@@ -32,9 +32,27 @@ export class Digging {
     this.lastHit = 0;
     this.hoverDirty = false;
     this.pointer = { x: 0, y: 0, inside: false };
+    this.shovelSkin = 'shovel_bronze';
 
     this._buildReticle();
     this._bind();
+
+    this._unsubCosmetics = events.on('cosmetics:equipped', ({ category, id }) => {
+      if (category === 'shovel') this.setShovelSkin(id);
+    });
+  }
+
+  setShovelSkin(skinId) {
+    this.shovelSkin = skinId;
+    const colors = {
+      shovel_bronze: 0x0FE3C1,
+      shovel_gold: 0xF5BA23,
+      shovel_crystal: 0x00F2FF,
+      shovel_obsidian: 0xFF3366,
+    };
+    if (this.reticle?.material && colors[skinId]) {
+      this.reticle.material.color.setHex(colors[skinId]);
+    }
   }
 
   setTerrain(terrain) { this.terrain = terrain; }
@@ -204,5 +222,6 @@ export class Digging {
     }
     this.reticle.geometry.dispose();
     this.reticle.material.dispose();
+    this._unsubCosmetics?.();
   }
 }

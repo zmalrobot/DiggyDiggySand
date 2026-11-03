@@ -13,6 +13,7 @@ export const SCHEMA = {
   'graphics.renderScale':{ type: 'enum',  def: 1, values: [0.5, 0.75, 1] },
   'graphics.shadows':    { type: 'enum',  def: 'low', values: ['off', 'low', 'high'] },
   'graphics.particles':  { type: 'enum',  def: 'med', values: ['low', 'med', 'high'] },
+  'graphics.dayNightCycle': { type: 'enum', def: 'auto', values: ['auto', 'day', 'night'] },
   'graphics.fpsCap':     { type: 'enum',  def: 60, values: [30, 60, 0] }, // 0 = senza limite
   'controls.cameraSens': { type: 'range', def: 1, min: 0.25, max: 2, step: 0.05 },
   'controls.invertY':    { type: 'bool',  def: false },

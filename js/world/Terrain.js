@@ -8,29 +8,72 @@ import * as THREE from 'three';
 import { PALETTE_3D } from './ProceduralFactory.js';
 
 export const CHUNK = 8;                 // vertici per lato del chunk
-const LAYER1 = new THREE.Color(0xE0C27A); // Superficie Y da 12 a 8: Fine sand dorata
-const LAYER2 = new THREE.Color(0xB88A44); // Profondità Y da 8 a 3: Sabbia aranciata compatta
-const LAYER3 = new THREE.Color(0x6E563B); // Fondo roccioso Y da 3 a 0: Pietra sedimentaria e detriti
-const VEIN = new THREE.Color(PALETTE_3D.atlantisCoreTeal);
+
+export const BIOME_PALETTES = {
+  sand_classic: {
+    layer1: new THREE.Color(0xE0C27A),
+    layer2: new THREE.Color(0xB88A44),
+    layer3: new THREE.Color(0x6E563B),
+    vein: new THREE.Color(PALETTE_3D.atlantisCoreTeal),
+    hex1: 0xE0C27A,
+    hex2: 0xB88A44,
+    hex3: 0x6E563B,
+  },
+  sand_mars: {
+    layer1: new THREE.Color(0xC84B31),
+    layer2: new THREE.Color(0x8C2C1D),
+    layer3: new THREE.Color(0x2D1B1B),
+    vein: new THREE.Color(0xF5BA23),
+    hex1: 0xC84B31,
+    hex2: 0x8C2C1D,
+    hex3: 0x2D1B1B,
+  },
+  sand_caribbean: {
+    layer1: new THREE.Color(0xF4F6F0),
+    layer2: new THREE.Color(0xD8E8E4),
+    layer3: new THREE.Color(0x2A6F7B),
+    vein: new THREE.Color(0x00F2FF),
+    hex1: 0xF4F6F0,
+    hex2: 0xD8E8E4,
+    hex3: 0x2A6F7B,
+  },
+  sand_volcanic: {
+    layer1: new THREE.Color(0x484B52),
+    layer2: new THREE.Color(0x2C2F36),
+    layer3: new THREE.Color(0x17181C),
+    vein: new THREE.Color(0xFF4500),
+    hex1: 0x484B52,
+    hex2: 0x2C2F36,
+    hex3: 0x17181C,
+  },
+};
+BIOME_PALETTES.classic = BIOME_PALETTES.sand_classic;
+BIOME_PALETTES.mars = BIOME_PALETTES.sand_mars;
+BIOME_PALETTES.caribbean = BIOME_PALETTES.sand_caribbean;
+BIOME_PALETTES.volcanic = BIOME_PALETTES.sand_volcanic;
+
+let currentBiome = 'sand_classic';
 
 const fract = (n) => n - Math.floor(n);
 const hash = (i) => fract(Math.sin(i * 12.9898) * 43758.5453);
 
 /** Ritorna il codice colore esadecimale dello strato per la quota Y (usato per le particelle). */
-export function getLayerColor(y) {
-  if (y > 8) return 0xE0C27A;
-  if (y > 3) return 0xB88A44;
-  return 0x6E563B;
+export function getLayerColor(y, biome = currentBiome) {
+  const p = BIOME_PALETTES[biome] || BIOME_PALETTES.sand_classic;
+  if (y > 8) return p.hex1;
+  if (y > 3) return p.hex2;
+  return p.hex3;
 }
 
-/** Colore del terreno per altezza: Y>8 sabbia dorata, 3<Y<=8 sabbia aranciata, Y<=3 roccia scura con venature teal. */
-export function layerColor(y, i, out = new THREE.Color()) {
+/** Colore del terreno per altezza in base al bioma attivo. */
+export function layerColor(y, i, out = new THREE.Color(), biome = currentBiome) {
+  const p = BIOME_PALETTES[biome] || BIOME_PALETTES.sand_classic;
   const h = hash(i);
-  if (y > 8) out.copy(LAYER1);
-  else if (y > 3) out.copy(LAYER2);
+  if (y > 8) out.copy(p.layer1);
+  else if (y > 3) out.copy(p.layer2);
   else {
-    out.copy(LAYER3);
-    if (h < 0.16) out.lerp(VEIN, 0.65); // venature luminescenti cyan
+    out.copy(p.layer3);
+    if (h < 0.16) out.lerp(p.vein, 0.65); // venature luminescenti
   }
   return out.multiplyScalar(0.92 + h * 0.16);
 }
@@ -238,6 +281,18 @@ export class Terrain {
   /** Percentuale di scavo: 1 - remainingVolume / initialVolume (0..1). */
   get completion() {
     return Math.min(1, Math.max(0, 1 - this.remainingVolume / this.initialVolume));
+  }
+
+  /** Imposta e applica la palette cosmetica del bioma all'intera griglia del terreno. */
+  setBiomePalette(biomeId) {
+    if (!BIOME_PALETTES[biomeId]) return;
+    currentBiome = biomeId;
+    this.activeBiome = biomeId;
+    const s = this.stride, count = s * s, c = this._tmpColor, col = this.colors.array;
+    for (let i = 0; i < count; i++) {
+      layerColor(this.heights[i], i, c, biomeId).toArray(col, i * 3);
+    }
+    this.colors.needsUpdate = true;
   }
 
   dispose() {

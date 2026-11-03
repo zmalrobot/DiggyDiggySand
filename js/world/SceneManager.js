@@ -2,6 +2,7 @@
 // Reagisce in tempo reale alle impostazioni grafiche e di controllo.
 import * as THREE from 'three';
 import { PALETTE_3D } from './ProceduralFactory.js';
+import { DayNightCycle } from './DayNightCycle.js';
 
 const PARTICLE_COUNTS = { low: [30, 3], med: [90, 8], high: [220, 18] };
 const SHADOW_SIZE = { low: 1024, high: 2048 };
@@ -61,6 +62,14 @@ export class SceneManager {
     this._groupMenuObjects();
     this._bindSettings();
 
+    this.dayNight = new DayNightCycle(this);
+    if (this.settings?.get?.('graphics.dayNightCycle')) {
+      this.dayNight.setMode(this.settings.get('graphics.dayNightCycle'));
+    }
+    this.unsubs.push(
+      this.settings?.subscribe?.('graphics.dayNightCycle', (m) => this.dayNight?.setMode(m))
+    );
+
     this._onResize = () => this.resize();
     window.addEventListener('resize', this._onResize);
     this.resize();
@@ -85,7 +94,8 @@ export class SceneManager {
   }
 
   _buildLights() {
-    this.scene.add(new THREE.HemisphereLight(PALETTE_3D.ambientSky, PALETTE_3D.sandBedrock, 0.9));
+    this.hemi = new THREE.HemisphereLight(PALETTE_3D.ambientSky, PALETTE_3D.sandBedrock, 0.9);
+    this.scene.add(this.hemi);
     const sun = new THREE.DirectionalLight(PALETTE_3D.sunLight, 2.4);
     sun.position.set(30, 40, 20);
     sun.shadow.camera.left = sun.shadow.camera.bottom = -45;
@@ -293,6 +303,7 @@ export class SceneManager {
 
   update(dt) {
     this.time += dt;
+    this.dayNight?.update(dt);
     if (this.mode === 'game') { this._updateGame(dt); return; }
     const sens = this.settings.get('controls.cameraSens');
     const dir = this.settings.get('controls.invertY') ? -1 : 1;
@@ -403,6 +414,7 @@ export class SceneManager {
 
   dispose() {
     this.running = false;
+    this.dayNight?.dispose?.();
     cancelAnimationFrame(this.raf);
     this.unsubs.forEach((u) => u());
     window.removeEventListener('resize', this._onResize);

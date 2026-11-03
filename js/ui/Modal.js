@@ -67,6 +67,14 @@ export class ModalManager {
     return handle;
   }
 
+  closeTop() {
+    if (this.stack.length) this.stack[this.stack.length - 1].close();
+  }
+
+  close() {
+    this.closeTop();
+  }
+
   /** Conferma di sicurezza. Risolve true/false. */
   confirm({ title, message, confirmLabel = 'Conferma', cancelLabel = 'Annulla', danger = false }) {
     return new Promise((resolve) => {

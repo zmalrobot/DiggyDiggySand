@@ -1623,6 +1623,168 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
   }
 }
 
+/* ==========================================================================
+   Fase 11: Guardaroba Cosmetico & Personalizzazione Skin
+   ========================================================================== */
+.wardrobe-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 680px;
+}
+
+.wardrobe-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(228, 197, 128, 0.2);
+}
+
+.wardrobe-tablets-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: rgba(15, 227, 193, 0.12);
+  border: 1px solid var(--atlantis-teal);
+  color: var(--atlantis-teal);
+  font-family: var(--font-data);
+  font-weight: 700;
+  font-size: 0.88rem;
+  box-shadow: 0 0 10px rgba(15, 227, 193, 0.2);
+  clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 0 calc(100% - 6px), 0 6px);
+}
+
+.wardrobe-tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 6px;
+}
+
+.wardrobe-tab-btn {
+  padding: 8px 16px;
+  background: transparent;
+  border: none;
+  color: var(--sand-mid);
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 2px solid transparent;
+}
+
+.wardrobe-tab-btn:hover {
+  color: var(--sand-bright);
+}
+
+.wardrobe-tab-btn.active {
+  color: var(--gold-pharaoh);
+  border-bottom-color: var(--gold-pharaoh);
+  text-shadow: 0 0 8px rgba(245, 186, 35, 0.4);
+}
+
+.wardrobe-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+  max-height: 52vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.wardrobe-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 14px;
+  background: rgba(6, 11, 17, 0.75);
+  border: 1px solid rgba(228, 197, 128, 0.25);
+  transition: all 0.25s ease;
+}
+
+.wardrobe-card:hover {
+  border-color: rgba(228, 197, 128, 0.6);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+
+.wardrobe-card.equipped {
+  border-color: var(--atlantis-teal);
+  box-shadow: 0 0 16px rgba(15, 227, 193, 0.3), inset 0 0 10px rgba(15, 227, 193, 0.1);
+}
+
+.wardrobe-card.locked {
+  opacity: 0.75;
+}
+
+.wardrobe-preview {
+  height: 50px;
+  width: 100%;
+  margin-bottom: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 0 calc(100% - 6px), 0 6px);
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.wardrobe-card-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 12px;
+}
+
+.wardrobe-card-name {
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  color: var(--sand-bright);
+  margin-bottom: 4px;
+}
+
+.wardrobe-card.equipped .wardrobe-card-name {
+  color: var(--atlantis-teal);
+}
+
+.wardrobe-card-desc {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+.wardrobe-card-action {
+  width: 100%;
+}
+
+.btn-equipped {
+  background: rgba(15, 227, 193, 0.2) !important;
+  border-color: var(--atlantis-teal) !important;
+  color: var(--atlantis-teal) !important;
+  cursor: default !important;
+  box-shadow: none !important;
+}
+
+.btn-unlock {
+  border-color: var(--gold-pharaoh) !important;
+  color: var(--gold-pharaoh) !important;
+}
+
+.btn-unlock:hover:not(:disabled) {
+  background: rgba(245, 186, 35, 0.25) !important;
+  box-shadow: 0 0 12px rgba(245, 186, 35, 0.4) !important;
+}
+
+.btn-wardrobe {
+  border-color: rgba(15, 227, 193, 0.4);
+}
+
+.btn-wardrobe:hover {
+  border-color: var(--atlantis-teal);
+  box-shadow: 0 0 12px rgba(15, 227, 193, 0.35);
+}
+
 
 
 

@@ -39,6 +39,8 @@ export class DebugTools {
       addTablets: (amount) => this.addTablets(amount),
       unlockAllEndings: () => this.unlockAllEndings(),
       unlockAchievement: (id) => this.unlockAchievement(id),
+      setTimeOfDay: (val) => this.setTimeOfDay(val),
+      unlockAllSkins: () => this.unlockAllSkins(),
       setLanguage: (lang) => this.setLanguage(lang),
       cleanVRAM: () => this.cleanVRAM(),
       resetAll: (hard) => this.resetAll(hard),
@@ -121,6 +123,40 @@ export class DebugTools {
     }
   }
 
+  setTimeOfDay(val) {
+    const cycle = this.scene?.dayNight;
+    if (!cycle) {
+      toast('[DEBUG] Ciclo Giorno/Notte non disponibile');
+      return;
+    }
+    let t = 0.5;
+    if (typeof val === 'number') {
+      t = Math.min(1, Math.max(0, val));
+    } else if (val === 'night' || val === 'midnight') {
+      t = 0.0;
+    } else if (val === 'dawn') {
+      t = 0.25;
+    } else if (val === 'day' || val === 'noon') {
+      t = 0.5;
+    } else if (val === 'sunset' || val === 'dusk') {
+      t = 0.75;
+    }
+    cycle.time = t;
+    cycle._applyTime(t);
+    toast(`[DEBUG] Ora solare impostata: ${t.toFixed(2)} (${val})`);
+    return t;
+  }
+
+  unlockAllSkins() {
+    const mgr = this.game?.cosmeticsManager ?? window.__dds?.game?.cosmeticsManager;
+    if (mgr) {
+      mgr.unlockAll();
+      toast('[DEBUG] Tutte le skin e biomi sbloccati!');
+      return true;
+    }
+    return false;
+  }
+
   setLanguage(lang = 'en') {
     if (window.__dds?.i18n) {
       window.__dds.i18n.setLanguage(lang);
@@ -142,6 +178,7 @@ export class DebugTools {
       localStorage.removeItem('dds_endings_seen');
       localStorage.removeItem('dds_stats_v1');
       localStorage.removeItem('dds_achievements_v1');
+      localStorage.removeItem('dds_cosmetics_v1');
       toast('[DEBUG] Salvataggi cancellati. Ricaricamento...');
       if (hard && typeof window !== 'undefined' && window.location?.reload) {
         setTimeout(() => window.location.reload(), 500);

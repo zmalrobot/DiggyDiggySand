@@ -14,6 +14,8 @@ import { DebugTools } from './core/DebugTools.js';
 import { i18n } from './core/I18n.js';
 import { StatsManager } from './core/StatsManager.js';
 import { Achievements } from './systems/Achievements.js';
+import { CosmeticsManager } from './systems/CosmeticsManager.js';
+import { WardrobeModal } from './ui/WardrobeModal.js';
 
 window.addEventListener('error', (e) => console.error('[DDS] errore non gestito', e.error ?? e.message));
 window.addEventListener('unhandledrejection', (e) => console.error('[DDS] promise rifiutata', e.reason));
@@ -59,7 +61,11 @@ async function boot() {
   }
 
   const settingsModal = new SettingsModal({ settings, modal, save, audio });
-  const menu = new MainMenu(document.getElementById('menu'), { save, modal, settingsModal, audio, scene, statsManager, achievements });
+  const cosmeticsManager = new CosmeticsManager(save);
+  const wardrobeModal = new WardrobeModal(modal, cosmeticsManager, save, audio, null);
+  const menu = new MainMenu(document.getElementById('menu'), {
+    save, modal, settingsModal, audio, scene, statsManager, achievements, cosmeticsManager, wardrobeModal,
+  });
   document.addEventListener('dds:save-cleared', () => menu.refresh());
 
   // Fase 1: "Nuova Spedizione" / "Continua" (eventi game:new / game:continue) avviano la partita.
@@ -67,6 +73,7 @@ async function boot() {
     scene, settings, audio, save, modal, settingsModal, menu,
     canvas: document.getElementById('game'),
     hudRoot: document.getElementById('hud'),
+    cosmeticsManager, wardrobeModal,
   });
 
   // Suite di Debug e Memory Audit (Fase 7)
@@ -74,7 +81,7 @@ async function boot() {
   game.debugTools = debugTools;
 
   // Hook di debug per i test.
-  window.__dds = { settings, audio, save, scene, assets, menu, game, debugTools, statsManager, achievements, i18n };
+  window.__dds = { settings, settingsModal, audio, save, scene, assets, menu, game, debugTools, statsManager, achievements, cosmeticsManager, wardrobeModal, i18n };
 
   await startClicked;
   menu.show();

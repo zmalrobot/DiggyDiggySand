@@ -188,10 +188,16 @@ export class Workers {
     this.group.name = 'workers-fleet';
 
     this.workers = []; // { type, mesh, timer, cycleTime, x, z, targetX, targetZ, digRadius, powerPerHit }
+    this.currentSkin = 'machinery_standard';
     this._unsubs = [
       events.on('upgrade:bought', ({ id }) => {
         if (UPGRADE_CATALOG[id]?.branch === 'fleet') {
           this.syncWithUpgrades(this.state.upgrades);
+        }
+      }),
+      events.on('cosmetics:equipped', ({ category, id }) => {
+        if (category === 'machinery') {
+          this.setSkin(id);
         }
       }),
     ];
@@ -282,6 +288,9 @@ export class Workers {
     }
 
     if (!m.userData) m.userData = {};
+    if (this.currentSkin && this.currentSkin !== 'machinery_standard') {
+      this._applySkinToMesh(m, this.currentSkin);
+    }
 
     const angle = Math.random() * Math.PI * 2;
     const r = distMin + Math.random() * (distMax - distMin);
@@ -438,6 +447,39 @@ export class Workers {
     if (w.type === 'excavator') {
       this.scene?.shake?.(0.03);
     }
+  }
+
+  setSkin(skinId) {
+    this.currentSkin = skinId;
+    for (const w of this.workers) {
+      this._applySkinToMesh(w.mesh, skinId);
+    }
+  }
+
+  _applySkinToMesh(mesh, skinId) {
+    if (!mesh) return;
+    mesh.traverse((o) => {
+      if (o.isMesh && o.material) {
+        if (skinId === 'machinery_royal_gold') {
+          o.material.color?.setHex?.(0xF5BA23);
+          if (o.material.metalness !== undefined) o.material.metalness = 0.85;
+          if (o.material.roughness !== undefined) o.material.roughness = 0.2;
+        } else if (skinId === 'machinery_atlantis_teal') {
+          o.material.color?.setHex?.(0x031826);
+          o.material.emissive?.setHex?.(0x0FE3C1);
+          o.material.emissiveIntensity = 0.65;
+          if (o.material.metalness !== undefined) o.material.metalness = 0.5;
+        } else {
+          // Standard
+          if (o.material.emissive && skinId === 'machinery_standard') {
+            if (o.material.emissive.getHex() === 0x0FE3C1 && !o.name.includes('eye') && !o.name.includes('core')) {
+              o.material.emissive.setHex(0x000000);
+            }
+          }
+        }
+        o.material.needsUpdate = true;
+      }
+    });
   }
 
   dispose() {

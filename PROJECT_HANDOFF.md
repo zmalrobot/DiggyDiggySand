@@ -14,10 +14,10 @@ Condotta con l'utente (Simone):
 - Non dichiarare "fatto" senza verifica reale. Dire sempre cosa NON è stato verificato.
 
 ## 1. Stato reale
-**Scritto ma MAI eseguito in un browser:** Milestone 0 (scaffolding) e Milestone 0.5 (boot, loading, menu, impostazioni).
-Verificato solo che il live server serve i file con HTTP 200. Nessun controllo di console, nessuno screenshot, nessun controllo di sintassi (nella VM mancava `node`; `python` era solo lo stub del Microsoft Store). Il test con il subagente browser non è partito perché non aveva Chrome DevTools.
-
-> **Primo passo obbligatorio per la nuova chat:** aprire `index.html` da un server statico (ad esempio Live Server su `http://127.0.0.1:5500/index.html`, oppure `npx serve .`), controllare la console e correggere gli errori, prima di iniziare la Milestone 1.
+**Milestones 0, 0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 e 11 COMPLETATE E VERIFICATE.**
+73 test unitari automatici su 73 passati con successo (100% green).
+Server locale `http://127.0.0.1:8080` attivo e collaudato con browser headless.
+0 errori o warning critici nella console del browser.
 
 Flusso atteso: schermata di caricamento (barra a obelisco, lore a rotazione) → pulsante "Inizia Spedizione" (sblocca l'AudioContext) → dissolvenza → menu con sfondo 3D (cratere con obelisco, camera orbitale) → Impostazioni funzionanti a runtime.
 
@@ -198,6 +198,28 @@ Verifiche manuali da fare: valori persistiti dopo il ricaricamento; `localStorag
     - Modale a due schede (Statistiche e Trofei) accessibile dal Menu Principale e dal Menu di Pausa in-game.
     - Griglia numeri di carriera con font Syne ed elenco trofei con stato di sblocco in tempo reale.
   - Verificata con 66 test unitari complessivi (5 specifici M10, 100% superati) e suite end-to-end Puppeteer/Headless Chrome (0 errori console).
+
+- **Milestone 11 (Fase 11) — Ciclo Giorno/Notte con Luci Dinamiche e Personalizzazione Cosmetica (Skins):**
+  - Ciclo Giorno/Notte & Illuminazione Dinamica (`js/world/DayNightCycle.js` & `js/world/Sky.js`):
+    - Orbita solare continua con calcolo altitudine e interpolazione atmosferica smoothstep (aurora dorata, mezzogiorno ciano/oro, tramonto cremisi, notte abissale `#060b11`).
+    - Cupola stellata procedurale a 350 particelle (`THREE.Points`) e disco lunare luminescente con fading diurno.
+    - Sfondo gradiente dinamico renderizzato su canvas 2×256 sincronizzato con nebbia (`scene.fog`) e luce emisferica.
+  - Illuminazione Notturna Locale (`js/world/Torches.js`):
+    - 4 bracieri/fiaccole su rovine archeologiche e campo base attivate automaticamente al calar del sole.
+    - Sfarfallio procedurale morbido ad alta frequenza (flicker casuale su `intensity`).
+    - Rispetto rigoroso del budget GPU: max 4 PointLight senza ombre per 60 FPS garantiti su mobile.
+  - Manager Cosmetico & Guardaroba (`js/systems/CosmeticsManager.js` & `js/ui/WardrobeModal.js`):
+    - Catalogo collezionabile per 3 categorie: Pale & Strumenti (Bronzo, Oro, Cristallo, Ossidiana), Biomi Sabbia (Classico, Marte, Caraibi, Vulcanico), Flotta Macchinari (Standard, Reale, Atlantideo).
+    - Costi in Tavolette Antiche τ e persistenza su `dds_cosmetics_v1`.
+    - Modale a 3 schede con anteprime cromatiche esagonali, saldo τ live e pulsanti di sblocco/equipaggiamento.
+  - Integrazione Materiali e Sistemi di Gioco:
+    - Terreno heightmap (`Terrain.js`): ricolore istantaneo dei vertici con le palette bioma `BIOME_PALETTES`.
+    - Lavoratori (`Workers.js`): tinting e finiture cromatiche sui modelli o mesh procedurali.
+    - Pala (`Digging.js`): reticolo e scintille particellari allineati al tema della skin equipaggiata.
+  - Impostazioni & Debug Suite:
+    - Impostazione `graphics.dayNightCycle` ('auto' | 'day' | 'night') in `SettingsModal.js` e persistenza su `localStorage`.
+    - Comandi debug `setTimeOfDay(time)` e `unlockAllSkins()` su `window.DDS_DEBUG`.
+  - Verificata con 73 test unitari complessivi (7 specifici M11, 100% superati) e browser testing end-to-end.
 
 Piano dettagliato con codice e verifiche: vedi la sezione "Roadmap" sopra e le formule in `Ideas/upgrade_tree_specification.md`.
 

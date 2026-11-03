@@ -3,10 +3,12 @@ import { events } from '../core/Events.js';
 import { GalleryModal } from './GalleryModal.js';
 import { PrestigeModal } from './PrestigeModal.js';
 import { StatsModal } from './StatsModal.js';
+import { WardrobeModal } from './WardrobeModal.js';
+import { CosmeticsManager } from '../systems/CosmeticsManager.js';
 import { i18n } from '../core/I18n.js';
 
 export class MainMenu {
-  constructor(root, { save, modal, settingsModal, audio, scene, statsManager, achievements }) {
+  constructor(root, { save, modal, settingsModal, audio, scene, statsManager, achievements, cosmeticsManager, wardrobeModal }) {
     this.root = root;
     this.save = save;
     this.modal = modal;
@@ -15,9 +17,11 @@ export class MainMenu {
     this.scene = scene;
     this.statsManager = statsManager;
     this.achievements = achievements;
+    this.cosmeticsManager = cosmeticsManager ?? new CosmeticsManager(save);
     this.galleryModal = new GalleryModal(modal, save);
     this.prestigeModal = new PrestigeModal(modal, save, null, audio);
     this.statsModal = new StatsModal(modal, statsManager, achievements, audio);
+    this.wardrobeModal = wardrobeModal ?? new WardrobeModal(modal, this.cosmeticsManager, save, audio, null);
     this._build();
   }
 
@@ -35,10 +39,11 @@ export class MainMenu {
           <button type="button" class="btn" data-act="gallery"><span data-i18n="menu.gallery">Finali Scoperti</span> (<span class="gallery-count">0</span>/4)</button>
           <button type="button" class="btn btn-prestige" data-act="prestige"><span data-i18n="menu.prestige">Santuario dei Predecessori</span> (<span class="tablets-count">τ 0</span>)</button>
           <button type="button" class="btn" data-act="stats" data-i18n="menu.stats">Statistiche & Trofei</button>
+          <button type="button" class="btn btn-wardrobe" data-act="wardrobe" data-i18n="menu.wardrobe">Guardaroba & Skin</button>
           <button type="button" class="btn" data-act="settings" data-i18n="menu.settings">Impostazioni</button>
           <button type="button" class="btn" data-act="credits" data-i18n="menu.credits">Crediti</button>
         </nav>
-        <footer class="menu-foot muted">v10.0 · Fase 10</footer>
+        <footer class="menu-foot muted">v11.0 · Fase 11</footer>
       </div>`;
     this.root.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-act]');
@@ -78,6 +83,11 @@ export class MainMenu {
 
   _stats() {
     this.statsModal.open();
+  }
+
+  _wardrobe() {
+    this.audio?.playClick();
+    this.wardrobeModal.open();
   }
 
   _gallery() {

@@ -33,6 +33,8 @@ export class PauseMenu {
         this.close();
       } else if (act === 'stats') {
         new StatsModal(this.game?.modal, this.game?.statsManager, this.game?.achievements, this.audio).open();
+      } else if (act === 'wardrobe') {
+        this.game?.openWardrobe?.();
       } else if (act === 'prestige') {
         new PrestigeModal(this.game?.modal, this.save, this.game?.state, this.audio).open();
       } else if (act === 'settings') {
@@ -124,6 +126,7 @@ export class PauseMenu {
         <div class="pause-actions">
           <button type="button" class="btn btn-resume" data-act="resume">${i18n.t('pause.resume') || 'Riprendi Spedizione'}</button>
           <button type="button" class="btn btn-secondary" data-act="stats">${i18n.t('pause.stats') || 'Statistiche & Trofei'}</button>
+          <button type="button" class="btn btn-secondary" data-act="wardrobe">${i18n.t('pause.wardrobe') || 'Guardaroba & Skin'}</button>
           <button type="button" class="btn btn-secondary" data-act="prestige">${i18n.t('pause.prestige') || 'Santuario dei Predecessori'} (τ ${this.save?.getTablets?.() ?? 0})</button>
           <button type="button" class="btn btn-secondary" data-act="settings">${i18n.t('settings.title') || 'Tutte le Impostazioni'}</button>
           <button type="button" class="btn btn-danger" data-act="save-exit">${i18n.t('pause.saveAndExit') || 'Salva ed Esci'}</button>

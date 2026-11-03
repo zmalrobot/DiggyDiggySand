@@ -13,6 +13,7 @@ const OPTION_LABELS = {
   'graphics.renderScale': { 0.5: '0.5×', 0.75: '0.75×', 1: '1.0×' },
   'graphics.shadows': { off: 'Disattivate', low: 'Basse', high: 'Alte' },
   'graphics.particles': { low: 'Basse', med: 'Medie', high: 'Alte' },
+  'graphics.dayNightCycle': { auto: 'Automatico (Dinamico)', day: 'Sempre Giorno', night: 'Sempre Notte' },
   'graphics.fpsCap': { 30: '30 FPS', 60: '60 FPS', 0: 'Illimitato' },
   'game.language': { it: 'Italiano', en: 'English' },
 };
@@ -28,7 +29,7 @@ export class SettingsModal {
   open() {
     this.unsubs = [];
     const root = document.createElement('div');
-    root.className = 'settings';
+    root.className = 'settings settings-modal';
     const tabBar = document.createElement('div');
     tabBar.className = 'tabs';
     tabBar.setAttribute('role', 'tablist');
@@ -120,6 +121,8 @@ export class SettingsModal {
     const def = SCHEMA[key];
     const sel = document.createElement('select');
     sel.className = 'select';
+    sel.name = key;
+    sel.dataset.key = key;
     for (const v of def.values) {
       const o = document.createElement('option');
       o.value = String(v);
@@ -151,6 +154,7 @@ export class SettingsModal {
       this._row('Risoluzione di rendering', this._select('graphics.renderScale'), 'Scala della risoluzione interna'),
       this._row('Ombre', this._select('graphics.shadows')),
       this._row('Qualità particelle', this._select('graphics.particles')),
+      this._row(i18n.t('settings.dayNight') || 'Ciclo Giorno/Notte', this._select('graphics.dayNightCycle'), 'Auto / Giorno / Notte'),
       this._row('Limite FPS', this._select('graphics.fpsCap')),
     );
   }

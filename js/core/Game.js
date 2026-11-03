@@ -25,6 +25,8 @@ import { toast } from '../ui/Modal.js';
 import { StatsManager } from './StatsManager.js';
 import { Achievements } from '../systems/Achievements.js';
 import { StatsModal } from '../ui/StatsModal.js';
+import { CosmeticsManager } from '../systems/CosmeticsManager.js';
+import { WardrobeModal } from '../ui/WardrobeModal.js';
 import { i18n } from './I18n.js';
 
 const WORLD_SIZE = 200;
@@ -37,7 +39,7 @@ const PAN_SPEED = 38; // m/s con WASD / frecce
 const smoothstep = (t) => t * t * (3 - 2 * t);
 
 export class Game {
-  constructor({ scene, settings, audio, save, modal, settingsModal, menu, canvas, hudRoot, assets = null }) {
+  constructor({ scene, settings, audio, save, modal, settingsModal, menu, canvas, hudRoot, assets = null, cosmeticsManager = null, wardrobeModal = null }) {
     this.sceneMgr = scene;
     this.settings = settings;
     this.audio = audio;
@@ -58,6 +60,9 @@ export class Game {
       audio: this.audio,
     });
     this.statsModal = new StatsModal(this.modal, this.statsManager, this.achievements, this.audio);
+    this.cosmeticsManager = cosmeticsManager ?? new CosmeticsManager(this.save);
+    this.wardrobeModal = wardrobeModal ?? new WardrobeModal(this.modal, this.cosmeticsManager, this.save, this.audio, this);
+    if (!this.wardrobeModal.game) this.wardrobeModal.game = this;
 
     this.economy = new Economy(this.state);
     this.hud = new Hud(hudRoot, { state: this.state, economy: this.economy, audio: this.audio });
@@ -120,6 +125,12 @@ export class Game {
 
     events.on('merchant:deal_bought', () => {
       events.emit('merchant:traded');
+    });
+
+    events.on('cosmetics:equipped', ({ category, id }) => {
+      if (category === 'sand') this.terrain?.setBiomePalette?.(id);
+      if (category === 'machinery') this.workers?.setSkin?.(id);
+      if (category === 'shovel') this.digging?.setShovelSkin?.(id);
     });
 
     let lastCompletionTier = 0;
@@ -274,7 +285,20 @@ export class Game {
 
     this.sceneMgr.scene.add(this.group);
     this.digging.setTerrain(this.terrain);
+
+    // Applica personalizzazioni cosmetiche equipaggiate
+    const sandSkin = this.cosmeticsManager?.getEquipped('sand');
+    if (sandSkin) this.terrain.setBiomePalette(sandSkin);
+    const machSkin = this.cosmeticsManager?.getEquipped('machinery');
+    if (machSkin) this.workers.setSkin(machSkin);
+    const shovelSkin = this.cosmeticsManager?.getEquipped('shovel');
+    if (shovelSkin) this.digging.setShovelSkin(shovelSkin);
+
     this.state.setCompletion(0);
+  }
+
+  openWardrobe() {
+    this.wardrobeModal?.open();
   }
 
   _disposeWorld() {
