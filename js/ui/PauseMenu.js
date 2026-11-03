@@ -38,6 +38,7 @@ export class PauseMenu {
       } else if (act === 'prestige') {
         new PrestigeModal(this.game?.modal, this.save, this.game?.state, this.audio).open();
       } else if (act === 'settings') {
+        if (this.settingsModal) this.settingsModal.game = this.game;
         this.settingsModal?.open?.();
       } else if (act === 'save-exit') {
         this.close();

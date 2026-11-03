@@ -44,6 +44,7 @@ export class Hud {
       events.on('upgrade:bought', ({ id }) => {
         if (id === 'georadar') this.refreshRadar(true);
       }),
+      events.on('cheats:enabled', () => this.refresh()),
       events.on('event:boost', ({ active, label }) => {
         if (this.el.boost) {
           if (active) {
@@ -66,6 +67,10 @@ export class Hud {
           <div class="hud-sand-row">
             <span class="hud-num" data-el="sand">0</span>
             <span class="hud-sps muted" data-el="sps">+0/s</span>
+            <div class="hud-cheats-badge hidden" data-el="cheatsBadge" title="Trucchi attivi — Obiettivi bloccati" aria-label="Trucchi attivi — Obiettivi bloccati">
+              <span class="cheats-icon">🛠️</span>
+              <span class="cheats-tag">TRUCCHI</span>
+            </div>
           </div>
           <div class="hud-boost-tag hidden accent" data-el="boost"></div>
         </div>
@@ -109,6 +114,7 @@ export class Hud {
       radar: this.root.querySelector('[data-el="radar"]'),
       radarReading: this.root.querySelector('[data-el="radarReading"]'),
       boost: this.root.querySelector('[data-el="boost"]'),
+      cheatsBadge: this.root.querySelector('[data-el="cheatsBadge"]'),
     };
 
     this.el.shop.addEventListener('click', () => events.emit('hud:shop'));
@@ -150,6 +156,9 @@ export class Hud {
     this._setCompletion(this.state.completion);
     if (this.economy) this.setSps(this.economy.sps);
     this.refreshRadar();
+    if (this.el.cheatsBadge) {
+      this.el.cheatsBadge.classList.toggle('hidden', !this.state.cheatsEnabled);
+    }
   }
 
   _setCompletion(c) {

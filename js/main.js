@@ -80,6 +80,7 @@ async function boot() {
     hudRoot: document.getElementById('hud'),
     cosmeticsManager, wardrobeModal, biomeManager,
   });
+  settingsModal.game = game;
 
   // Suite di Debug e Memory Audit (Fase 7)
   const debugTools = new DebugTools({ game, scene, state: game.state, save, audio });

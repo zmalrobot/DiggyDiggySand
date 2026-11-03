@@ -19,6 +19,8 @@ export class State {
     this.seed = data.seed ?? 0;
     this.endingId = data.endingId ?? 'curse';
     this.currentBiome = data.currentBiome ?? 'desert';
+    this.cheatsEnabled = !!data.cheatsEnabled;
+    this.godMode = !!data.godMode;
     this.sand = Number.isFinite(data.sand) ? Math.max(0, data.sand) : 0;
     this.totalSand = Number.isFinite(data.totalSand) ? Math.max(0, data.totalSand) : this.sand;
     this.upgrades = { ...(data.upgrades ?? {}) };
@@ -30,6 +32,12 @@ export class State {
     this.metaUpgrades = { ...(data.metaUpgrades ?? {}) };
     this.sandMultiplier = 1.0;
     this.lastSaved = data.lastSaved ?? data.lastSeen ?? Date.now();
+  }
+
+  enableCheats() {
+    if (this.cheatsEnabled) return;
+    this.cheatsEnabled = true;
+    events.emit('cheats:enabled', { cheatsEnabled: true });
   }
 
   registerClick() {
@@ -51,10 +59,14 @@ export class State {
     // Formula U1.2: TickInterval = max(0.06s, 0.35s * 0.93^n)
     const interval = freqLvl === 0 ? 0.5 : Math.max(MIN_TICK, 0.35 * Math.pow(0.93, freqLvl));
     const echoBonus = 1 + (this.metaUpgrades.shovelEcho ?? 0) * 0.15;
+    const basePower = (BASE_STATS.power + (n.shovel ?? 0)) * echoBonus;
+    const baseRadius = BASE_STATS.radius + 0.45 * (n.radius ?? 0);
+    const baseRate = freqLvl === 0 ? BASE_STATS.digRate : Math.min(1 / MIN_TICK, 1 / interval);
+
     return {
-      power: (BASE_STATS.power + (n.shovel ?? 0)) * echoBonus,
-      radius: BASE_STATS.radius + 0.45 * (n.radius ?? 0),
-      digRate: freqLvl === 0 ? BASE_STATS.digRate : Math.min(1 / MIN_TICK, 1 / interval),
+      power: this.godMode ? Math.max(100, basePower * 10) : basePower,
+      radius: this.godMode ? baseRadius * 10 : baseRadius,
+      digRate: this.godMode ? 1 / MIN_TICK : baseRate,
     };
   }
 
@@ -89,6 +101,8 @@ export class State {
       seed: this.seed,
       endingId: this.endingId,
       currentBiome: this.currentBiome || 'desert',
+      cheatsEnabled: !!this.cheatsEnabled,
+      godMode: !!this.godMode,
       sand: this.sand,
       totalSand: this.totalSand,
       upgrades: this.upgrades,

@@ -52,17 +52,21 @@ export class DebugTools {
   }
 
   addSand(amount = 10000) {
+    this.game?.state?.enableCheats?.();
     this.game?.state?.addSand(amount);
+    this.game?.saveNow?.();
     toast(`[DEBUG] Aggiunta sabbia: +${formatNumber(amount)}`);
     return this.game?.state?.sand;
   }
 
   setCompletion(pct = 0.99) {
+    this.game?.state?.enableCheats?.();
     const c = Math.min(1, Math.max(0, pct));
     if (this.game?.terrain) {
       this.game.terrain.remainingVolume = this.game.terrain.initialVolume * (1 - c);
     }
     this.game?.state?.setCompletion(c);
+    this.game?.saveNow?.();
     toast(`[DEBUG] Completamento forzato: ${(c * 100).toFixed(1)}%`);
     return c;
   }
@@ -73,11 +77,13 @@ export class DebugTools {
       console.warn(`[DEBUG] Ending non valido (${id}). Ammessi:`, valid);
       return false;
     }
+    this.game?.state?.enableCheats?.();
     if (this.game?.state) this.game.state.endingId = id;
     this.setCompletion(0.99);
     if (this.game?.endingManager) {
       this.game.endingManager.forceEnding(id);
     }
+    this.game?.saveNow?.();
     toast(`[DEBUG] Forzato finale: ${id}`);
     return true;
   }
@@ -87,19 +93,23 @@ export class DebugTools {
       console.warn('[DEBUG] Sistema WorldEvents non attivo');
       return false;
     }
+    this.game?.state?.enableCheats?.();
     this.game.worldEvents.triggerEvent(type);
+    this.game?.saveNow?.();
     toast(`[DEBUG] Evento lanciato: ${type}`);
     return true;
   }
 
   unlockAllUpgrades() {
     if (!this.game?.state) return false;
+    this.game.state.enableCheats?.();
     for (const [id, def] of Object.entries(UPGRADE_CATALOG)) {
       this.game.state.upgrades[id] = def.maxLevel;
     }
     this.game.workers?.syncWithUpgrades?.(this.game.state.upgrades);
     this.game.shop?.render?.();
     this.game.economy?.recalculateSPS?.();
+    this.game.saveNow?.();
     toast('[DEBUG] Tutti gli upgrade sbloccati al massimo livello!');
     return this.game.state.upgrades;
   }

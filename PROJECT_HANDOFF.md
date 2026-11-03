@@ -242,6 +242,29 @@ Verifiche manuali da fare: valori persistiti dopo il ricaricamento; `localStorag
   - Persistenza `currentBiome` in `State.js` e `Save.js`, più comandi debug `setBiome(id)` e `unlockAllBiomes()` su `window.DDS_DEBUG`.
   - Verificata con 78 test unitari complessivi (5 suite specifiche M12 in `tests/phase12.test.mjs`, 100% superati) e verifica browser end-to-end (`tests/phase12_browser_qa.mjs`, 0 errori console).
 
+- [x] **M13** Cheat di Debug nel Pannello Impostazioni & Blocco Permanente degli Achievement:
+  - Gestione Stato & Lockout Permanente (`js/core/State.js` & `js/systems/Achievements.js`):
+    - Aggiunta proprietà booleana persistente `state.cheatsEnabled = false` (e `state.godMode = false`).
+    - Blocco rigoroso in `Achievements.unlock(id)` e `Achievements.check()`: se `state.cheatsEnabled === true`, nessun obiettivo viene sbloccato o valutato.
+    - Banner di avviso permanente (`.cheats-lockout-banner`) mostrato in cima alla tab Trofei di `StatsModal.js`: *"⚠️ Obiettivi disabilitati: sono stati utilizzati trucchi in questa partita"*.
+  - Dialogo di Conferma Irreversibile (`js/ui/SettingsModal.js`):
+    - Al primo tentativo di interazione con qualsiasi trucco (pulsante o toggle), apertura modale di sicurezza:
+      > **"Attenzione: Modalità Trucchi"**
+      > *"L'attivazione dei trucchi ti permetterà di modificare liberamente la sabbia, il terreno e gli eventi, ma disabiliterà definitivamente lo sblocco di tutti gli Obiettivi per questa spedizione. Continuare?"*
+    - Se confermato, `state.enableCheats()` imposta `cheatsEnabled = true`, persiste istantaneamente lo stato su `localStorage` (`dds_save_v1`), aggiorna la UI e attiva il comando.
+  - Nuova Scheda "Trucchi" nel Pannello Impostazioni (`js/ui/SettingsModal.js`):
+    - *Stato Trucchi:* banner `.cheats-status-box` dinamico (inattivo verde/dorato vs attivo ambra/rosso).
+    - *Accredito Sabbia:* comandi rapidi `+100.000 Sabbia` e `+1.000.000 Sabbia`.
+    - *Completamento Scavo Rapido:* impostazione immediata volume residuo e completamento a `50%`, `95%` o `99%` (innesco climax).
+    - *Forza Finale di Spedizione:* selettore dropdown (Maledizione, Tesoro, Impresa SRL, Ascensione Segreta) con pulsante `Avvia Climax Ora`.
+    - *Attiva Evento nel Deserto:* avvio istantaneo di `Tempesta di Sabbia` o `Mercante Nomade`.
+    - *Super Pala (God Mode):* toggle interruttore per scavo ad altissima potenza (raggio x10, potenza x10, frequenza massima e zero cooldown).
+    - *Sblocca Tutti gli Upgrade:* massimizzazione istantanea di tutti gli strumenti, escavatori e droni con sincronizzazione automatica della flotta.
+  - Indicatore Visivo HUD (`js/ui/Hud.js`):
+    - Badge `.hud-cheats-badge` con icona chiave inglese e teschietto (`🔧 Cheats`), animazione pulsante dorata/rossa e tooltip esplicativo posizionato accanto al contatore della sabbia.
+  - Anti-Tampering: il flag `cheatsEnabled: true` viene scritto immediatamente nel JSON di salvataggio; ricaricare o riavviare la sessione mantiene il blocco permanente fino all'inizio di una nuova spedizione pulita.
+  - Verificata con 83 test unitari complessivi (5 suite specifiche M13 in `tests/phase13.test.mjs`, 100% superati) e test QA headless Chrome (`tests/phase13_browser_qa.mjs`, 0 errori console, 3 screenshot salvati).
+
 Piano dettagliato con codice e verifiche: vedi la sezione "Roadmap" sopra e le formule in `Ideas/upgrade_tree_specification.md`.
 
 ## 6. Convenzioni

@@ -141,7 +141,8 @@ export class Digging {
   /** Esegue un colpo alla posizione corrente del puntatore. Ritorna la sabbia guadagnata (0 se niente). */
   _hit() {
     const now = performance.now();
-    if (now - this.lastHit < MIN_TICK * 1000) return 0;
+    const minInterval = this.state?.godMode ? 0 : MIN_TICK * 1000;
+    if (now - this.lastHit < minInterval) return 0;
     const p = this.pick(this.pointer.x, this.pointer.y);
     if (!p) return 0;
     this.lastHit = now;
@@ -179,10 +180,11 @@ export class Digging {
     if (!this.enabled || !this.terrain) return;
 
     if (this.holding && !this.multi) {
-      const interval = Math.max(MIN_TICK, 1 / this.state.stats.digRate);
+      const interval = this.state?.godMode ? MIN_TICK : Math.max(MIN_TICK, 1 / this.state.stats.digRate);
       this.cooldown -= dt;
       let n = 0;
-      while (this.cooldown <= 0 && n++ < MAX_HITS_PER_FRAME) {
+      const maxHits = this.state?.godMode ? 8 : MAX_HITS_PER_FRAME;
+      while (this.cooldown <= 0 && n++ < maxHits) {
         this._hit();
         this.cooldown += interval;
       }

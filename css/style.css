@@ -2037,6 +2037,143 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
   border-top: 1px solid rgba(200, 152, 73, 0.25);
 }
 
+/* ==========================================================================
+   FASE 13: Modalità Trucchi / Creative & Blocco Achievement
+   ========================================================================== */
+
+.tab[data-tab="cheats"] {
+  color: rgba(245, 186, 35, 0.75);
+}
+
+.tab[data-tab="cheats"]:hover {
+  color: var(--gold-bright);
+}
+
+.tab[data-tab="cheats"].active {
+  color: var(--gold-pharaoh);
+  border-bottom-color: var(--gold-pharaoh);
+  text-shadow: 0 0 10px rgba(245, 186, 35, 0.5);
+}
+
+.cheats-status-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 15px;
+  border-radius: 4px;
+  font-family: var(--font-body);
+  font-size: 0.84rem;
+  margin-bottom: 16px;
+  line-height: 1.45;
+}
+
+.cheats-status-box.inactive {
+  background: rgba(245, 186, 35, 0.1);
+  border: 1px solid rgba(245, 186, 35, 0.45);
+  color: #fce2a6;
+}
+
+.cheats-status-box.active {
+  background: rgba(220, 53, 69, 0.18);
+  border: 1.5px solid rgba(220, 53, 69, 0.7);
+  color: #ff9b9b;
+  font-weight: 600;
+  box-shadow: 0 0 14px rgba(220, 53, 69, 0.3);
+}
+
+.cheats-btn-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cheats-btn-row .btn {
+  padding: 7px 14px;
+  font-size: 0.78rem;
+}
+
+.cheats-select-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  width: min(440px, 100%);
+  flex-wrap: wrap;
+}
+
+.cheats-select-row .select {
+  flex: 1;
+  min-width: 220px;
+}
+
+.cheats-select-row .btn {
+  padding: 7px 14px;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+/* Indicatore Visivo HUD (Badge Trucchi Attivi) */
+.hud-cheats-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(220, 53, 69, 0.22);
+  border: 1px solid rgba(220, 53, 69, 0.65);
+  border-radius: 3px;
+  padding: 2px 7px;
+  font-family: var(--font-data);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #ff7b7b;
+  box-shadow: 0 0 10px rgba(220, 53, 69, 0.35);
+  cursor: help;
+  user-select: none;
+  animation: pulseCheatBadge 2.5s infinite ease-in-out;
+}
+
+.hud-cheats-badge.hidden {
+  display: none !important;
+}
+
+.hud-cheats-badge .cheats-icon {
+  font-size: 0.8rem;
+}
+
+@keyframes pulseCheatBadge {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(220, 53, 69, 0.3);
+    border-color: rgba(220, 53, 69, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(220, 53, 69, 0.6);
+    border-color: rgba(255, 107, 107, 0.9);
+  }
+}
+
+/* Banner di Lockout Permanente nella Scheda Trofei */
+.cheats-lockout-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(220, 53, 69, 0.16);
+  border: 1.5px solid rgba(220, 53, 69, 0.65);
+  border-radius: 4px;
+  padding: 12px 16px;
+  margin-bottom: 18px;
+  color: #ff9b9b;
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  font-weight: 600;
+  box-shadow: 0 0 14px rgba(220, 53, 69, 0.25);
+  line-height: 1.4;
+}
+
+.cheats-lockout-banner .lockout-icon {
+  font-size: 1.35rem;
+  flex-shrink: 0;
+}
+
+
 
 
 

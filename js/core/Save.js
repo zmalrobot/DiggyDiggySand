@@ -179,6 +179,8 @@ export class Save {
       seed,
       endingId,
       currentBiome: biome || 'desert',
+      cheatsEnabled: false,
+      godMode: false,
       createdAt: Date.now(),
       lastSaved: Date.now(),
       sand: 0,

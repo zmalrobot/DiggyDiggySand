@@ -172,6 +172,7 @@ export class Achievements {
   }
 
   unlock(id) {
+    if (this.state?.cheatsEnabled) return false;
     if (this.unlocked.has(id)) return false;
     const def = ACHIEVEMENT_DEFS.find((d) => d.id === id);
     if (!def) return false;
@@ -193,6 +194,8 @@ export class Achievements {
   }
 
   check() {
+    if (this.state?.cheatsEnabled) return;
+
     const ctx = {
       state: this.state,
       stats: this.stats?.stats ?? this.stats,

@@ -65,6 +65,7 @@ export class Game {
     this.biomeManager = biomeManager ?? menu?.biomeManager ?? new BiomeManager(this.save, this.statsManager);
     this.wardrobeModal = wardrobeModal ?? new WardrobeModal(this.modal, this.cosmeticsManager, this.save, this.audio, this);
     if (!this.wardrobeModal.game) this.wardrobeModal.game = this;
+    if (this.settingsModal) this.settingsModal.game = this;
 
     this.economy = new Economy(this.state);
     this.hud = new Hud(hudRoot, { state: this.state, economy: this.economy, audio: this.audio });

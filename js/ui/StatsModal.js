@@ -64,6 +64,10 @@ export class StatsModal {
     });
   }
 
+  close() {
+    this.handle?.close?.();
+  }
+
   _renderStatsPage(container) {
     const s = this.statsManager?.stats ?? {};
     const bestTimeStr = s.bestRunTime !== null && s.bestRunTime !== undefined
@@ -107,8 +111,24 @@ export class StatsModal {
   }
 
   _renderTrophiesPage(container) {
+    const isCheated = !!(
+      this.achievements?.state?.cheatsEnabled ??
+      this.statsManager?.state?.cheatsEnabled ??
+      (typeof window !== 'undefined' && window.__dds?.game?.state?.cheatsEnabled)
+    );
     const list = this.achievements?.getAll?.() ?? [];
-    let html = `<div class="trophies-list">`;
+    let html = '';
+
+    if (isCheated) {
+      html += `
+        <div class="cheats-lockout-banner" role="alert">
+          <span class="lockout-icon">⚠️</span>
+          <span class="lockout-text">${i18n.t('stats.cheatsWarning') || 'Obiettivi disabilitati: sono stati utilizzati trucchi in questa partita'}</span>
+        </div>
+      `;
+    }
+
+    html += `<div class="trophies-list">`;
 
     for (const item of list) {
       const title = i18n.t(`achievements.${item.id}.title`);
