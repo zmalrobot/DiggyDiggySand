@@ -36,3 +36,18 @@ Documenti sorgente (in `Ideas/`): `diggy-diggy-sand-project.md` (GDD e architett
 - Salvataggio terreno: altezze Uint8 su griglia 128×128, RLE/delta + base64, scritto in idle ogni 15s e su `visibilitychange`.
 - Finale scelto da seed (mulberry32) e salvato. Debug con `?ending=` e `?cheat=1`.
 
+## 7. Architettura Modali e Dialoghi
+- Le finestre di dialogo basate su `ModalManager` risiedono in `#modal-root`. I modali di conferma sovrapposti (`modal.confirm`) si impilano nello stack di `#modal-root`.
+- Ogni classe/controller modale (`SettingsModal`, `StatsModal`, `BiomeSelectModal`, `GalleryModal`) deve esporre esplicitamente un metodo `close()` pubblico per garantire un ciclo di vita uniforme e testabile.
+- I modali a schermo intero indipendenti usano l'attributo `hidden` per visibilità/accessibilità.
+
+## 8. Convenzione di Test e Runner
+- Poiché il progetto usa Three.js con ES modules e import map nativi, tutti i file di test Node.js che importano `three` devono essere eseguiti con il register loader:
+  `node --import ./tests/register.mjs tests/<nome-test>.mjs`
+- Le suite di browser QA con CDP/Puppeteer devono sempre attendere il caricamento completo del renderer e verificare `0 errori console` e `0 eccezioni pagina`.
+
+## 9. Cheat di Debug e Politica Achievement
+- Qualsiasi funzionalità di cheat visiva deve richiedere una conferma esplicita irreversibile prima dell'attivazione se `!state.cheatsEnabled`.
+- L'abilitazione scrive immediatamente `cheatsEnabled: true` nel salvataggio persistente (`dds_save_v1`) per prevenire exploit al reload.
+- `Achievements.js` blocca incondizionatamente sia `unlock()` che `check()` se `state.cheatsEnabled === true`, e la schermata Trofei espone il banner `.cheats-lockout-banner`.
+
