@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Sfondo gradiente abisso -->
+    <radialGradient id="bgGrad" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#0b1e2c"/>
+      <stop offset="60%" stop-color="#031826"/>
+      <stop offset="100%" stop-color="#020b12"/>
+    </radialGradient>
+
+    <!-- Oro egizio lucente -->
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFE8A3"/>
+      <stop offset="35%" stop-color="#F5BA23"/>
+      <stop offset="70%" stop-color="#C89849"/>
+      <stop offset="100%" stop-color="#8C5828"/>
+    </linearGradient>
+
+    <!-- Cristallo ciano atlantideo -->
+    <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#C7FFF6"/>
+      <stop offset="40%" stop-color="#0FE3C1"/>
+      <stop offset="85%" stop-color="#00B4D8"/>
+      <stop offset="100%" stop-color="#034B68"/>
+    </linearGradient>
+
+    <!-- Filtro bagliore ciano -->
+    <filter id="cyanGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Filtro bagliore oro -->
+    <filter id="goldGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Base rettangolare con angoli smussati Atlantean -->
+  <rect width="512" height="512" rx="100" fill="url(#bgGrad)"/>
+  <rect x="16" y="16" width="480" height="480" rx="88" fill="none" stroke="#0FE3C1" stroke-opacity="0.35" stroke-width="4"/>
+  <rect x="28" y="28" width="456" height="456" rx="76" fill="none" stroke="#F5BA23" stroke-opacity="0.25" stroke-width="2"/>
+
+  <!-- Sagoma Pala Dorata Sovrana -->
+  <g filter="url(#goldGlow)" transform="translate(0, 10)">
+    <!-- Lama Pala a cuneo geometrico low-poly -->
+    <path d="M 256,60 L 370,190 L 340,340 L 256,430 L 172,340 L 142,190 Z" 
+          fill="url(#goldGrad)" 
+          stroke="#FFE8A3" 
+          stroke-width="6" 
+          stroke-linejoin="round"/>
+
+    <!-- Faccette interne dorate per stile scalpellato low-poly -->
+    <path d="M 256,60 L 256,430 L 340,340 L 370,190 Z" 
+          fill="#FFE8A3" 
+          fill-opacity="0.2"/>
+    <path d="M 256,60 L 256,430 L 172,340 L 142,190 Z" 
+          fill="#8C5828" 
+          fill-opacity="0.35"/>
+  </g>
+
+  <!-- Cristallo Centrale di Atlantide (Cuore d'Oricalco / Occhio di Horus) -->
+  <g filter="url(#cyanGlow)" transform="translate(0, 10)">
+    <!-- Romboidi concentrici -->
+    <polygon points="256,170 316,250 256,330 196,250" 
+             fill="url(#cyanGrad)" 
+             stroke="#FFFFFF" 
+             stroke-width="4"/>
+
+    <!-- Nucleo centrale ad altissima luminosità -->
+    <polygon points="256,205 292,250 256,295 220,250" 
+             fill="#FFFFFF" 
+             fill-opacity="0.85"/>
+
+    <!-- Raggi solari geroglifici oricalco -->
+    <line x1="256" y1="120" x2="256" y2="155" stroke="#0FE3C1" stroke-width="6" stroke-linecap="round"/>
+    <line x1="256" y1="345" x2="256" y2="380" stroke="#0FE3C1" stroke-width="6" stroke-linecap="round"/>
+    <line x1="145" y1="250" x2="180" y2="250" stroke="#0FE3C1" stroke-width="6" stroke-linecap="round"/>
+    <line x1="332" y1="250" x2="367" y2="250" stroke="#0FE3C1" stroke-width="6" stroke-linecap="round"/>
+  </g>
+</svg>
+

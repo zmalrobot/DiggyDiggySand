@@ -38,6 +38,7 @@ export class DebugTools {
       unlockAllUpgrades: () => this.unlockAllUpgrades(),
       addTablets: (amount) => this.addTablets(amount),
       unlockAllEndings: () => this.unlockAllEndings(),
+      cleanVRAM: () => this.cleanVRAM(),
       resetAll: (hard) => this.resetAll(hard),
       getMemoryReport: () => this.getMemoryReport(),
       togglePanel: () => this.toggle(),
@@ -109,6 +110,11 @@ export class DebugTools {
     for (const id of all) this.save?.recordEnding(id);
     toast('[DEBUG] Tutti i 4 finali registrati come scoperti!');
     return this.save?.getEndingsSeen();
+  }
+
+  cleanVRAM() {
+    this.scene?.renderer?.renderLists?.dispose?.();
+    toast('[DEBUG] Render lists WebGL liberate con successo.');
   }
 
   resetAll(hard = true) {

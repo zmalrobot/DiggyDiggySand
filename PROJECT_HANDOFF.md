@@ -144,6 +144,19 @@ Verifiche manuali da fare: valori persistiti dopo il ricaricamento; `localStorag
     - Zero `console.log` residui nel ciclo di render a 60 FPS.
     - Tutti i percorsi in `index.html` e `style.css` sono relativi per garantire il deployment istantaneo su root o sottocartelle (es. GitHub Pages).
   - Verificata con 48 test unitari complessivi (7 specifici M7) e suite end-to-end Puppeteer/Headless Chrome (5/5 PASSED, 0 errori console, screenshot in `scratch/04_debug_panel_open.png`).
+- [x] **M8** Web App Manifest (PWA/Mobile Standalone), Configurazione Deployment Statico e Documentazione di Rilascio:
+  - Manifest Web App & Supporto PWA (`manifest.json`):
+    - Configurazione `standalone` (rimozione barre URL browser per esperienza fullscreen nativa), orientamento `any`, `theme_color: #0b1522`, `background_color: #060b11`.
+    - Icona vettoriale procedurale SVG (`assets/icons/icon.svg`) con pala dorata sovranista, cristallo ciano d'oricalco emissivo e raccordi Atlantean.
+    - Metadati `apple-mobile-web-app-capable`, `apple-touch-icon`, `theme-color` e meta tag Open Graph (`og:title`, `og:description`, `og:image`) integrati nell'header di `index.html`.
+  - Automazione Deployment GitHub Pages:
+    - Workflow GitHub Actions [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) pronto per la pubblicazione automatica sui branch `main` e `master`.
+    - Tutti i percorsi degli asset, script e fogli di stile rigorosamente relativi (`./`) per compatibilità assoluta con domini personalizzati o sottocartelle (es. `username.github.io/diggy-diggy-sand/`).
+  - Documentazione Completa & Licenza:
+    - [`README.md`](README.md) professionale e completo con badge, lore, pilastri di design, tabella controlli Desktop vs Mobile, tabella parametri debug e cheat da URL, istruzioni di avvio locale rapido e crediti.
+    - File [`LICENSE`](LICENSE) (Licenza MIT).
+    - [`.gitignore`](.gitignore) arricchito per escludere file temporanei OS, IDE, log e scratchpad.
+  - Verificata con 53 test unitari complessivi (5 specifici M8) e suite end-to-end Puppeteer/Headless Chrome (5/5 PASSED, 0 errori 404, screenshot in `scratch/05_pwa_standalone_ready.png`).
 
 Piano dettagliato con codice e verifiche: vedi la sezione "Roadmap" sopra e le formule in `Ideas/upgrade_tree_specification.md`.
 

@@ -1,6 +1,37 @@
+# Dipendenze e build temporanee
 node_modules/
+dist/
+build/
 *.zip
+*.tar.gz
+
+# File di sistema e cache OS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+[Dd]esktop.ini
+
+# Logs e test scratchpad
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 scratch/
 
+# IDE e configurazioni editor locali
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+
+# Variabili d'ambiente
+.env
+.env.local
+.env.*.local

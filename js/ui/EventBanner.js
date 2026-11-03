@@ -4,7 +4,6 @@ export class EventBanner {
     this.root = root;
     this.el = null;
     this.timeout = null;
-    this.hideTimeout = null;
     this._build();
   }
 
@@ -23,14 +22,7 @@ export class EventBanner {
   }
 
   show({ icon = '✦', title = '', message = '', duration = 8000, actionLabel = null, onAction = null }) {
-    if (this.timeout) {
-      clearTimeout(this.timeout);
-      this.timeout = null;
-    }
-    if (this.hideTimeout) {
-      clearTimeout(this.hideTimeout);
-      this.hideTimeout = null;
-    }
+    if (this.timeout) clearTimeout(this.timeout);
     this.onAction = onAction;
 
     this.el.innerHTML = `
@@ -57,23 +49,16 @@ export class EventBanner {
       clearTimeout(this.timeout);
       this.timeout = null;
     }
-    if (this.hideTimeout) {
-      clearTimeout(this.hideTimeout);
-      this.hideTimeout = null;
-    }
     this.el.classList.remove('visible');
-    this.hideTimeout = setTimeout(() => {
+    setTimeout(() => {
       this.el.classList.add('hidden');
-      this.hideTimeout = null;
     }, 350);
   }
 
   dispose() {
     if (this.timeout) clearTimeout(this.timeout);
-    if (this.hideTimeout) clearTimeout(this.hideTimeout);
     if (this.el?.parentElement) {
       this.el.parentElement.removeChild(this.el);
     }
   }
 }
-

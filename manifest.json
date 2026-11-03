@@ -1,0 +1,25 @@
+{
+  "name": "Diggy Diggy Sand: The Sunken City",
+  "short_name": "DiggySand",
+  "description": "Svuota il deserto. Scopri cosa dorme sotto le sabbie d'Egitto. Miner 3D chiseled low-poly con rovine sepolte di Atlantide, economia dinamica e finali multipli.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#060b11",
+  "theme_color": "#0b1522",
+  "categories": [
+    "games",
+    "simulation",
+    "casual"
+  ],
+  "icons": [
+    {
+      "src": "./assets/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
+
