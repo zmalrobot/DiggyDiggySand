@@ -3,6 +3,8 @@
 import * as THREE from 'three';
 import { PALETTE_3D } from './ProceduralFactory.js';
 import { DayNightCycle } from './DayNightCycle.js';
+import { Atmosphere } from './Atmosphere.js';
+import { PostProcessing } from './PostProcessing.js';
 
 const PARTICLE_COUNTS = { low: [30, 3], med: [90, 8], high: [220, 18] };
 const SHADOW_SIZE = { low: 1024, high: 2048 };
@@ -61,6 +63,9 @@ export class SceneManager {
     this._buildParticles();
     this._groupMenuObjects();
     this._bindSettings();
+
+    this.atmosphere = new Atmosphere(this.scene, this.settings);
+    this.postProcessing = new PostProcessing(this.renderer, this.scene, this.camera, this.settings);
 
     this.dayNight = new DayNightCycle(this);
     if (this.settings?.get?.('graphics.dayNightCycle')) {
@@ -274,7 +279,21 @@ export class SceneManager {
     const w = window.innerWidth, h = window.innerHeight;
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
+
+    // Compensazione adattiva del FOV per schermi verticali (portrait / mobile con notch) e ultra-wide (21:9 / 32:9)
+    const baseFov = 50;
+    const aspect = w / h;
+    if (aspect < 1.0) {
+      // Schermo portrait / mobile: allarga progressivamente il FOV per mantenere duna e HUD visibili
+      this.camera.fov = Math.min(78, Math.max(50, baseFov / Math.pow(aspect, 0.65)));
+    } else if (aspect > 2.05) {
+      // Display ultra-wide (21:9 e 32:9): calibra il FOV per evitare distorsioni da lente ai margini
+      this.camera.fov = Math.max(42, Math.min(baseFov, baseFov * (1.78 / aspect) * 1.05));
+    } else {
+      this.camera.fov = baseFov;
+    }
     this.camera.updateProjectionMatrix();
+    this.postProcessing?.setSize?.(w, h);
   }
 
   /** Scossone di camera. Rispetta il toggle "Screen shake". */
@@ -295,7 +314,11 @@ export class SceneManager {
       if (cap > 0 && elapsed < 1000 / cap - 0.5) return;
       this.lastFrame = now;
       this.update(Math.min(elapsed / 1000, 0.1));
-      this.renderer.render(this.scene, this.camera);
+      if (this.postProcessing) {
+        this.postProcessing.render();
+      } else {
+        this.renderer.render(this.scene, this.camera);
+      }
       if (this._shakeApplied) { this.camera.position.sub(this._shakeApplied); this._shakeApplied = null; }
     };
     this.raf = requestAnimationFrame(frame);
@@ -304,6 +327,7 @@ export class SceneManager {
   update(dt) {
     this.time += dt;
     this.dayNight?.update(dt);
+    this.atmosphere?.update(dt);
     if (this.mode === 'game') { this._updateGame(dt); return; }
     const sens = this.settings.get('controls.cameraSens');
     const dir = this.settings.get('controls.invertY') ? -1 : 1;
@@ -415,6 +439,8 @@ export class SceneManager {
   dispose() {
     this.running = false;
     this.dayNight?.dispose?.();
+    this.atmosphere?.dispose?.();
+    this.postProcessing?.dispose?.();
     cancelAnimationFrame(this.raf);
     this.unsubs.forEach((u) => u());
     window.removeEventListener('resize', this._onResize);

@@ -227,6 +227,12 @@ export class Game {
     if (offlineReport) {
       this.modal.open(offlineReport);
     }
+
+    if (this.save?.lastRecoveryReason === 'backup_restored') {
+      setTimeout(() => toast('⚠️ Salvataggio ripristinato dal backup di sicurezza.'), 1000);
+    } else if (this.save?.lastRecoveryReason === 'emergency_reset') {
+      setTimeout(() => toast('⚠️ Dati corrotti: avviata nuova spedizione pulita.'), 1000);
+    }
   }
 
 
@@ -252,6 +258,7 @@ export class Game {
     this.particles.setBiome(biome);
     this.audio?.setBiome?.(biome);
     this.sceneMgr?.dayNight?.setBiome?.(biome);
+    this.sceneMgr?.atmosphere?.setBiome?.(biome);
 
     // Sistema lavoratori 3D
     this.workers = new Workers({
@@ -443,6 +450,17 @@ export class Game {
 
     this.sceneMgr.followSun(this.controls.target.x, this.controls.target.z);
 
+    // Adattamento dinamico piani near/far per prevenire z-fighting o clipping nelle rovine profonde
+    if (cam && this.controls?.target) {
+      const dist = cam.position.distanceTo(this.controls.target);
+      const dynamicNear = Math.max(0.15, Math.min(1.0, dist * 0.02));
+      const dynamicFar = Math.max(350, dist + 250);
+      if (Math.abs(cam.near - dynamicNear) > 0.05 || Math.abs(cam.far - dynamicFar) > 5) {
+        cam.near = dynamicNear;
+        cam.far = dynamicFar;
+        cam.updateProjectionMatrix();
+      }
+    }
 
     if (performance.now() - this._lastSave > AUTOSAVE_MS) this.saveNow();
   }

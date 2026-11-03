@@ -13,6 +13,8 @@ export const SCHEMA = {
   'graphics.renderScale':{ type: 'enum',  def: 1, values: [0.5, 0.75, 1] },
   'graphics.shadows':    { type: 'enum',  def: 'low', values: ['off', 'low', 'high'] },
   'graphics.particles':  { type: 'enum',  def: 'med', values: ['low', 'med', 'high'] },
+  'graphics.postProcessing': { type: 'bool', def: true },
+  'graphics.dustMotes':  { type: 'bool',  def: true },
   'graphics.dayNightCycle': { type: 'enum', def: 'auto', values: ['auto', 'day', 'night'] },
   'graphics.fpsCap':     { type: 'enum',  def: 60, values: [30, 60, 0] }, // 0 = senza limite
   'controls.cameraSens': { type: 'range', def: 1, min: 0.25, max: 2, step: 0.05 },
@@ -73,6 +75,8 @@ export class SettingsManager {
         this.values['graphics.shadows'] = 'off';
         this.values['graphics.particles'] = 'low';
         this.values['graphics.renderScale'] = 0.75;
+        this.values['graphics.postProcessing'] = false;
+        this.values['graphics.dustMotes'] = false;
       }
       return;
     }

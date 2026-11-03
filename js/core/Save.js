@@ -1,6 +1,7 @@
 // Salvataggio di gioco (separato dalle impostazioni). Versione 1: metadati di sessione,
 // economia e tracciamento finale basato su seed mulberry32.
 export const SAVE_KEY = 'dds_save_v1';
+export const SAVE_BACKUP_KEY = 'dds_save_backup';
 export const SAVE_VERSION = 1;
 
 export const ENDINGS = [
@@ -23,6 +24,20 @@ export function mulberry32(seed) {
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
+}
+
+/**
+ * Valida la conformità strutturale del salvataggio.
+ * Respinge JSON troncati, valori NaN o infiniti, e oggetti corrotti.
+ */
+export function validateSave(data) {
+  if (!data || typeof data !== 'object') return false;
+  if (!Number.isInteger(data.version) || data.version < 1 || data.version > SAVE_VERSION) return false;
+  if (!Number.isInteger(data.seed)) return false;
+  if (typeof data.sand !== 'number' || Number.isNaN(data.sand) || !Number.isFinite(data.sand) || data.sand < 0) return false;
+  if (typeof data.totalSand !== 'number' || Number.isNaN(data.totalSand) || !Number.isFinite(data.totalSand) || data.totalSand < 0) return false;
+  if (!data.upgrades || typeof data.upgrades !== 'object' || Array.isArray(data.upgrades)) return false;
+  return true;
 }
 
 export function pickEnding(seed, seenEndings = [], overrideParam = null) {
@@ -51,29 +66,71 @@ export function pickEnding(seed, seenEndings = [], overrideParam = null) {
 export class Save {
   constructor(storage = null) {
     try { this.storage = storage ?? window.localStorage; } catch { this.storage = null; }
+    this.lastRecoveryReason = null;
   }
 
-  /** Legge e valida il salvataggio. Ritorna null se assente o non valido. */
+  /**
+   * Legge e valida il salvataggio con schema check.
+   * Se il dato primario è corrotto, tenta il ripristino automatico dal backup dds_save_backup.
+   * Se anche il backup fallisce, genera un salvataggio pulito senza schermate bianche o crash.
+   */
   load() {
+    this.lastRecoveryReason = null;
+    let primaryData = null;
+    let primaryCorrupted = false;
+
+    // 1. Lettura salvataggio principale
     try {
       const raw = this.storage?.getItem(SAVE_KEY);
-      if (!raw) return null;
-      const data = JSON.parse(raw);
-      if (!data || typeof data !== 'object') return null;
-      if (!Number.isInteger(data.version) || data.version < 1 || data.version > SAVE_VERSION) return null;
-      if (!Number.isInteger(data.seed)) return null;
-      if (!data.endingId) data.endingId = pickEnding(data.seed);
-      return data;
+      if (raw) {
+        primaryData = JSON.parse(raw);
+        if (!validateSave(primaryData)) {
+          primaryCorrupted = true;
+          primaryData = null;
+        }
+      }
     } catch {
-      return null;
+      primaryCorrupted = true;
+      primaryData = null;
     }
+
+    if (primaryData) {
+      if (!primaryData.endingId) primaryData.endingId = pickEnding(primaryData.seed);
+      return primaryData;
+    }
+
+    // 2. Se primario corrotto o assente, tenta il recupero dal backup
+    if (primaryCorrupted) {
+      console.warn('[Save] Salvataggio primario corrotto o non conforme. Tentativo di ripristino dal backup...');
+      try {
+        const rawBackup = this.storage?.getItem(SAVE_BACKUP_KEY);
+        if (rawBackup) {
+          const backupData = JSON.parse(rawBackup);
+          if (validateSave(backupData)) {
+            console.info('[Save] Ripristino dal backup completato con successo.');
+            if (!backupData.endingId) backupData.endingId = pickEnding(backupData.seed);
+            this.lastRecoveryReason = 'backup_restored';
+            // Sovrascrivi il file primario corrotto con il backup valido
+            this.write(backupData);
+            return backupData;
+          }
+        }
+      } catch (err) {
+        console.error('[Save] Errore lettura backup:', err);
+      }
+
+      // 3. Fallback salvataggio pulito di emergenza
+      console.warn('[Save] Backup assente o corrotto: generazione nuovo salvataggio di emergenza pulito.');
+      this.lastRecoveryReason = 'emergency_reset';
+      return this.createNew();
+    }
+
+    return null;
   }
 
   hasValidSave() { return this.load() !== null; }
 
   getEndingsSeen() {
-    const fromSave = this.load()?.endingsSeen;
-    if (Array.isArray(fromSave) && fromSave.length > 0) return fromSave;
     try {
       const raw = this.storage?.getItem('dds_endings_seen');
       if (raw) {
@@ -81,7 +138,7 @@ export class Save {
         if (Array.isArray(arr)) return arr;
       }
     } catch {}
-    return Array.isArray(fromSave) ? fromSave : [];
+    return [];
   }
 
   recordEnding(id) {
@@ -99,8 +156,6 @@ export class Save {
   }
 
   getTablets() {
-    const fromSave = this.load()?.tablets;
-    if (Number.isFinite(fromSave)) return fromSave;
     try {
       const raw = this.storage?.getItem('dds_tablets_v1');
       if (raw !== null && raw !== undefined) {
@@ -137,8 +192,6 @@ export class Save {
   }
 
   getMetaUpgrades() {
-    const fromSave = this.load()?.metaUpgrades;
-    if (fromSave && typeof fromSave === 'object') return fromSave;
     try {
       const raw = this.storage?.getItem('dds_meta_v1');
       if (raw) {
@@ -214,11 +267,26 @@ export class Save {
   }
 
   write(data) {
-    try { this.storage?.setItem(SAVE_KEY, JSON.stringify(data)); return true; } catch { return false; }
+    if (!validateSave(data)) {
+      console.warn('[Save] Scrittura annullata: dati non conformi allo schema.');
+      return false;
+    }
+    try {
+      const json = JSON.stringify(data);
+      this.storage?.setItem(SAVE_KEY, json);
+      // Salva sempre una copia di backup ridondante ad ogni salvataggio valido
+      this.storage?.setItem(SAVE_BACKUP_KEY, json);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   clear() {
-    try { this.storage?.removeItem(SAVE_KEY); } catch { /* ignora */ }
+    try {
+      this.storage?.removeItem(SAVE_KEY);
+      this.storage?.removeItem(SAVE_BACKUP_KEY);
+    } catch { /* ignora */ }
   }
 }
 

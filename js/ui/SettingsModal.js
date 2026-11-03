@@ -179,6 +179,8 @@ export class SettingsModal {
       this._row('Risoluzione di rendering', this._select('graphics.renderScale'), 'Scala della risoluzione interna'),
       this._row('Ombre', this._select('graphics.shadows')),
       this._row('Qualità particelle', this._select('graphics.particles')),
+      this._row('Post-Processing (Bloom & Vignette)', this._toggle('graphics.postProcessing', 'Post-Processing'), 'Bagliori emissivi e color grading'),
+      this._row('Particelle Atmosferiche', this._toggle('graphics.dustMotes', 'Particelle Atmosferiche'), 'Pulviscolo fluttuante nel cratere'),
       this._row(i18n.t('settings.dayNight') || 'Ciclo Giorno/Notte', this._select('graphics.dayNightCycle'), 'Auto / Giorno / Notte'),
       this._row('Limite FPS', this._select('graphics.fpsCap')),
     );

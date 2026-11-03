@@ -89,6 +89,10 @@ export const DICTIONARY = {
       tabControls: 'Controlli',
       tabData: 'Dati & Lingua',
       tabCheats: 'Trucchi',
+      postProcessing: 'Post-Processing (Bloom & Vignette)',
+      postProcessingDesc: 'Bagliori emissivi e gradiente caldo cinematografico',
+      dustMotes: 'Particelle Atmosferiche',
+      dustMotesDesc: 'Pulviscolo fluttuante nel cratere',
       cheats: {
         title: 'Modalità Trucchi & Creative',
         subtitle: 'Modifica liberamente parametri ed eventi della spedizione corrente.',
@@ -402,6 +406,10 @@ export const DICTIONARY = {
       tabControls: 'Controls',
       tabData: 'Data & Language',
       tabCheats: 'Cheats',
+      postProcessing: 'Post-Processing (Bloom & Vignette)',
+      postProcessingDesc: 'Emissive glow and cinematic warmth gradient',
+      dustMotes: 'Atmospheric Dust Motes',
+      dustMotesDesc: 'Floating ambient dust particles',
       cheats: {
         title: 'Cheats & Creative Mode',
         subtitle: 'Freely alter parameters and events in the current expedition.',

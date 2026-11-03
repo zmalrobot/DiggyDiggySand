@@ -31,6 +31,8 @@ export class Digging {
     this.cooldown = 0;
     this.lastHit = 0;
     this.hoverDirty = false;
+    this._boundsTimer = 0;
+    this._needsBoundsUpdate = false;
     this.pointer = { x: 0, y: 0, inside: false };
     this.shovelSkin = 'shovel_bronze';
 
@@ -127,6 +129,10 @@ export class Digging {
   _cancel() {
     this.holding = false;
     this.primaryId = null;
+    if (this._needsBoundsUpdate) {
+      this.terrain?.updateBounds?.();
+      this._needsBoundsUpdate = false;
+    }
   }
 
   /** Converte coordinate schermo in punto world sul terreno (o null). */
@@ -146,6 +152,7 @@ export class Digging {
     const p = this.pick(this.pointer.x, this.pointer.y);
     if (!p) return 0;
     this.lastHit = now;
+    this._needsBoundsUpdate = true;
     this.state?.registerClick?.();
     return this.dig(p);
   }
@@ -191,6 +198,15 @@ export class Digging {
       if (this.cooldown < -interval) this.cooldown = 0; // niente raffiche dopo un lag
       this.hoverDirty = true;
     }
+
+    // Refresh periodico o al rilascio del cursore per AABB e sfera limite della geometria
+    this._boundsTimer += dt;
+    if (this._needsBoundsUpdate && (!this.holding || this._boundsTimer >= 1.0)) {
+      this.terrain.updateBounds();
+      this._needsBoundsUpdate = false;
+      this._boundsTimer = 0;
+    }
+
     this._updateReticle();
   }
 

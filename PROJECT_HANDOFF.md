@@ -265,6 +265,35 @@ Verifiche manuali da fare: valori persistiti dopo il ricaricamento; `localStorag
   - Anti-Tampering: il flag `cheatsEnabled: true` viene scritto immediatamente nel JSON di salvataggio; ricaricare o riavviare la sessione mantiene il blocco permanente fino all'inizio di una nuova spedizione pulita.
   - Verificata con 83 test unitari complessivi (5 suite specifiche M13 in `tests/phase13.test.mjs`, 100% superati) e test QA headless Chrome (`tests/phase13_browser_qa.mjs`, 0 errori console, 3 screenshot salvati).
 
+- [x] **M14** Post-Processing Visivo (Bloom & Atmosfera), Ottimizzazione Sub-Grid del Terreno e Bugfixing di Stabilità:
+  - Compositing & Post-Processing Leggero (`js/world/PostProcessing.js`):
+    - Fullscreen pass con shader dedicato basato su `WebGLRenderTarget` e quad ortografico.
+    - *Selective Bloom:* estrazione a soglia percettiva di luminanza multi-tap per esaltare elementi emissivi (cristalli atlantidei ciano `#00F2FF`, oro del finale Treasure e geroglifici).
+    - *Color Grading:* iniezione di gradiente caldo nei mezzitoni e curva s-curve morbida per accentuare la profondità del cratere.
+    - *Vignette:* ombreggiatura radiale cinematografica ai bordi del canvas.
+    - Disattivazione completa a zero overhead quando l'opzione grafica `graphics.postProcessing` è disabilitata (o su dispositivi a bassa potenza).
+  - Micro-Particelle Atmosferiche (`js/world/Atmosphere.js`):
+    - Nuvola di 100 particelle ottaedriche low-poly chiseled (`InstancedMesh`) fluttuanti con moto browniano/sinusoidale lento e corrente termica ascensionale.
+    - Adattamento cromatico dinamico per bioma (ambra dorato per Deserto, ciano bioluminescente per Oceano, polvere di diamante per Ghiacciaio, spore verdi per Giungla).
+    - Toggle dedicato `graphics.dustMotes` nelle Impostazioni.
+  - Rifinitura Terreno con Procedural Noise Blend (`js/world/Terrain.js`):
+    - Funzione `noise2D` multi-frequenza integrata in `layerColor` per simulare granelli di sabbia, striature nelle rocce e screziature naturali senza sacrificare il `flatShading: true`.
+  - Ottimizzazione Sub-Grid delle Normali O(k) (`js/world/Terrain.js`):
+    - Eliminato qualsiasi ricalcolo globale della mesh $256 \times 256$ durante lo scavo.
+    - Calcolo analitico O(1) del gradiente sui vertici della sub-regione compresa nel bounding box dello scavo (`computeSubGridNormals`).
+    - Aggiornamento parziale `normals.addUpdateRange()` con 60 FPS stabili anche durante colpi continui o raffiche dinamite.
+  - Hardening Geometrico & Anti-Tunneling (`js/systems/Digging.js` & `js/world/Terrain.js`):
+    - *Fix Anti-Tunneling:* clamping assoluto di ogni vertice a $\ge 0$ (bedrock), prevenendo forature della mesh o sprofondamento nel vuoto.
+    - *Fix Bounding Box:* metodo `updateBounds()` sincronizzato periodicamente o al rilascio del cursore per mantenere perfetto il raycasting anche in fosse profonde.
+    - *Fix Frustum:* adattamento dinamico continuo dei piani `near` e `far` della camera orbitale in `Game.js` in funzione della distanza dal punto guardato, eliminando z-fighting.
+  - Validazione Schema & Sistema di Backup Salvataggio (`js/core/Save.js`):
+    - Funzione `validateSave(data)` che rigetta JSON troncati, valori `NaN` nel bilancio sabbia o chiavi corrotte.
+    - Backup ridondante automatico su `dds_save_backup`. In caso di corruzione del file primario, ripristino istantaneo dal backup o rigenerazione pulita con notifica non distruttiva senza schermate bianche o crash.
+  - Reattività Display Estremi (Portrait Mobile & Ultra-Wide 21:9):
+    - Compensazione adattiva del FOV in `SceneManager.resize()`: allargamento automatico fino a $78^\circ$ su schermi verticali (9:16 / notch) e calibrazione a $42^\circ$ su monitor ultrawide (21:9 / 32:9).
+    - Safe-area insets CSS per notch e display sagomati (`env(safe-area-inset-*)`).
+  - Verificata con 89 test unitari complessivi (6 suite specifiche M14 in `tests/phase14.test.mjs`, 100% superati) e browser QA end-to-end (`tests/phase14_browser_qa.mjs`, 0 errori console, 4 screenshot salvati).
+
 Piano dettagliato con codice e verifiche: vedi la sezione "Roadmap" sopra e le formule in `Ideas/upgrade_tree_specification.md`.
 
 ## 6. Convenzioni

@@ -95,6 +95,13 @@ let currentBiome = 'sand_classic';
 const fract = (n) => n - Math.floor(n);
 const hash = (i) => fract(Math.sin(i * 12.9898) * 43758.5453);
 
+// Funzione di rumore 2D procedurale pseudo-casuale multi-frequenza per granelli e venature
+function noise2D(ix, iz) {
+  const s1 = Math.sin(ix * 0.23 + iz * 0.17) * Math.cos(iz * 0.19 - ix * 0.13);
+  const s2 = Math.sin(ix * 1.35 + iz * 1.85) * 0.5 + Math.cos(ix * 2.1 - iz * 1.4) * 0.5;
+  return s1 * 0.65 + s2 * 0.35;
+}
+
 /** Ritorna il codice colore esadecimale dello strato per la quota Y (usato per le particelle). */
 export function getLayerColor(y, biome = currentBiome) {
   const p = BIOME_PALETTES[biome] || BIOME_PALETTES.sand_classic;
@@ -103,17 +110,36 @@ export function getLayerColor(y, biome = currentBiome) {
   return p.hex3;
 }
 
-/** Colore del terreno per altezza in base al bioma attivo. */
-export function layerColor(y, i, out = new THREE.Color(), biome = currentBiome) {
+/** Colore del terreno per altezza in base al bioma attivo con rifinitura noise blend. */
+export function layerColor(y, i, out = new THREE.Color(), biome = currentBiome, ix = 0, iz = 0) {
   const p = BIOME_PALETTES[biome] || BIOME_PALETTES.sand_classic;
   const h = hash(i);
-  if (y > 8) out.copy(p.layer1);
-  else if (y > 3) out.copy(p.layer2);
-  else {
+  const n = noise2D(ix || (i % 257), iz || Math.floor(i / 257));
+
+  if (y > 8) {
+    // Strato 1: Sabbia fine con micro-granelli e ondulazioni
+    out.copy(p.layer1);
+    const grain = (h - 0.5) * 0.08 + n * 0.05;
+    out.r = Math.min(1, Math.max(0, out.r + grain));
+    out.g = Math.min(1, Math.max(0, out.g + grain * 0.9));
+    out.b = Math.min(1, Math.max(0, out.b + grain * 0.7));
+  } else if (y > 3) {
+    // Strato 2: Ocra / sedimenti / permafrost compatto
+    out.copy(p.layer2);
+    const strata = n * 0.07;
+    out.r = Math.min(1, Math.max(0, out.r + strata));
+    out.g = Math.min(1, Math.max(0, out.g + strata * 0.8));
+    out.b = Math.min(1, Math.max(0, out.b + strata * 0.6));
+  } else {
+    // Strato 3: Basamento roccioso scuro con venature luminescenti d'oricalco
     out.copy(p.layer3);
-    if (h < 0.16) out.lerp(p.vein, 0.65); // venature luminescenti
+    const rock = (h - 0.5) * 0.06 + n * 0.04;
+    out.multiplyScalar(0.95 + rock);
+    if (h < 0.18 || Math.abs(n) > 0.72) {
+      out.lerp(p.vein, 0.6 + h * 0.3); // venature luminescenti d'oricalco
+    }
   }
-  return out.multiplyScalar(0.92 + h * 0.16);
+  return out.multiplyScalar(0.94 + h * 0.12);
 }
 
 
@@ -145,8 +171,16 @@ export class Terrain {
     this.colors.setUsage(THREE.DynamicDrawUsage);
     pos.setUsage(THREE.DynamicDrawUsage);
     this.geometry.setAttribute('color', this.colors);
+
+    this.normals = this.geometry.attributes.normal;
+    this.normals.setUsage(THREE.DynamicDrawUsage);
+
     const c = new THREE.Color();
-    for (let i = 0; i < count; i++) layerColor(this.startHeight, i, c, this.activeBiome).toArray(this.colors.array, i * 3);
+    for (let i = 0; i < count; i++) {
+      const ix = i % this.stride;
+      const iz = (i / this.stride) | 0;
+      layerColor(this.startHeight, i, c, this.activeBiome, ix, iz).toArray(this.colors.array, i * 3);
+    }
     this.geometry.computeBoundingSphere();
     this.geometry.computeBoundingBox();
 
@@ -167,6 +201,12 @@ export class Terrain {
     this.dirtyCount = 0;
     this.dirtyRowMin = Infinity;
     this.dirtyRowMax = -Infinity;
+
+    // Sub-grid bounding box indici per il ricalcolo localizzato delle normali O(1)
+    this.dirtyIxMin = Infinity;
+    this.dirtyIxMax = -Infinity;
+    this.dirtyIzMin = Infinity;
+    this.dirtyIzMax = -Infinity;
     // Giungla Sepolta: durabilità delle radici sepolte per ciascun chunk
     const rootHits = this.biomeMechanics.rootHitsRequired || 0;
     this.rootDurability = new Uint8Array(this.chunksX * this.chunksX).fill(rootHits);
@@ -312,12 +352,19 @@ export class Terrain {
         const h = this.heights[i];
         const resFactor = (h > 3 && h <= 8) ? midRes : baseRes;
         const effectivePower = resFactor === 1.0 ? power : (power / resFactor);
-        const newH = Math.max(this.floor, h - effectivePower * (1 - dist / effectiveRadius));
+        // Fix Anti-Tunneling: Clamping assoluto al bedrock (Y = 0) per prevenire fori o crollo nel vuoto
+        const newH = Math.max(0, Math.max(this.floor, h - effectivePower * (1 - dist / effectiveRadius)));
         if (newH === h) continue;
         removed += (h - newH) * cellArea;
         this.heights[i] = newH;
         pos[i * 3 + 1] = newH;
         this._markDirty(ix, iz);
+
+        // Espande il bounding box degli indici sub-grid per il ricalcolo localizzato delle normali
+        if (ix < this.dirtyIxMin) this.dirtyIxMin = ix;
+        if (ix > this.dirtyIxMax) this.dirtyIxMax = ix;
+        if (iz < this.dirtyIzMin) this.dirtyIzMin = iz;
+        if (iz > this.dirtyIzMax) this.dirtyIzMax = iz;
       }
     }
     this.remainingVolume -= removed;
@@ -331,7 +378,71 @@ export class Terrain {
     if (iz > this.dirtyRowMax) this.dirtyRowMax = iz;
   }
 
-  /** Ricolora i chunk sporchi e carica su GPU solo le righe coinvolte. Chiamare al massimo 1 volta per frame. */
+  /**
+   * Ricalcola i vettori normali esclusivamente per la sub-regione di indici compresa tra
+   * [ix0 - 1, iz0 - 1] e [ix1 + 1, iz1 + 1]. O(k) con k << N, garantendo 60 FPS costanti.
+   */
+  computeSubGridNormals(ix0, ix1, iz0, iz1) {
+    if (!this.normals) return;
+    const s = this.stride, res = this.res, cell = this.cell;
+    const h = this.heights;
+    const norms = this.normals.array;
+
+    const minX = Math.max(0, ix0 - 1);
+    const maxX = Math.min(res, ix1 + 1);
+    const minZ = Math.max(0, iz0 - 1);
+    const maxZ = Math.min(res, iz1 + 1);
+
+    for (let iz = minZ; iz <= maxZ; iz++) {
+      const zPrev = iz > 0 ? iz - 1 : iz;
+      const zNext = iz < res ? iz + 1 : iz;
+      const dzScale = (zNext - zPrev) * cell;
+
+      for (let ix = minX; ix <= maxX; ix++) {
+        const xPrev = ix > 0 ? ix - 1 : ix;
+        const xNext = ix < res ? ix + 1 : ix;
+        const dxScale = (xNext - xPrev) * cell;
+
+        // Gradiente parziale locale O(1)
+        const dx = (h[iz * s + xNext] - h[iz * s + xPrev]) / dxScale;
+        const dz = (h[zNext * s + ix] - h[zPrev * s + ix]) / dzScale;
+
+        // Vettore normale della superficie Y = h(X, Z): N = normalize(-dx, 1, -dz)
+        const nx = -dx;
+        const ny = 1.0;
+        const nz = -dz;
+        const len = Math.hypot(nx, ny, nz);
+        const invLen = len > 0 ? 1.0 / len : 1.0;
+
+        const idx3 = (iz * s + ix) * 3;
+        norms[idx3] = nx * invLen;
+        norms[idx3 + 1] = ny * invLen;
+        norms[idx3 + 2] = nz * invLen;
+      }
+    }
+
+    const start = minZ * s * 3;
+    const count = (maxZ - minZ + 1) * s * 3;
+    this.normals.clearUpdateRanges();
+    this.normals.addUpdateRange(start, count);
+    this.normals.needsUpdate = true;
+  }
+
+  /**
+   * Forza l'aggiornamento dei volumi limite (AABB e sfera) della geometria per prevenire
+   * il fallimento dei raycast o il culling indesiderato quando la fossa diventa profonda.
+   */
+  updateBounds() {
+    this.geometry.computeBoundingBox();
+    this.geometry.computeBoundingSphere();
+    if (this.geometry.boundingBox) {
+      this._box.copy(this.geometry.boundingBox);
+      this._box.min.y = Math.min(this.floor, this._box.min.y);
+      this._box.max.y = Math.max(this.startHeight, this._box.max.y);
+    }
+  }
+
+  /** Ricolora i chunk sporchi e carica su GPU solo le righe e le normali coinvolte. */
   flush() {
     if (!this.dirtyCount) return false;
     const s = this.stride, c = this._tmpColor, col = this.colors.array;
@@ -344,7 +455,7 @@ export class Terrain {
       for (let iz = cz * CHUNK; iz < z1; iz++) {
         for (let ix = cx * CHUNK; ix < x1; ix++) {
           const i = iz * s + ix;
-          layerColor(this.heights[i], i, c, activePalette).toArray(col, i * 3);
+          layerColor(this.heights[i], i, c, activePalette, ix, iz).toArray(col, i * 3);
         }
       }
     }
@@ -354,6 +465,16 @@ export class Terrain {
     const pos = this.geometry.attributes.position;
     pos.clearUpdateRanges(); pos.addUpdateRange(start, count); pos.needsUpdate = true;
     this.colors.clearUpdateRanges(); this.colors.addUpdateRange(start, count); this.colors.needsUpdate = true;
+
+    // Ricalcolo localizzato delle normali solo per la sub-grid scavata
+    if (this.dirtyIxMin <= this.dirtyIxMax && this.dirtyIzMin <= this.dirtyIzMax) {
+      this.computeSubGridNormals(this.dirtyIxMin, this.dirtyIxMax, this.dirtyIzMin, this.dirtyIzMax);
+      this.dirtyIxMin = Infinity;
+      this.dirtyIxMax = -Infinity;
+      this.dirtyIzMin = Infinity;
+      this.dirtyIzMax = -Infinity;
+    }
+
     this.dirtyRowMin = Infinity;
     this.dirtyRowMax = -Infinity;
     return true;
@@ -371,7 +492,7 @@ export class Terrain {
     this.activeBiome = biomeId;
     const s = this.stride, count = s * s, c = this._tmpColor, col = this.colors.array;
     for (let i = 0; i < count; i++) {
-      layerColor(this.heights[i], i, c, biomeId).toArray(col, i * 3);
+      layerColor(this.heights[i], i, c, biomeId, i % s, (i / s) | 0).toArray(col, i * 3);
     }
     this.colors.needsUpdate = true;
   }
