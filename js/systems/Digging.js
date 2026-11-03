@@ -116,6 +116,7 @@ export class Digging {
     const p = this.pick(this.pointer.x, this.pointer.y);
     if (!p) return 0;
     this.lastHit = now;
+    this.state?.registerClick?.();
     return this.dig(p);
   }
 

@@ -12,6 +12,8 @@ import { Workers } from '../systems/Workers.js';
 import { calculateSPS } from '../systems/Upgrades.js';
 import { City } from '../world/City.js';
 import { Foreshadowing } from '../systems/Foreshadowing.js';
+import { EndingManager } from '../endings/EndingManager.js';
+import { Overlay } from '../ui/Overlay.js';
 import { Hud, formatNumber } from '../ui/Hud.js';
 
 import { Shop } from '../ui/Shop.js';
@@ -45,6 +47,8 @@ export class Game {
 
     const shopRoot = document.getElementById('shop-root') || document.body;
     this.shop = new Shop(shopRoot, { state: this.state, audio });
+    this.overlay = new Overlay();
+    this.endingManager = null;
 
     this.running = false;
     this.paused = false;
@@ -191,12 +195,30 @@ export class Game {
       terrain: this.terrain,
     });
 
+    // Manager dei finali dinamici (Curse, Treasure, Business)
+    this.endingManager = new EndingManager({
+      scene: this.sceneMgr,
+      terrain: this.terrain,
+      state: this.state,
+      audio: this.audio,
+      particles: this.particles,
+      city: this.city,
+      controls: this.controls,
+      overlay: this.overlay,
+      save: this.save,
+      game: this,
+    });
+
     this.sceneMgr.scene.add(this.group);
     this.digging.setTerrain(this.terrain);
     this.state.setCompletion(0);
   }
 
   _disposeWorld() {
+    if (this.endingManager) {
+      this.endingManager.dispose();
+      this.endingManager = null;
+    }
     if (this.foreshadowing) {
       this.foreshadowing.dispose();
       this.foreshadowing = null;
@@ -245,6 +267,7 @@ export class Game {
     c.mouseButtons = { LEFT: -1, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE };
     c.touches = { ONE: -1, TWO: THREE.TOUCH.DOLLY_ROTATE };
     this.controls = c;
+    if (this.endingManager) this.endingManager.controls = c;
     this._unsubSens = this.settings.subscribe('controls.cameraSens', (v) => { c.rotateSpeed = v; }, { immediate: true });
   }
 
@@ -275,6 +298,8 @@ export class Game {
     this.workers?.update(dt);
     this.economy?.update(dt);
     this.foreshadowing?.update(dt);
+    this.endingManager?.onProgress(this.state.completion);
+    this.endingManager?.update(dt);
     this.particles.update(dt);
     this.terrain?.flush();      // al massimo un upload GPU per frame
     this.hud.update(dt);
@@ -359,11 +384,25 @@ export class Game {
     const saveTime = (existing?.lastSaved && existing.lastSaved < Date.now() - 30000)
       ? existing.lastSaved
       : Date.now();
-    this.save.write(this.state.toSave({ ...(this.saveBase ?? {}), lastSaved: saveTime }));
+    this.save.write(this.state.toSave({
+      ...(this.saveBase ?? {}),
+      endingsSeen: this.save.getEndingsSeen(),
+      lastSaved: saveTime,
+    }));
   }
 
 
+  /** Avvia direttamente una nuova spedizione (usato dall'overlay epilogo). */
+  async startNewRun() {
+    this.overlay?.hide();
+    this.save.clear();
+    const data = this.save.createNew();
+    this._leave();
+    await this.start(data);
+  }
+
   returnToMenu() {
+    this.overlay?.hide();
     this.shop.close(true);
     this.saveNow();
     this.fade.classList.add('on');
@@ -378,6 +417,7 @@ export class Game {
     this.running = false;
     this.phase = 'idle';
     this.paused = false;
+    this.overlay?.hide();
     this.digging.setEnabled(false);
     this.shop.close(true);
     this.sceneMgr.updaters.delete(this._tick);

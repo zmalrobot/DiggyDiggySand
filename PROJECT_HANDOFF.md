@@ -94,7 +94,15 @@ Verifiche manuali da fare: valori persistiti dopo il ricaricamento; `localStorag
   - `js/ui/Hud.js`: widget del Georadar con oscilloscopio a scansione rotante, ping audio e readout di profondità reattivo alla quota scavata.
   - `js/systems/Upgrades.js`: upgrade "Georadar di Profondità" integrato nell'Officina.
   - Verificata con 20 test unitari complessivi e 7/7 step browser QA (Headless Chrome).
-- [ ] **M4** Finali e persistenza avanzata: `js/endings/{EndingManager,CurseEnding,TreasureEnding,BusinessEnding}.js` (mulberry32, `?ending=`, `?cheat=1`), codec compresso del terreno in `Save.js`, `js/ui/Overlay.js`, galleria finali.
+- [x] **M4** I Tre Finali Dinamici (Curse, Treasure, Business), Gestione Seed e Galleria Epiloghi:
+  - `js/endings/EndingManager.js`: interfaccia unificata per le classi dei finali (`prepare`, `onProgress`, `trigger`, `update`, `dispose`), determinazione ending tramite seed `mulberry32` e override URL `?ending=curse|treasure|business`, trigger automatico a completamento scavo >= 98%.
+  - `js/endings/CurseEnding.js`: rottura del sigillo centrale, mutazione atmosferica violenta (cielo rosso sangue `#8B0000`, nebbia porpora `#2E0854`), colonna vorticosa di particelle oscure / locuste, rombo sismico procedurale `playCurseRumble()`, epilogo narrativo (*"Forse avresti dovuto lasciare la sabbia dov'era..."*).
+  - `js/endings/TreasureEnding.js`: rivelazione della cripta d'oro sommersa, arpeggio metallico trionfale `playTreasureShower()`, pioggia dinamica di monete d'oro e gemme ciano con rimbalzo a terra, mini-interazione con gemme cliccabili che conferiscono ricchezza istantanea ed emettono tintinnii brillanti `playCoinGlitter()`, epilogo celebrativo (*"Sei oscenamente ricco..."*).
+  - `js/endings/BusinessEnding.js`: anticlimax comico con arresto dei cori mistici e fischio solitario del vento `playWindWhistle()`, luce neutrale da cantiere, secchiello di plastica arancione e barriere di sicurezza, calcolo della valutazione d'impresa della flotta di macchinari, certificato di costituzione d'impresa ed opzione per proseguire nella "Modalità Sandbox Libera".
+  - `js/ui/Overlay.js`: modale a schermo intero stile Atlantean-Kemetism con angoli a 45°, titolo display, badge tematico (`☠️`, `👑`, `🏗️`), testo narrativo, griglia statistiche (tempo spedizione, sabbia estratta, colpi di pala, percentuale completamento, valutazione), pulsanti "Nuova Spedizione", "Torna al Menu" e "Continua in Sandbox".
+  - `js/ui/GalleryModal.js`: modale accessibile dal Menu principale tramite il pulsante "Finali Scoperti (X/3)", con barra di avanzamento e schede per ciascuno dei tre finali (stato sbloccato con descrizione e badge, oppure sigillato con lucchetto `🔒`).
+  - Persistenza `endingsSeen` indipendente e tracking statistico di click e tempo trascorso in `Save.js` e `State.js`.
+  - Verificata con 28 test unitari complessivi e browser QA.
 - [ ] **M5** Polish e mobile: `js/systems/TouchControls.js` (un dito scava, due ruotano e zoomano), bilanciamento ed eventi sonori completi.
 
 Piano dettagliato con codice e verifiche: vedi la sezione "Roadmap" sopra e le formule in `Ideas/upgrade_tree_specification.md`.

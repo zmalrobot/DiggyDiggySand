@@ -239,6 +239,86 @@ export class AudioEngine {
     if (!this._ok()) return;
     this._blip({ type: 'sine', f0: 1760, f1: 880, dur: 0.08, vol: 0.15 });
   }
+
+  /** Rombo tellurico profondo e boato cosmico per il climax della Maledizione. */
+  playCurseRumble() {
+    if (!this._ok()) return;
+    const t = this.ctx.currentTime;
+    const osc1 = this.ctx.createOscillator();
+    const osc2 = this.ctx.createOscillator();
+    osc1.type = 'sawtooth';
+    osc2.type = 'triangle';
+    osc1.frequency.setValueAtTime(55, t);
+    osc1.frequency.exponentialRampToValueAtTime(28, t + 3.0);
+    osc2.frequency.setValueAtTime(82, t);
+    osc2.frequency.exponentialRampToValueAtTime(35, t + 3.0);
+
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(220, t);
+    filter.frequency.linearRampToValueAtTime(90, t + 3.0);
+
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0.001, t);
+    gain.gain.exponentialRampToValueAtTime(0.45, t + 0.4);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 3.2);
+
+    osc1.connect(filter);
+    osc2.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.nodes.sfx);
+
+    osc1.start(t);
+    osc2.start(t);
+    osc1.stop(t + 3.3);
+    osc2.stop(t + 3.3);
+  }
+
+  /** Cascata metallica e arpeggio trionfale per la pioggia del Tesoro. */
+  playTreasureShower() {
+    if (!this._ok()) return;
+    const notes = [523.25, 659.25, 783.99, 1046.5, 1318.51, 1567.98, 2093.0];
+    notes.forEach((f, i) => {
+      setTimeout(() => {
+        if (!this._ok()) return;
+        this._blip({ type: 'triangle', f0: f, f1: f * 1.02, dur: 0.28, vol: 0.22 });
+      }, i * 65);
+    });
+  }
+
+  /** Tintinnio brillante quando si raccoglie una gemma sul fondo. */
+  playCoinGlitter() {
+    if (!this._ok()) return;
+    this._blip({ type: 'sine', f0: 1760, f1: 2637, dur: 0.16, vol: 0.25 });
+  }
+
+  /** Fischio comico e solitario del vento per l'anticlimax di Business. */
+  playWindWhistle() {
+    if (!this._ok()) return;
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(587.33, t); // D5
+    osc.frequency.exponentialRampToValueAtTime(440.0, t + 0.7);
+    osc.frequency.exponentialRampToValueAtTime(293.66, t + 1.8);
+
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0.001, t);
+    gain.gain.exponentialRampToValueAtTime(0.18, t + 0.2);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 1.9);
+
+    osc.connect(gain);
+    gain.connect(this.nodes.sfx);
+    osc.start(t);
+    osc.stop(t + 1.95);
+  }
+
+  stopAmbient() {
+    if (this.ambient) {
+      try { this.ambient.stop(); } catch {}
+      this.ambient = null;
+    }
+  }
 }
 
 

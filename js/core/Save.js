@@ -60,6 +60,33 @@ export class Save {
 
   hasValidSave() { return this.load() !== null; }
 
+  getEndingsSeen() {
+    const fromSave = this.load()?.endingsSeen;
+    if (Array.isArray(fromSave) && fromSave.length > 0) return fromSave;
+    try {
+      const raw = this.storage?.getItem('dds_endings_seen');
+      if (raw) {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr)) return arr;
+      }
+    } catch {}
+    return Array.isArray(fromSave) ? fromSave : [];
+  }
+
+  recordEnding(id) {
+    if (!id) return this.getEndingsSeen();
+    const seen = new Set(this.getEndingsSeen());
+    seen.add(id);
+    const arr = Array.from(seen);
+    try { this.storage?.setItem('dds_endings_seen', JSON.stringify(arr)); } catch {}
+    const cur = this.load();
+    if (cur) {
+      cur.endingsSeen = arr;
+      this.write(cur);
+    }
+    return arr;
+  }
+
   /** Nuova spedizione: genera il seed (da cui sarà scelto il finale) e scrive il salvataggio. */
   createNew() {
     const seed = (crypto.getRandomValues(new Uint32Array(1))[0]) | 0;
@@ -73,7 +100,7 @@ export class Save {
       sand: 0,
       totalSand: 0,
       upgrades: {},
-      endingsSeen: this.load()?.endingsSeen ?? [],
+      endingsSeen: this.getEndingsSeen(),
     };
     this.write(data);
     return data;

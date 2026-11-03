@@ -87,15 +87,18 @@ export class City {
     // Elemento tematico in base al finale
     if (this.endingId === 'curse') {
       const seal = mesh(new THREE.OctahedronGeometry(0.8, 0), this.mats.curseAltar, [0, 3.8, 2.2]);
+      this.curseSeal = seal;
       g.add(seal);
     } else if (this.endingId === 'treasure') {
       const chest = mesh(new THREE.BoxGeometry(1.4, 0.7, 0.9), this.mats.treasureGold, [0, 3.75, 2.2]);
+      this.treasureChest = chest;
       g.add(chest);
     } else if (this.endingId === 'business') {
       // Secchio di plastica e cartello low-poly
       const bucket = mesh(new THREE.CylinderGeometry(0.25, 0.2, 0.45, 6), mat(0xFF6B00), [0, 3.6, 2.2]);
       const signPost = mesh(new THREE.BoxGeometry(0.08, 1.4, 0.08), mat(0x555555), [0.8, 4.1, 2.2]);
       const signBoard = mesh(new THREE.BoxGeometry(0.9, 0.5, 0.05), mat(0xFFDE00), [0.8, 4.6, 2.2]);
+      this.businessBucket = bucket;
       g.add(bucket, signPost, signBoard);
     }
 

@@ -22,7 +22,17 @@ export class State {
     this.totalSand = Number.isFinite(data.totalSand) ? Math.max(0, data.totalSand) : this.sand;
     this.upgrades = { ...(data.upgrades ?? {}) };
     this.completion = 0; // 0..1, derivato dal terreno
+    this.clicks = Number.isFinite(data.clicks) ? Math.max(0, data.clicks) : 0;
+    this.startTime = data.startTime ?? data.createdAt ?? Date.now();
     this.lastSaved = data.lastSaved ?? data.lastSeen ?? Date.now();
+  }
+
+  registerClick() {
+    this.clicks++;
+  }
+
+  get elapsedSeconds() {
+    return Math.max(0, Math.floor((Date.now() - (this.startTime || Date.now())) / 1000));
   }
 
 
@@ -71,6 +81,8 @@ export class State {
       sand: this.sand,
       totalSand: this.totalSand,
       upgrades: this.upgrades,
+      clicks: this.clicks,
+      startTime: this.startTime,
       lastSaved: Date.now(),
       lastSeen: Date.now(),
     };
