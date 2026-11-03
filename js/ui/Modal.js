@@ -1,0 +1,101 @@
+// Modali e toast in stile vetro/oro. Il contenitore #modal-root si nasconde da solo quando è vuoto.
+export class ModalManager {
+  constructor(root) {
+    this.root = root;
+    this.stack = [];
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.stack.length) this.stack[this.stack.length - 1].close();
+    });
+  }
+
+  /** content: Node | string. actions: [{label, onClick, danger, keepOpen}] */
+  open({ title, content, actions = [], wide = false, onClose } = {}) {
+    const backdrop = document.createElement('div');
+    backdrop.className = 'modal-backdrop';
+    const panel = document.createElement('div');
+    panel.className = `panel modal${wide ? ' wide' : ''}`;
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-modal', 'true');
+
+    if (title) {
+      const h = document.createElement('h2');
+      h.className = 'modal-title';
+      h.textContent = title;
+      panel.append(h);
+    }
+    const body = document.createElement('div');
+    body.className = 'modal-body';
+    if (typeof content === 'string') {
+      const p = document.createElement('p');
+      p.textContent = content;
+      body.append(p);
+    } else if (content) body.append(content);
+    panel.append(body);
+
+    const handle = { close: () => {} };
+    if (actions.length) {
+      const bar = document.createElement('div');
+      bar.className = 'modal-actions';
+      for (const a of actions) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = `btn${a.danger ? ' danger' : ''}`;
+        b.textContent = a.label;
+        b.addEventListener('click', () => {
+          a.onClick?.();
+          if (!a.keepOpen) handle.close();
+        });
+        bar.append(b);
+      }
+      panel.append(bar);
+    }
+
+    backdrop.append(panel);
+    backdrop.addEventListener('pointerdown', (e) => { if (e.target === backdrop) handle.close(); });
+    this.root.append(backdrop);
+
+    let closed = false;
+    handle.close = () => {
+      if (closed) return;
+      closed = true;
+      this.stack = this.stack.filter((h) => h !== handle);
+      backdrop.remove();
+      onClose?.();
+    };
+    this.stack.push(handle);
+    panel.querySelector('.btn')?.focus({ preventScroll: true });
+    return handle;
+  }
+
+  /** Conferma di sicurezza. Risolve true/false. */
+  confirm({ title, message, confirmLabel = 'Conferma', cancelLabel = 'Annulla', danger = false }) {
+    return new Promise((resolve) => {
+      let answered = false;
+      const answer = (v) => { answered = true; resolve(v); };
+      this.open({
+        title,
+        content: message,
+        actions: [
+          { label: cancelLabel, onClick: () => answer(false) },
+          { label: confirmLabel, danger, onClick: () => answer(true) },
+        ],
+        onClose: () => { if (!answered) resolve(false); },
+      });
+    });
+  }
+}
+
+export function toast(message, ms = 4200) {
+  let host = document.getElementById('toast-host');
+  if (!host) {
+    host = document.createElement('div');
+    host.id = 'toast-host';
+    document.body.append(host);
+  }
+  const el = document.createElement('div');
+  el.className = 'panel toast';
+  el.textContent = message;
+  host.append(el);
+  setTimeout(() => { el.classList.add('leaving'); setTimeout(() => el.remove(), 500); }, ms);
+}
+
