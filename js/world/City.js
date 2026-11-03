@@ -15,9 +15,10 @@ const mesh = (geo, material, pos = [0, 0, 0]) => {
 };
 
 export class City {
-  constructor({ endingId = 'curse', floor = 0 } = {}) {
+  constructor({ endingId = 'curse', floor = 0, assets = null } = {}) {
     this.endingId = endingId;
     this.floor = floor;
+    this.assets = assets;
     this.group = new THREE.Group();
     this.group.name = 'buried-city';
 
@@ -90,7 +91,10 @@ export class City {
       this.curseSeal = seal;
       g.add(seal);
     } else if (this.endingId === 'treasure') {
-      const chest = mesh(new THREE.BoxGeometry(1.4, 0.7, 0.9), this.mats.treasureGold, [0, 3.75, 2.2]);
+      const chest = this.assets?.getModel
+        ? this.assets.getModel('ruins/chest.glb', () => mesh(new THREE.BoxGeometry(1.4, 0.7, 0.9), this.mats.treasureGold, [0, 3.75, 2.2]))
+        : mesh(new THREE.BoxGeometry(1.4, 0.7, 0.9), this.mats.treasureGold, [0, 3.75, 2.2]);
+      chest.position.set(0, 3.75, 2.2);
       this.treasureChest = chest;
       g.add(chest);
     } else if (this.endingId === 'business') {
@@ -127,10 +131,23 @@ export class City {
           const z = d.dz === 0 ? offset : d.dz * dist;
 
           // Colonna (Y max = 4.8)
-          const base = mesh(new THREE.BoxGeometry(1.1, 0.35, 1.1), bedrock, [x, 0.175, z]);
-          const shaft = mesh(new THREE.CylinderGeometry(0.35, 0.45, 3.8, 6), stone, [x, 2.25, z]);
-          const cap = mesh(new THREE.BoxGeometry(1.0, 0.35, 1.0), gold, [x, 4.32, z]);
-          g.add(base, shaft, cap);
+          if (this.assets?.getModel) {
+            const col = this.assets.getModel('ruins/column.glb', () => {
+              const cg = new THREE.Group();
+              const base = mesh(new THREE.BoxGeometry(1.1, 0.35, 1.1), bedrock, [0, 0.175, 0]);
+              const shaft = mesh(new THREE.CylinderGeometry(0.35, 0.45, 3.8, 6), stone, [0, 2.25, 0]);
+              const cap = mesh(new THREE.BoxGeometry(1.0, 0.35, 1.0), gold, [0, 4.32, 0]);
+              cg.add(base, shaft, cap);
+              return cg;
+            });
+            col.position.set(x, 0, z);
+            g.add(col);
+          } else {
+            const base = mesh(new THREE.BoxGeometry(1.1, 0.35, 1.1), bedrock, [x, 0.175, z]);
+            const shaft = mesh(new THREE.CylinderGeometry(0.35, 0.45, 3.8, 6), stone, [x, 2.25, z]);
+            const cap = mesh(new THREE.BoxGeometry(1.0, 0.35, 1.0), gold, [x, 4.32, z]);
+            g.add(base, shaft, cap);
+          }
 
           // Architravi longitudinali che collegano le colonne
           if (i < 3) {

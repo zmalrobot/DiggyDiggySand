@@ -7,6 +7,8 @@ export class AudioEngine {
     this.nodes = null;
     this.ambient = null;
     this.ambientFilters = null;
+    this.buffers = new Map();
+    this.samplesLoading = false;
     this.supported = typeof window !== 'undefined' && !!(window.AudioContext || window.webkitAudioContext);
     settings?.subscribe?.('*', (_v, key) => {
       if (key.startsWith('audio.')) this._applyGains();
@@ -49,12 +51,47 @@ export class AudioEngine {
     try {
       this._init();
       if (this.ctx.state !== 'running') await this.ctx.resume();
+      this.loadDefaultSamples().catch(() => {});
       this.startAmbient();
       return this.ctx.state === 'running';
     } catch (e) {
       console.warn('[Audio] sblocco non riuscito', e);
       return false;
     }
+  }
+
+  /**
+   * Carica un campione audio campionato (OGG/MP3/WAV) nel pool di buffer.
+   * Se fallisce o se non supportato, non lancia eccezioni e preserva i fallback procedurali.
+   */
+  async loadSample(id, url) {
+    if (!this.ctx || typeof fetch === 'undefined') return null;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const arrayBuffer = await res.arrayBuffer();
+      const audioBuffer = await this.ctx.decodeAudioData(arrayBuffer);
+      this.buffers.set(id, audioBuffer);
+      return audioBuffer;
+    } catch (e) {
+      console.warn(`[Audio] Campione "${id}" (${url}) non caricato, uso fallback procedurale:`, e?.message || e);
+      return null;
+    }
+  }
+
+  /**
+   * Pre-carica i campioni audio predefiniti per SFX e rumore ambientale.
+   */
+  async loadDefaultSamples() {
+    if (this.samplesLoading || !this.ctx) return;
+    this.samplesLoading = true;
+    const samples = [
+      { id: 'sfx_dig', url: './assets/audio/sfx_dig_sand.ogg' },
+      { id: 'sfx_coin', url: './assets/audio/sfx_coin_pickup.ogg' },
+      { id: 'sfx_earthquake', url: './assets/audio/sfx_earthquake.ogg' },
+      { id: 'amb_wind', url: './assets/audio/ambient_desert_wind.ogg' },
+    ];
+    await Promise.allSettled(samples.map((s) => this.loadSample(s.id, s.url)));
   }
 
   _applyGains(instant = false) {
@@ -139,6 +176,22 @@ export class AudioEngine {
   /** Chime metallico / cascata di monete per acquisto di upgrade. */
   playPurchaseSound() {
     if (!this._ok()) return;
+    const sample = this.buffers.get('sfx_coin');
+    if (sample) {
+      try {
+        const src = this.ctx.createBufferSource();
+        src.buffer = sample;
+        src.playbackRate.value = 1 + (Math.random() * 0.15 - 0.075);
+        const g = this.ctx.createGain();
+        g.gain.value = 0.35;
+        src.connect(g);
+        g.connect(this.nodes.sfx);
+        src.start();
+        return;
+      } catch (e) {
+        console.warn('[Audio] Errore riproduzione sfx_coin, fallback:', e);
+      }
+    }
     const pitches = [587.33, 880.0, 1174.66]; // D5, A5, D6
     pitches.forEach((f, i) => {
       setTimeout(() => {
@@ -151,15 +204,32 @@ export class AudioEngine {
 
 
   /**
-   * Colpo di pala nella sabbia: raschio di rumore filtrato + tonfo sordo. Il pitch varia di ±15% a ogni
-   * chiamata per evitare ripetitività. `intensity` (0..1.5) scala il volume.
+   * Colpo di pala nella sabbia: riproduce il campione audio se disponibile (con variazione di pitch ±15%),
+   * altrimenti fallback procedurale (raschio di rumore filtrato + tonfo sordo). `intensity` (0..1.5) scala il volume.
    */
   playDigSound(intensity = 1) {
     if (!this._ok()) return;
     const p = 1 + (Math.random() * 0.3 - 0.15);
-    const t = this.ctx.currentTime;
     const vol = 0.35 * Math.min(1.5, Math.max(0.2, intensity));
 
+    const sample = this.buffers.get('sfx_dig');
+    if (sample) {
+      try {
+        const src = this.ctx.createBufferSource();
+        src.buffer = sample;
+        src.playbackRate.value = p;
+        const g = this.ctx.createGain();
+        g.gain.value = vol;
+        src.connect(g);
+        g.connect(this.nodes.sfx);
+        src.start();
+        return;
+      } catch (e) {
+        console.warn('[Audio] Errore riproduzione sfx_dig, fallback:', e);
+      }
+    }
+
+    const t = this.ctx.currentTime;
     const src = this.ctx.createBufferSource();
     src.buffer = this._noiseBuffer(0.22);
     const bp = this.ctx.createBiquadFilter();
@@ -177,14 +247,15 @@ export class AudioEngine {
     this._blip({ type: 'sine', f0: 120 * p, f1: 55 * p, dur: 0.13, vol: vol * 0.7 });
   }
 
-  /** Vento del deserto (rumore filtrato con LFO) + drone atlantideo a bassa frequenza. */
+  /** Vento del deserto (campionato o sintetico filtrato con LFO) + drone atlantideo a bassa frequenza. */
   startAmbient() {
     if (!this.ctx || this.ambient) return;
     const ctx = this.ctx;
     const out = this.nodes.music;
 
+    const windSample = this.buffers.get('amb_wind');
     const wind = ctx.createBufferSource();
-    wind.buffer = this._noiseBuffer(3);
+    wind.buffer = windSample || this._noiseBuffer(3);
     wind.loop = true;
     const bp = ctx.createBiquadFilter();
     bp.type = 'bandpass'; bp.frequency.value = 380; bp.Q.value = 0.6;
@@ -279,6 +350,21 @@ export class AudioEngine {
   /** Rombo tellurico profondo e boato cosmico per il climax della Maledizione. */
   playCurseRumble() {
     if (!this._ok()) return;
+    const sample = this.buffers.get('sfx_earthquake');
+    if (sample) {
+      try {
+        const src = this.ctx.createBufferSource();
+        src.buffer = sample;
+        const g = this.ctx.createGain();
+        g.gain.value = 0.5;
+        src.connect(g);
+        g.connect(this.nodes.sfx);
+        src.start();
+        return;
+      } catch (e) {
+        console.warn('[Audio] Errore riproduzione sfx_earthquake, fallback:', e);
+      }
+    }
     const t = this.ctx.currentTime;
     const osc1 = this.ctx.createOscillator();
     const osc2 = this.ctx.createOscillator();
@@ -390,6 +476,16 @@ export class AudioEngine {
       try { this.ambient.stop(); } catch {}
       this.ambient = null;
     }
+  }
+
+  dispose() {
+    this.stopAmbient();
+    this.buffers.clear();
+    if (this.ctx && this.ctx.state !== 'closed') {
+      try { this.ctx.close(); } catch {}
+    }
+    this.ctx = null;
+    this.nodes = null;
   }
 }
 

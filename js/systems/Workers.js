@@ -177,11 +177,12 @@ export function createDredgeModel() {
 }
 
 export class Workers {
-  constructor({ terrain, state, particles, scene }) {
+  constructor({ terrain, state, particles, scene, assets = null }) {
     this.terrain = terrain;
     this.state = state;
     this.particles = particles;
     this.scene = scene;
+    this.assets = assets ?? scene?.assets ?? null;
 
     this.group = new THREE.Group();
     this.group.name = 'workers-fleet';
@@ -264,15 +265,23 @@ export class Workers {
     let distMax = 50;
 
     if (type === 'scarab') {
-      m = createScarabModel();
+      m = this.assets?.getModel
+        ? this.assets.getModel('machinery/worker_scarab.glb', createScarabModel)
+        : createScarabModel();
       distMin = 10; distMax = 42;
     } else if (type === 'excavator') {
-      m = createExcavatorModel();
+      m = this.assets?.getModel
+        ? this.assets.getModel('machinery/excavator_steam.glb', createExcavatorModel)
+        : createExcavatorModel();
       distMin = 22; distMax = 65;
     } else if (type === 'dredge') {
-      m = createDredgeModel();
+      m = this.assets?.getModel
+        ? this.assets.getModel('machinery/dredge.glb', createDredgeModel)
+        : createDredgeModel();
       distMin = 35; distMax = 75;
     }
+
+    if (!m.userData) m.userData = {};
 
     const angle = Math.random() * Math.PI * 2;
     const r = distMin + Math.random() * (distMax - distMin);

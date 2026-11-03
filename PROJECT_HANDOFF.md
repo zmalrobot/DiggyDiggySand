@@ -157,6 +157,25 @@ Verifiche manuali da fare: valori persistiti dopo il ricaricamento; `localStorag
     - File [`LICENSE`](LICENSE) (Licenza MIT).
     - [`.gitignore`](.gitignore) arricchito per escludere file temporanei OS, IDE, log e scratchpad.
   - Verificata con 53 test unitari complessivi (5 specifici M8) e suite end-to-end Puppeteer/Headless Chrome (5/5 PASSED, 0 errori 404, screenshot in `scratch/05_pwa_standalone_ready.png`).
+- [x] **M9** Asset Loader Pipeline, Sostituzione Modelli 3D GLTF e Integrazione Audio Campionato:
+  - Asset Loader Pipeline & Fallback Robusto (`js/core/AssetLoader.js`):
+    - Registro centralizzato `MODEL_REGISTRY` con fallback procedurali per:
+      - Attrezzi: `tools/shovel_basic.glb`, `tools/shovel_atlantean.glb`
+      - Flotta macchinari: `machinery/worker_scarab.glb`, `machinery/excavator_steam.glb`, `machinery/dredge.glb`
+      - Rovine sepolte: `ruins/column.glb`, `ruins/temple_center.glb`, `ruins/chest.glb`
+    - Pattern fallback `loadModel(id, fallbackGenerator)` e `getModel(id, fallbackGenerator)`: caricamento asincrono con `THREE.GLTFLoader`, clonazione mesh con salvaguardia `flatShading: true`, `castShadow = true`, `receiveShadow = true` e fallback istantaneo a `ProceduralFactory.js` o generatori locali se assente o corrotto.
+    - Aggiornamento `assets/manifest.json` con flag `available: true` per i modelli GLB operativi.
+  - Sostituzione Lavoratori e Città Sepolta (`js/systems/Workers.js` & `js/world/City.js`):
+    - `Workers.js`: istanziazione di Scarafaggio, Escavatore e Draga dai modelli GLTF caricati in `assets/models/machinery/` con ancoraggio corretto alla quota Y del terreno e supporto animazione procedurale.
+    - `City.js`: impiego dei modelli 3D per le colonne monumentali lungo i viali, il santuario centrale e il forziere aureo con fallback garantito.
+  - Web Audio Pool & Audio Campionato (`js/core/AudioEngine.js`):
+    - Buffer pool `buffers = new Map()` per campioni audio reali pre-caricati: `sfx_dig_sand.ogg`, `sfx_coin_pickup.ogg`, `sfx_earthquake.ogg`, `ambient_desert_wind.ogg`.
+    - Metodo `loadSample(id, url)` con gestione resiliente degli errori e caricamento all'evento `unlock()` (post-gesto utente).
+    - `playDigSound(intensity)`: riproduzione campione scavo con randomizzazione pitch `±15%` e modulazione di volume, oppure fallback sul sintetizzatore procedurale a rumore bianco e tonfo sordo.
+    - `playPurchaseSound()`: riproduzione monete metalliche campionate o fallback su arpeggio sinusoidale.
+    - `playCurseRumble()`: riproduzione boato tellurico o oscillatore low-frequency.
+    - `startAmbient()`: routing del loop vento del deserto campionato attraverso la catena di filtri dinamici a modulazione di profondità (`setDepth`).
+  - Verificata con 61 test unitari complessivi (8 specifici M9, 100% superati) e verifica end-to-end in browser.
 
 Piano dettagliato con codice e verifiche: vedi la sezione "Roadmap" sopra e le formule in `Ideas/upgrade_tree_specification.md`.
 

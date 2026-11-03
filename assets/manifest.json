@@ -1,20 +1,24 @@
 {
   "_note": "Imposta available:true solo dopo aver scaricato il file in assets/models/. Gli asset non disponibili usano il fallback procedurale (ProceduralFactory.js) senza richieste di rete.",
   "models": [
-    { "id": "TOOL_SHOVEL",      "file": "assets/models/tools/shovel_basic.glb",      "available": false },
-    { "id": "TOOL_PICKAXE",     "file": "assets/models/tools/pickaxe_heavy.glb",     "available": false },
-    { "id": "TOOL_DYNAMITE",    "file": "assets/models/tools/dynamite_cask.glb",     "available": false },
-    { "id": "UNIT_NOMAD",       "file": "assets/models/fleet/worker_nomad.glb",      "available": false },
-    { "id": "UNIT_SIFTER",      "file": "assets/models/fleet/sifter_tripod.glb",     "available": false },
-    { "id": "UNIT_EXCAVATOR",   "file": "assets/models/fleet/steam_excavator.glb",   "available": false },
-    { "id": "UNIT_MONOLITH",    "file": "assets/models/fleet/atlantean_monolith.glb","available": false },
-    { "id": "RUIN_PILLAR",      "file": "assets/models/city/pillar_stone.glb",       "available": false },
-    { "id": "RUIN_OBELISK",     "file": "assets/models/city/obelisk_kemet.glb",      "available": false },
-    { "id": "RUIN_WALL",        "file": "assets/models/city/ruin_wall_corner.glb",   "available": false },
-    { "id": "RUIN_CHEST",       "file": "assets/models/city/ancient_chest.glb",      "available": false },
-    { "id": "END_CURSE_CORE",   "file": "assets/models/endings/black_sarcophagus.glb","available": false },
-    { "id": "END_TREASURE_GEM", "file": "assets/models/endings/gem_cluster.glb",     "available": false },
-    { "id": "END_BIZ_CONE",     "file": "assets/models/endings/traffic_cone.glb",    "available": false }
+    { "id": "TOOL_SHOVEL",             "file": "assets/models/tools/shovel_basic.glb",      "available": true },
+    { "id": "TOOL_SHOVEL_ATLANTEAN",   "file": "assets/models/tools/shovel_atlantean.glb",  "available": true },
+    { "id": "UNIT_SCARAB",             "file": "assets/models/machinery/worker_scarab.glb", "available": true },
+    { "id": "UNIT_EXCAVATOR",          "file": "assets/models/machinery/excavator_steam.glb","available": true },
+    { "id": "UNIT_DREDGE",             "file": "assets/models/machinery/dredge.glb",        "available": true },
+    { "id": "RUIN_COLUMN",             "file": "assets/models/ruins/column.glb",           "available": true },
+    { "id": "RUIN_TEMPLE",             "file": "assets/models/ruins/temple_center.glb",     "available": true },
+    { "id": "RUIN_CHEST",              "file": "assets/models/ruins/chest.glb",             "available": true },
+    { "id": "TOOL_PICKAXE",            "file": "assets/models/tools/pickaxe_heavy.glb",     "available": false },
+    { "id": "TOOL_DYNAMITE",           "file": "assets/models/tools/dynamite_cask.glb",     "available": false },
+    { "id": "UNIT_NOMAD",              "file": "assets/models/fleet/worker_nomad.glb",      "available": false },
+    { "id": "UNIT_SIFTER",             "file": "assets/models/fleet/sifter_tripod.glb",     "available": false },
+    { "id": "UNIT_MONOLITH",           "file": "assets/models/fleet/atlantean_monolith.glb","available": false },
+    { "id": "RUIN_PILLAR",             "file": "assets/models/city/pillar_stone.glb",       "available": false },
+    { "id": "RUIN_OBELISK",            "file": "assets/models/city/obelisk_kemet.glb",      "available": false },
+    { "id": "RUIN_WALL",               "file": "assets/models/city/ruin_wall_corner.glb",   "available": false },
+    { "id": "END_CURSE_CORE",          "file": "assets/models/endings/black_sarcophagus.glb","available": false },
+    { "id": "END_TREASURE_GEM",        "file": "assets/models/endings/gem_cluster.glb",     "available": false },
+    { "id": "END_BIZ_CONE",            "file": "assets/models/endings/traffic_cone.glb",    "available": false }
   ]
 }
-

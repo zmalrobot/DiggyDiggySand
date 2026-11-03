@@ -33,7 +33,7 @@ const PAN_SPEED = 38; // m/s con WASD / frecce
 const smoothstep = (t) => t * t * (3 - 2 * t);
 
 export class Game {
-  constructor({ scene, settings, audio, save, modal, settingsModal, menu, canvas, hudRoot }) {
+  constructor({ scene, settings, audio, save, modal, settingsModal, menu, canvas, hudRoot, assets = null }) {
     this.sceneMgr = scene;
     this.settings = settings;
     this.audio = audio;
@@ -42,6 +42,7 @@ export class Game {
     this.settingsModal = settingsModal;
     this.menu = menu;
     this.canvas = canvas;
+    this.assets = assets ?? scene?.assets ?? null;
 
     this.state = new State();
     this.economy = new Economy(this.state);
@@ -188,7 +189,7 @@ export class Game {
     this.group.add(this.terrain.group);
 
     // Città sepolta procedurale (collocata sotto la sabbia tra Y=0 e Y=8.8)
-    this.city = new City({ endingId: this.state.endingId, floor: this.terrain.floor });
+    this.city = new City({ endingId: this.state.endingId, floor: this.terrain.floor, assets: this.assets });
     this.group.add(this.city.group);
 
     // Sistema lavoratori 3D
@@ -197,6 +198,7 @@ export class Game {
       state: this.state,
       particles: this.particles,
       scene: this.sceneMgr,
+      assets: this.assets,
     });
     this.group.add(this.workers.group);
 
