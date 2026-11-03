@@ -1184,6 +1184,178 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
   color: var(--gold-glow);
 }
 
+/* ==========================================================================
+   Fase 7: Debug Console Suite, Memory Audit & WebGL Error Boundary
+   ========================================================================== */
+
+/* Pannello Debug HUD a scomparsa (F2 o ~) */
+.dds-debug-panel {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 1000;
+  width: calc(100% - 48px);
+  max-width: 440px;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 16px 18px 20px;
+  background: rgba(3, 24, 38, 0.96);
+  border: 1.5px solid var(--atlantis-teal);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.75), 0 0 24px rgba(15, 227, 193, 0.35);
+  animation: overlayPop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.2) both;
+}
+
+.debug-panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(15, 227, 193, 0.25);
+}
+
+.debug-panel-title {
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.debug-close-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: color 0.15s;
+}
+.debug-close-btn:hover {
+  color: var(--gold-glow);
+}
+
+/* Griglia Statistiche Live */
+.debug-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  background: rgba(10, 42, 64, 0.6);
+  padding: 10px 12px;
+  border: 1px solid rgba(15, 227, 193, 0.2);
+  margin-bottom: 14px;
+}
+
+.debug-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.78rem;
+}
+.debug-stat.full-row {
+  grid-column: 1 / -1;
+  border-top: 1px solid rgba(15, 227, 193, 0.15);
+  padding-top: 4px;
+  margin-top: 2px;
+}
+
+.d-label {
+  color: var(--text-muted);
+  font-family: var(--font-heading);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+}
+
+.d-val {
+  font-family: var(--font-data);
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+/* Sezioni Pulsanti Debug */
+.debug-actions-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.debug-sec-label {
+  font-family: var(--font-heading);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 4px;
+}
+
+.debug-btns-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.debug-btn {
+  flex: 1 1 calc(50% - 6px);
+  padding: 8px 10px;
+  font-size: 0.78rem;
+  min-height: 36px;
+  text-align: center;
+  justify-content: center;
+  background: rgba(15, 227, 193, 0.1);
+  border-color: rgba(15, 227, 193, 0.35);
+  color: var(--text-main);
+}
+.debug-btn:hover {
+  background: rgba(15, 227, 193, 0.25);
+  border-color: var(--atlantis-teal);
+  color: #FFFFFF;
+}
+
+/* WebGL Error Boundary Fallback Screen */
+.webgl-fallback-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(3, 24, 38, 0.96);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+
+.webgl-error-card {
+  max-width: 500px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+  padding: 36px 28px;
+  border-color: var(--gold-pharaoh);
+  box-shadow: 0 0 35px rgba(245, 186, 35, 0.35);
+}
+
+.webgl-error-icon {
+  font-size: 3rem;
+  filter: drop-shadow(0 0 12px var(--gold-pharaoh));
+}
+
+.webgl-error-title {
+  font-size: 1.4rem;
+  color: var(--gold-glow);
+}
+
+.webgl-error-msg {
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.webgl-error-actions {
+  margin-top: 8px;
+}
+
+
 
 
 

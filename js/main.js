@@ -10,6 +10,7 @@ import { MainMenu } from './ui/MainMenu.js';
 import { SettingsModal } from './ui/SettingsModal.js';
 import { ModalManager } from './ui/Modal.js';
 import { Game } from './core/Game.js';
+import { DebugTools } from './core/DebugTools.js';
 
 window.addEventListener('error', (e) => console.error('[DDS] errore non gestito', e.error ?? e.message));
 window.addEventListener('unhandledrejection', (e) => console.error('[DDS] promise rifiutata', e.reason));
@@ -57,11 +58,15 @@ async function boot() {
     hudRoot: document.getElementById('hud'),
   });
 
-  await startClicked;
-  menu.show();
+  // Suite di Debug e Memory Audit (Fase 7)
+  const debugTools = new DebugTools({ game, scene, state: game.state, save, audio });
+  game.debugTools = debugTools;
 
   // Hook di debug per i test.
-  window.__dds = { settings, audio, save, scene, assets, menu, game };
+  window.__dds = { settings, audio, save, scene, assets, menu, game, debugTools };
+
+  await startClicked;
+  menu.show();
 }
 
 boot().catch((e) => {

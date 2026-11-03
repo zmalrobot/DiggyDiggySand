@@ -95,13 +95,13 @@ export class Digging {
     c?.addEventListener?.('pointerleave', this._onLeave);
     c?.addEventListener?.('contextmenu', this._onCtx);
 
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && window.addEventListener) {
       window.addEventListener('pointerup', this._onUp);
       window.addEventListener('pointercancel', this._onUp);
       window.addEventListener('blur', this._onBlur);
       window.addEventListener('gesturestart', this._onGesture, { passive: false });
     }
-    if (typeof document !== 'undefined') {
+    if (typeof document !== 'undefined' && document.addEventListener) {
       document.addEventListener('visibilitychange', this._onBlur);
     }
   }
@@ -193,13 +193,13 @@ export class Digging {
     c?.removeEventListener?.('pointermove', this._onMove);
     c?.removeEventListener?.('pointerleave', this._onLeave);
     c?.removeEventListener?.('contextmenu', this._onCtx);
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && window.removeEventListener) {
       window.removeEventListener('pointerup', this._onUp);
       window.removeEventListener('pointercancel', this._onUp);
       window.removeEventListener('blur', this._onBlur);
       window.removeEventListener('gesturestart', this._onGesture);
     }
-    if (typeof document !== 'undefined') {
+    if (typeof document !== 'undefined' && document.removeEventListener) {
       document.removeEventListener('visibilitychange', this._onBlur);
     }
     this.reticle.geometry.dispose();

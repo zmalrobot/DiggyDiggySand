@@ -128,6 +128,22 @@ Verifiche manuali da fare: valori persistiti dopo il ricaricamento; `localStorag
     - Climax visivo e sonoro: risveglio del cuore d'oricalco, 55 geyser di luce/acqua ciano emissiva (`0x0FE3C1`), levitazione poetica delle rovine cittadine, cielo aurorale e fanfara trionfale `playAscensionChime()`.
     - Epilogo e Galleria: overlay dedicato con tema ciano/oricalco, testo narrativo trionfale, badge `🔱` e assegnazione del 4° trofeo nella Galleria dei Finali (`(X/4)`).
   - Verificata con 41 test unitari complessivi (7 specifici M6, tutti passati) e suite end-to-end Puppeteer/Headless Chrome (6/6 PASSED, 0 errori console, screenshot salvati in `scratch/`).
+- [x] **M7** Debug Console Suite, Memory Audit (Three.js WebGL Cleanup) e Ottimizzazione Produzione:
+  - Debug Suite & Cheat Integrata (`js/core/DebugTools.js`):
+    - Esposizione globale sicura `window.DDS_DEBUG` con metodi: `addSand`, `setCompletion`, `forceEnding`, `triggerEvent`, `unlockAllUpgrades`, `addTablets`, `unlockAllEndings`, `resetAll`, `getMemoryReport`, `togglePanel`.
+    - Mini-pannello UI a scomparsa attivabile con scorciatoia `F2` o `~` (Backquote) con monitoraggio in tempo reale di: FPS, Draw Calls, Triangoli, Geometrie caricate, Texture WebGL, Particelle attive e JS Heap Memoria.
+    - Pulsanti rapidi di azione per test immediati: valuta, completamento 99%, eventi spontanei, finali e pulizia VRAM.
+  - Memory Audit & Ciclo di Vita Rigoroso:
+    - Rilascio sistematico delle risorse GPU al cambio scena o restart (`geometry.dispose()`, `material.dispose()`).
+    - Smontaggio dei lavoratori rimossi durante i downgrade/sync in `Workers.js` e delle strutture perimetrali in `City.js`.
+    - Invocazione di `renderer.renderLists.dispose()` su `Game._disposeWorld()` e `Game._leave()` per azzerare i riferimenti nella VRAM WebGL.
+  - WebGL ErrorBoundary & Fallback Contesto:
+    - Gestione degli eventi canvas `webglcontextlost` (con `event.preventDefault()`) e `webglcontextrestored` in `SceneManager.js`.
+    - Schermata di errore / fallback visiva stilizzata in vetro e ambra (`.webgl-fallback-overlay`) per prevenire schermate nere in caso di GPU crash o WebGL disabilitato.
+  - Ottimizzazione Bundle & Percorsi Relativi:
+    - Zero `console.log` residui nel ciclo di render a 60 FPS.
+    - Tutti i percorsi in `index.html` e `style.css` sono relativi per garantire il deployment istantaneo su root o sottocartelle (es. GitHub Pages).
+  - Verificata con 48 test unitari complessivi (7 specifici M7) e suite end-to-end Puppeteer/Headless Chrome (5/5 PASSED, 0 errori console, screenshot in `scratch/04_debug_panel_open.png`).
 
 Piano dettagliato con codice e verifiche: vedi la sezione "Roadmap" sopra e le formule in `Ideas/upgrade_tree_specification.md`.
 

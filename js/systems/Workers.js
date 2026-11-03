@@ -232,6 +232,10 @@ export class Workers {
       while (currentOfType.length > targetVisual) {
         const removed = currentOfType.pop();
         this.group.remove(removed.mesh);
+        removed.mesh.traverse((o) => {
+          o.geometry?.dispose?.();
+          if (o.material) [].concat(o.material).forEach((m) => m?.dispose?.());
+        });
         this.workers = this.workers.filter((w) => w !== removed);
       }
 

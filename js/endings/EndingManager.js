@@ -120,6 +120,18 @@ export class EndingManager {
     }
   }
 
+  forceEnding(id) {
+    if (this.activeEnding) {
+      this.activeEnding.dispose?.();
+      this.activeEnding = null;
+    }
+    this.hasTriggered = false;
+    this.sandboxMode = false;
+    if (this.state) this.state.endingId = id;
+    this._initEnding();
+    this.trigger();
+  }
+
   update(dt) {
     if (this.hasTriggered && !this.sandboxMode) {
       this.activeEnding?.update?.(dt);

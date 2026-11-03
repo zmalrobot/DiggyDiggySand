@@ -104,6 +104,10 @@ export class Shop {
     this.updateAffordability();
   }
 
+  refresh() {
+    this.render();
+  }
+
   _renderCard(def) {
     const lvl = this.state.upgrades[def.id] ?? 0;
     const isMax = lvl >= def.maxLevel;

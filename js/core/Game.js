@@ -268,6 +268,8 @@ export class Game {
       this.terrain = null;
       this.digging.setTerrain(null);
     }
+    // Rilascia riferimenti e liste di rendering WebGL per prevenire memory leak
+    this.sceneMgr?.renderer?.renderLists?.dispose?.();
   }
 
 
@@ -452,6 +454,7 @@ export class Game {
     this.banner?.hide();
     this.digging.setEnabled(false);
     this.shop.close(true);
+    this.debugTools?.close?.();
     this.sceneMgr.updaters.delete(this._tick);
     this._unsubSens?.();
     if (this.controls) { this.controls.dispose(); this.controls = null; }
@@ -460,5 +463,6 @@ export class Game {
     this.sceneMgr.setMode('menu');
     this.hud.hide();
     this.menu.root.classList.remove('fade-out');
+    this.sceneMgr?.renderer?.renderLists?.dispose?.();
   }
 }

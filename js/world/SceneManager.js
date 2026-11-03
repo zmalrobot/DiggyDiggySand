@@ -36,8 +36,14 @@ export class SceneManager {
       this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
     } catch (e) {
       console.warn('[Scene] WebGL non disponibile, il menu funziona senza sfondo 3D', e);
+      this._showWebGLError(
+        'Accelerazione 3D Non Disponibile',
+        'Il tuo browser o dispositivo non supporta WebGL 2 o l\'accelerazione grafica hardware è disabilitata.'
+      );
       return;
     }
+
+    this._setupContextListeners(canvas);
 
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -338,12 +344,78 @@ export class SceneManager {
     a.needsUpdate = true;
   }
 
+  _setupContextListeners(canvas) {
+    if (!canvas?.addEventListener) return;
+
+    this._onContextLost = (e) => {
+      e.preventDefault();
+      console.warn('[Scene] Contesto WebGL perso!');
+      this.contextLost = true;
+      this.running = false;
+      this._showWebGLError(
+        'Contesto Grafico Interrotto',
+        'Il dispositivo ha temporaneamente sospeso l\'accelerazione grafica WebGL (risorse GPU sature o riavvio del driver). Il motore tenterà il ripristino automatico.'
+      );
+    };
+
+    this._onContextRestored = () => {
+      console.info('[Scene] Contesto WebGL ripristinato!');
+      this.contextLost = false;
+      this._hideWebGLError();
+      try {
+        this.renderer?.renderLists?.dispose?.();
+        this._buildSky();
+        this.start();
+      } catch (err) {
+        console.error('[Scene] Errore ripristino post-contextrestored', err);
+      }
+    };
+
+    canvas.addEventListener('webglcontextlost', this._onContextLost, false);
+    canvas.addEventListener('webglcontextrestored', this._onContextRestored, false);
+  }
+
+  _showWebGLError(title, message) {
+    if (typeof document === 'undefined') return;
+    if (!this.errorOverlay) {
+      this.errorOverlay = document.createElement('div');
+      this.errorOverlay.className = 'webgl-fallback-overlay';
+      document.body.appendChild(this.errorOverlay);
+    }
+    this.errorOverlay.innerHTML = `
+      <div class="webgl-error-card panel glow-amber">
+        <div class="webgl-error-icon">⚠️</div>
+        <h2 class="display webgl-error-title">${title}</h2>
+        <p class="webgl-error-msg muted">${message}</p>
+        <div class="webgl-error-actions">
+          <button type="button" class="btn" onclick="window.location.reload()">Ricarica Pagina</button>
+        </div>
+      </div>
+    `;
+    this.errorOverlay.classList.remove('hidden');
+  }
+
+  _hideWebGLError() {
+    if (this.errorOverlay) {
+      this.errorOverlay.classList.add('hidden');
+    }
+  }
+
   dispose() {
     this.running = false;
     cancelAnimationFrame(this.raf);
     this.unsubs.forEach((u) => u());
     window.removeEventListener('resize', this._onResize);
+    if (this._onContextLost && this.canvas) {
+      this.canvas.removeEventListener('webglcontextlost', this._onContextLost);
+      this.canvas.removeEventListener('webglcontextrestored', this._onContextRestored);
+    }
+    this.renderer?.renderLists?.dispose?.();
     this.renderer?.dispose();
+    if (this.errorOverlay?.parentElement) {
+      this.errorOverlay.parentElement.removeChild(this.errorOverlay);
+      this.errorOverlay = null;
+    }
   }
 }
 
