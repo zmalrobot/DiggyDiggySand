@@ -59,8 +59,8 @@ export class Overlay {
             <span class="stat-val">${clicksFormatted}</span>
           </div>
           <div class="stat-box">
-            <span class="stat-label">Completamento</span>
-            <span class="stat-val highlight">${compFormatted}</span>
+            <span class="stat-label">Tavolette Antiche</span>
+            <span class="stat-val highlight">τ +${stats.tabletsEarned ?? 5}</span>
           </div>
         </div>
 

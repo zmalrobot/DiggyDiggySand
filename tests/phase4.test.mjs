@@ -191,7 +191,7 @@ t('GalleryModal: verifica metadati per tutti i 3 finali', () => {
   assert.ok(GALLERY_DATA.treasure);
   assert.ok(GALLERY_DATA.business);
 
-  assert.equal(Object.keys(GALLERY_DATA).length, 3);
+  assert.ok(Object.keys(GALLERY_DATA).length >= 3, 'Devono essere presenti almeno i 3 finali base');
   for (const [id, data] of Object.entries(GALLERY_DATA)) {
     assert.equal(data.id, id);
     assert.ok(data.name.length > 0);

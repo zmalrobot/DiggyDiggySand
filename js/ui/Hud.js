@@ -44,6 +44,16 @@ export class Hud {
       events.on('upgrade:bought', ({ id }) => {
         if (id === 'georadar') this.refreshRadar(true);
       }),
+      events.on('event:boost', ({ active, label }) => {
+        if (this.el.boost) {
+          if (active) {
+            this.el.boost.textContent = label;
+            this.el.boost.classList.remove('hidden');
+          } else {
+            this.el.boost.classList.add('hidden');
+          }
+        }
+      }),
     ];
     this.refresh();
   }
@@ -57,6 +67,7 @@ export class Hud {
             <span class="hud-num" data-el="sand">0</span>
             <span class="hud-sps muted" data-el="sps">+0/s</span>
           </div>
+          <div class="hud-boost-tag hidden accent" data-el="boost"></div>
         </div>
         <div class="hud-block hud-progress">
           <div class="hud-progress-head">
@@ -97,6 +108,7 @@ export class Hud {
       menu: this.root.querySelector('[data-el="menu"]'),
       radar: this.root.querySelector('[data-el="radar"]'),
       radarReading: this.root.querySelector('[data-el="radarReading"]'),
+      boost: this.root.querySelector('[data-el="boost"]'),
     };
 
     this.el.shop.addEventListener('click', () => events.emit('hud:shop'));

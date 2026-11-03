@@ -328,6 +328,42 @@ export class AudioEngine {
     this._blip({ type: 'sine', f0: 1760, f1: 2637, dur: 0.16, vol: 0.25 });
   }
 
+  /** Vento forte e sferzante per la Tempesta di Sabbia. */
+  playStormSound() {
+    if (!this._ok()) return;
+    const t = this.ctx.currentTime;
+    const src = this.ctx.createBufferSource();
+    src.buffer = this._noiseBuffer(2.5);
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(450, t);
+    filter.frequency.linearRampToValueAtTime(750, t + 1.2);
+    filter.frequency.linearRampToValueAtTime(320, t + 2.4);
+    filter.Q.value = 1.2;
+
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0.001, t);
+    gain.gain.exponentialRampToValueAtTime(0.35, t + 0.4);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 2.5);
+
+    src.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.nodes.sfx);
+    src.start(t);
+  }
+
+  /** Fanfara aurorale ed eco d'oricalco per l'Ascensione di Atlantide. */
+  playAscensionChime() {
+    if (!this._ok()) return;
+    const notes = [440.0, 554.37, 659.25, 880.0, 1108.73, 1318.51, 1760.0];
+    notes.forEach((f, i) => {
+      setTimeout(() => {
+        if (!this._ok()) return;
+        this._blip({ type: 'sine', f0: f, f1: f * 1.005, dur: 0.45, vol: 0.22 });
+      }, i * 90);
+    });
+  }
+
   /** Fischio comico e solitario del vento per l'anticlimax di Business. */
   playWindWhistle() {
     if (!this._ok()) return;

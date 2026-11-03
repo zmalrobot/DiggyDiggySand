@@ -111,6 +111,23 @@ Verifiche manuali da fare: valori persistiti dopo il ricaricamento; `localStorag
   - Tappeto Sonoro e Audio Dinamico (`js/core/AudioEngine.js`): ambiente vento + drone con modulazione di frequenza in base alla quota scavata (`setDepth(depthY)`), sospensione automatica dell'AudioContext quando la scheda non è visibile (`visibilitychange`).
   - Menu di Pausa in-game dedicato (`js/ui/PauseMenu.js`): pulsante "⚙️ Pausa" nell'HUD, ripresa spedizione, impostazioni rapide (volume master, mute, qualità grafica), salva ed esci sincronizzato.
   - Verificata con 34 test unitari complessivi e browser QA headless Chrome (5/5 PASSED).
+- [x] **M6** Meta-Progressione (New Game+), Eventi Spontanei nel Deserto e Finale Segreto:
+  - Meta-Progressione & Tavolette Antiche (`js/systems/Prestige.js` & `js/core/Save.js`):
+    - Formula ricompensa fine run: `tabletsEarned = Math.floor(Math.sqrt(totalSand / 100000)) + 5`.
+    - Persistenza tavolette (`state.tablets`, `save.getTablets()`, `dds_tablets_v1`) e perk permanenti attraverso le spedizioni.
+    - Santuario dei Predecessori (`js/ui/PrestigeModal.js`): accessibile dal Main Menu con indicatore `(τ X)` e dal PauseMenu in-game:
+      - *Eco della Pala (`shovelEcho`):* +15% potenza scavo base permanente per livello.
+      - *Progetto dell'Escavatore (`excavatorBlueprint`):* inizia le future spedizioni con 1 Automa Scarabeo già attivo per livello.
+      - *Magnetismo delle Tavolette (`tabletMagnetism`):* sconto progressivo del 5% sui costi di sabbia in Officina per livello (max 25%).
+  - Eventi Dinamici Spontanei (`js/systems/WorldEvents.js` & `js/ui/EventBanner.js`):
+    - Scheduler temporizzato con spawn ogni 3-5 minuti (e trigger di debug `triggerEvent('sandstorm'|'merchant')`).
+    - *Tempesta di Sabbia:* durata 30s, audio vento sferzante (`playStormSound()`), nebbia dorata densa, bonus +50% sabbia per colpo/SPS (`sandMultiplier = 1.5`), banner di notifica in alto e badge nell'HUD (`.hud-boost-tag`).
+    - *Mercante Nomade:* durata 60s, accampamento 3D low-poly sul bordo della duna (tenda, cassa oricalco, tappeto), banner in alto con azione "Commercia" che apre la modale di scambio (es. *Iper-Scavo Nomade* +100% sabbia per 45s a fronte di 150 sabbia).
+  - Finale Segreto — L'Ascensione di Atlantide (`js/endings/SecretEnding.js`):
+    - Condizione di sblocco: trigger automatico a completamento 100% se tutti i 3 finali base sono stati scoperti (`endingsSeen.length >= 3`) oppure via override URL `?ending=secret`.
+    - Climax visivo e sonoro: risveglio del cuore d'oricalco, 55 geyser di luce/acqua ciano emissiva (`0x0FE3C1`), levitazione poetica delle rovine cittadine, cielo aurorale e fanfara trionfale `playAscensionChime()`.
+    - Epilogo e Galleria: overlay dedicato con tema ciano/oricalco, testo narrativo trionfale, badge `🔱` e assegnazione del 4° trofeo nella Galleria dei Finali (`(X/4)`).
+  - Verificata con 41 test unitari complessivi (7 specifici M6, tutti passati) e suite end-to-end Puppeteer/Headless Chrome (6/6 PASSED, 0 errori console, screenshot salvati in `scratch/`).
 
 Piano dettagliato con codice e verifiche: vedi la sezione "Roadmap" sopra e le formule in `Ideas/upgrade_tree_specification.md`.
 

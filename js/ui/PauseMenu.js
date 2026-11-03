@@ -1,6 +1,7 @@
 // Menu di Pausa in-game dedicato (Fase 5 Polish & UI).
 // Fornisce opzioni rapide (audio, grafica), ripresa e salvataggio/uscita sincronizzato.
 import { formatNumber } from './Hud.js';
+import { PrestigeModal } from './PrestigeModal.js';
 
 export class PauseMenu {
   constructor(root = document.body, { game, settings, settingsModal, audio, save }) {
@@ -28,6 +29,8 @@ export class PauseMenu {
       const act = btn.dataset.act;
       if (act === 'resume') {
         this.close();
+      } else if (act === 'prestige') {
+        new PrestigeModal(this.game?.modal, this.save, this.game?.state, this.audio).open();
       } else if (act === 'settings') {
         this.settingsModal?.open?.();
       } else if (act === 'save-exit') {
@@ -116,6 +119,7 @@ export class PauseMenu {
 
         <div class="pause-actions">
           <button type="button" class="btn btn-resume" data-act="resume">Riprendi Spedizione</button>
+          <button type="button" class="btn btn-secondary" data-act="prestige">Santuario dei Predecessori (τ ${this.save?.getTablets?.() ?? 0})</button>
           <button type="button" class="btn btn-secondary" data-act="settings">Tutte le Impostazioni</button>
           <button type="button" class="btn btn-danger" data-act="save-exit">Salva ed Esci</button>
         </div>

@@ -16,6 +16,8 @@ import { EndingManager } from '../endings/EndingManager.js';
 import { Overlay } from '../ui/Overlay.js';
 import { Tutorial } from '../ui/Tutorial.js';
 import { PauseMenu } from '../ui/PauseMenu.js';
+import { EventBanner } from '../ui/EventBanner.js';
+import { WorldEvents } from '../systems/WorldEvents.js';
 import { Hud, formatNumber } from '../ui/Hud.js';
 
 import { Shop } from '../ui/Shop.js';
@@ -51,6 +53,8 @@ export class Game {
     this.shop = new Shop(shopRoot, { state: this.state, audio });
     this.overlay = new Overlay();
     this.endingManager = null;
+    this.banner = new EventBanner(document.body);
+    this.worldEvents = null;
     this.tutorial = new Tutorial(document.body, { state: this.state });
     this.pauseMenu = new PauseMenu(document.body, {
       game: this,
@@ -219,12 +223,27 @@ export class Game {
       game: this,
     });
 
+    // Sistema di eventi spontanei nel deserto (Tempesta, Mercante)
+    this.worldEvents = new WorldEvents({
+      scene: this.sceneMgr,
+      terrain: this.terrain,
+      state: this.state,
+      audio: this.audio,
+      particles: this.particles,
+      banner: this.banner,
+      modal: this.modal,
+    });
+
     this.sceneMgr.scene.add(this.group);
     this.digging.setTerrain(this.terrain);
     this.state.setCompletion(0);
   }
 
   _disposeWorld() {
+    if (this.worldEvents) {
+      this.worldEvents.dispose();
+      this.worldEvents = null;
+    }
     if (this.endingManager) {
       this.endingManager.dispose();
       this.endingManager = null;
@@ -312,6 +331,7 @@ export class Game {
     this.endingManager?.onProgress(this.state.completion);
     this.endingManager?.update(dt);
     this.tutorial?.update(dt);
+    this.worldEvents?.update(dt);
 
     // Throttling particellare intelligente in base alla flotta di lavoratori
     if (this.workers && this.particles?.setWorkerCount) {
@@ -429,6 +449,7 @@ export class Game {
     this.pauseMenu?.close();
     this.tutorial?.complete();
     this.overlay?.hide();
+    this.banner?.hide();
     this.digging.setEnabled(false);
     this.shop.close(true);
     this.sceneMgr.updaters.delete(this._tick);

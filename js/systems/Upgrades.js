@@ -107,10 +107,11 @@ export const UPGRADE_CATALOG = {
   },
 };
 
-/** Formula costi: Math.floor(baseCost * Math.pow(multiplier, level)). */
-export function getUpgradeCost(def, level = 0) {
+/** Formula costi: Math.floor(baseCost * Math.pow(multiplier, level)) con sconto opzionale. */
+export function getUpgradeCost(def, level = 0, discount = 0) {
   if (level >= def.maxLevel) return Infinity;
-  return Math.floor(def.baseCost * Math.pow(def.multiplier, level));
+  const raw = Math.floor(def.baseCost * Math.pow(def.multiplier, level));
+  return Math.max(1, Math.floor(raw * (1 - Math.min(0.25, Math.max(0, discount)))));
 }
 
 /** Calcola la produzione passiva totale al secondo (Sand Per Second - SPS). */
@@ -130,7 +131,8 @@ export function canAffordUpgrade(id, state) {
   if (!def) return false;
   const currentLvl = state.upgrades[id] ?? 0;
   if (currentLvl >= def.maxLevel) return false;
-  const cost = getUpgradeCost(def, currentLvl);
+  const discount = state?.costDiscount ?? 0;
+  const cost = getUpgradeCost(def, currentLvl, discount);
   return state.sand >= cost;
 }
 
@@ -140,7 +142,8 @@ export function buyUpgrade(id, state, audio = null) {
   if (!def) return false;
   const currentLvl = state.upgrades[id] ?? 0;
   if (currentLvl >= def.maxLevel) return false;
-  const cost = getUpgradeCost(def, currentLvl);
+  const discount = state?.costDiscount ?? 0;
+  const cost = getUpgradeCost(def, currentLvl, discount);
 
   if (!state.spend(cost)) return false;
 

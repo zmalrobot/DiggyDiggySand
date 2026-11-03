@@ -23,6 +23,13 @@ export const GALLERY_DATA = {
     hint: 'Raggiungi il fondo sterile per un anticlimax memorabile.',
     description: 'Nessun dio, nessun tesoro: solo un secchiello e una flotta di macchinari quotata per miliardi in borsa!',
   },
+  secret: {
+    id: 'secret',
+    name: 'L\'Ascensione di Atlantide',
+    badge: '🔱',
+    hint: 'Scopri prima tutti e 3 i destini della duna per risvegliare l\'antico cuore d\'Oricalco.',
+    description: 'Hai risvegliato il cuore perduto di Atlantide: la città risorge in volo verso il cielo.',
+  },
 };
 
 export class GalleryModal {
@@ -34,7 +41,7 @@ export class GalleryModal {
   open() {
     const seen = new Set(this.save?.getEndingsSeen?.() ?? []);
     const count = seen.size;
-    const total = 3;
+    const total = 4;
     const pct = Math.round((count / total) * 100);
 
     const wrap = document.createElement('div');

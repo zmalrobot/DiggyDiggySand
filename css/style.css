@@ -479,6 +479,20 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
 .overlay-card.ending-business .epilogue-title { color: #FFFFFF; }
 .overlay-card.ending-business .epilogue-sub { color: var(--atlantis-teal); }
 
+.overlay-card.ending-secret {
+  border-color: var(--atlantis-teal);
+  box-shadow: inset 0 0 0 2px var(--atlantis-teal), 0 0 50px rgba(15, 227, 193, 0.7), 0 0 80px rgba(216, 125, 56, 0.35);
+  background: radial-gradient(circle at center, rgba(15, 227, 193, 0.15) 0%, rgba(3, 24, 38, 0.94) 75%);
+}
+.overlay-card.ending-secret .epilogue-title {
+  color: var(--gold-glow);
+  text-shadow: 0 0 24px var(--atlantis-teal), 0 0 12px var(--gold-pharaoh);
+}
+.overlay-card.ending-secret .epilogue-sub {
+  color: var(--atlantis-teal);
+  text-shadow: 0 0 12px var(--atlantis-teal);
+}
+
 /* Griglia statistiche run */
 .stats-grid {
   display: grid;
@@ -925,6 +939,249 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
     grid-template-columns: 1fr;
     gap: 8px;
   }
+}
+
+/* ==========================================================================
+   Fase 6: Eventi Spontanei nel Deserto, Santuario Predecessori & Epilogo Segreto
+   ========================================================================== */
+
+/* Top Event Banner */
+.event-banner {
+  position: fixed;
+  top: 76px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-30px);
+  z-index: 150;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.2), opacity 0.35s ease;
+  width: calc(100% - 32px);
+  max-width: 540px;
+}
+.event-banner.visible {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+.event-banner.hidden {
+  display: none;
+}
+.event-banner-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 18px;
+  width: 100%;
+  background: rgba(3, 24, 38, 0.94);
+  border: 1.5px solid var(--atlantis-teal);
+  box-shadow: 0 6px 26px rgba(0, 0, 0, 0.65), 0 0 18px rgba(15, 227, 193, 0.35);
+}
+.event-banner-icon {
+  font-size: 1.8rem;
+  flex-shrink: 0;
+}
+.event-banner-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.event-banner-title {
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--gold-glow);
+  letter-spacing: 0.05em;
+}
+.event-banner-msg {
+  font-size: 0.82rem;
+  color: var(--text-main);
+  line-height: 1.3;
+}
+.event-banner-btn {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  font-size: 0.82rem;
+  min-height: 38px;
+  background: linear-gradient(180deg, rgba(216, 125, 56, 0.4), rgba(140, 88, 40, 0.6));
+  border-color: var(--gold-pharaoh);
+  color: var(--gold-glow);
+}
+
+/* HUD Boost Tag */
+.hud-boost-tag {
+  font-family: var(--font-heading);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 3px 8px;
+  background: rgba(15, 227, 193, 0.15);
+  border: 1px solid var(--atlantis-teal);
+  box-shadow: 0 0 10px rgba(15, 227, 193, 0.3);
+  margin-top: 4px;
+  display: inline-block;
+  animation: boostPulse 1.4s ease-in-out infinite alternate;
+}
+@keyframes boostPulse {
+  0% { transform: scale(0.98); opacity: 0.85; }
+  100% { transform: scale(1.02); opacity: 1; box-shadow: 0 0 16px rgba(15, 227, 193, 0.5); }
+}
+
+/* Santuario dei Predecessori (Meta-Progressione) */
+.prestige-container {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 540px;
+}
+.prestige-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.prestige-currency {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-family: var(--font-heading);
+}
+.currency-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.currency-val {
+  font-family: var(--font-data);
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--atlantis-teal);
+  text-shadow: 0 0 14px rgba(15, 227, 193, 0.5);
+}
+.prestige-intro {
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+.prestige-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.prestige-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: rgba(10, 42, 64, 0.6);
+  border: 1px solid rgba(15, 227, 193, 0.25);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.prestige-card.card-max {
+  border-color: var(--ui-border-gold);
+  background: rgba(15, 45, 65, 0.7);
+}
+.prestige-badge {
+  font-size: 2rem;
+  flex-shrink: 0;
+  width: 44px;
+  text-align: center;
+}
+.prestige-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+.prestige-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.prestige-title {
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+.prestige-lvl {
+  font-family: var(--font-data);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.prestige-benefit {
+  font-family: var(--font-data);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--atlantis-teal);
+}
+.prestige-desc {
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+.prestige-action {
+  flex-shrink: 0;
+}
+.btn-meta {
+  min-width: 80px;
+  padding: 8px 14px;
+  font-family: var(--font-data);
+  font-size: 0.85rem;
+  font-weight: 700;
+  background: linear-gradient(180deg, rgba(15, 227, 193, 0.25), rgba(0, 180, 216, 0.45));
+  border-color: var(--atlantis-teal);
+  color: #FFFFFF;
+}
+.btn-meta:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: var(--text-muted);
+}
+
+/* Mercante Nomade Modal */
+.merchant-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 480px;
+}
+.merchant-offers {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.merchant-offer-card {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: rgba(10, 42, 64, 0.65);
+  border: 1px solid var(--ui-border-gold);
+}
+.offer-title {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--gold-glow);
+}
+.offer-desc {
+  font-size: 0.84rem;
+  color: var(--text-main);
+  line-height: 1.4;
+}
+.btn-offer {
+  align-self: flex-start;
+  margin-top: 4px;
+  padding: 10px 18px;
+  font-size: 0.85rem;
+  background: linear-gradient(180deg, rgba(216, 125, 56, 0.45), rgba(140, 88, 40, 0.65));
+  border-color: var(--gold-pharaoh);
+  color: var(--gold-glow);
 }
 
 

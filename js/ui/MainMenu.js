@@ -1,6 +1,7 @@
-// Menu principale: Nuova Spedizione, Continua, Impostazioni, Crediti, Galleria Finali.
+// Menu principale: Nuova Spedizione, Continua, Impostazioni, Crediti, Galleria Finali, Santuario Predecessori.
 import { events } from '../core/Events.js';
 import { GalleryModal } from './GalleryModal.js';
+import { PrestigeModal } from './PrestigeModal.js';
 
 export class MainMenu {
   constructor(root, { save, modal, settingsModal, audio, scene }) {
@@ -11,6 +12,7 @@ export class MainMenu {
     this.audio = audio;
     this.scene = scene;
     this.galleryModal = new GalleryModal(modal, save);
+    this.prestigeModal = new PrestigeModal(modal, save, null, audio);
     this._build();
   }
 
@@ -25,11 +27,12 @@ export class MainMenu {
         <nav class="panel menu-panel" aria-label="Menu principale">
           <button type="button" class="btn" data-act="new">Nuova Spedizione</button>
           <button type="button" class="btn" data-act="continue">Continua</button>
-          <button type="button" class="btn" data-act="gallery">Finali Scoperti (<span class="gallery-count">0</span>/3)</button>
+          <button type="button" class="btn" data-act="gallery">Finali Scoperti (<span class="gallery-count">0</span>/4)</button>
+          <button type="button" class="btn btn-prestige" data-act="prestige">Santuario dei Predecessori (<span class="tablets-count">τ 0</span>)</button>
           <button type="button" class="btn" data-act="settings">Impostazioni</button>
           <button type="button" class="btn" data-act="credits">Crediti</button>
         </nav>
-        <footer class="menu-foot muted">v4.0 · Fase 4</footer>
+        <footer class="menu-foot muted">v6.0 · Fase 6</footer>
       </div>`;
     this.root.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-act]');
@@ -38,6 +41,8 @@ export class MainMenu {
     });
     this.continueBtn = this.root.querySelector('[data-act="continue"]');
     this.galleryCount = this.root.querySelector('.gallery-count');
+    this.tabletsCount = this.root.querySelector('.tablets-count');
+    events.on('meta:bought', () => this.refresh());
   }
 
   show() {
@@ -48,7 +53,7 @@ export class MainMenu {
 
   hide() { this.root.classList.add('hidden'); }
 
-  /** Aggiorna lo stato di "Continua" e contatore finali in base al salvataggio. */
+  /** Aggiorna lo stato di "Continua", finali scoperti e tavolette in base al salvataggio. */
   refresh() {
     const has = this.save.hasValidSave();
     this.continueBtn.disabled = !has;
@@ -57,10 +62,18 @@ export class MainMenu {
     if (this.galleryCount) {
       this.galleryCount.textContent = seen.length.toString();
     }
+    if (this.tabletsCount) {
+      const tab = this.save.getTablets?.() ?? 0;
+      this.tabletsCount.textContent = `τ ${tab}`;
+    }
   }
 
   _gallery() {
     this.galleryModal.open();
+  }
+
+  _prestige() {
+    this.prestigeModal.open();
   }
 
   async _new() {

@@ -25,6 +25,9 @@ export class State {
     this.clicks = Number.isFinite(data.clicks) ? Math.max(0, data.clicks) : 0;
     this.startTime = data.startTime ?? data.createdAt ?? Date.now();
     this.tutorialDone = !!data.tutorialDone;
+    this.tablets = Number.isFinite(data.tablets) ? Math.max(0, data.tablets) : 0;
+    this.metaUpgrades = { ...(data.metaUpgrades ?? {}) };
+    this.sandMultiplier = 1.0;
     this.lastSaved = data.lastSaved ?? data.lastSeen ?? Date.now();
   }
 
@@ -36,15 +39,19 @@ export class State {
     return Math.max(0, Math.floor((Date.now() - (this.startTime || Date.now())) / 1000));
   }
 
+  get costDiscount() {
+    return Math.min(0.25, (this.metaUpgrades.tabletMagnetism ?? 0) * 0.05);
+  }
 
-  /** Statistiche correnti derivate dai livelli degli upgrade. */
+  /** Statistiche correnti derivate dai livelli degli upgrade e dai meta-perk. */
   get stats() {
     const n = this.upgrades;
     const freqLvl = n.frequency ?? 0;
     // Formula U1.2: TickInterval = max(0.06s, 0.35s * 0.93^n)
     const interval = freqLvl === 0 ? 0.5 : Math.max(MIN_TICK, 0.35 * Math.pow(0.93, freqLvl));
+    const echoBonus = 1 + (this.metaUpgrades.shovelEcho ?? 0) * 0.15;
     return {
-      power: BASE_STATS.power + (n.shovel ?? 0),
+      power: (BASE_STATS.power + (n.shovel ?? 0)) * echoBonus,
       radius: BASE_STATS.radius + 0.45 * (n.radius ?? 0),
       digRate: freqLvl === 0 ? BASE_STATS.digRate : Math.min(1 / MIN_TICK, 1 / interval),
     };
@@ -52,9 +59,10 @@ export class State {
 
   addSand(amount) {
     if (!(amount > 0)) return;
-    this.sand += amount;
-    this.totalSand += amount;
-    events.emit('sand:changed', { sand: this.sand, delta: amount });
+    const actual = amount * (this.sandMultiplier || 1.0);
+    this.sand += actual;
+    this.totalSand += actual;
+    events.emit('sand:changed', { sand: this.sand, delta: actual });
   }
 
   /** Spende sabbia se disponibile. Ritorna true se l'acquisto è riuscito. */
@@ -85,6 +93,8 @@ export class State {
       clicks: this.clicks,
       startTime: this.startTime,
       tutorialDone: this.tutorialDone,
+      tablets: this.tablets,
+      metaUpgrades: this.metaUpgrades,
       lastSaved: Date.now(),
       lastSeen: Date.now(),
     };

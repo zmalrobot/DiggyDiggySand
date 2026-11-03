@@ -3,6 +3,8 @@
 import { CurseEnding } from './CurseEnding.js';
 import { TreasureEnding } from './TreasureEnding.js';
 import { BusinessEnding } from './BusinessEnding.js';
+import { SecretEnding } from './SecretEnding.js';
+import { calculateTabletsEarned } from '../systems/Prestige.js';
 import { events } from '../core/Events.js';
 
 export const ENDING_THRESHOLD = 0.98; // Trigger automatico a completamento quasi totale (98%-100%)
@@ -30,6 +32,9 @@ export class EndingManager {
   _initEnding() {
     const id = this.state?.endingId || 'curse';
     switch (id) {
+      case 'secret':
+        this.activeEnding = new SecretEnding();
+        break;
       case 'treasure':
         this.activeEnding = new TreasureEnding();
         break;
@@ -81,7 +86,14 @@ export class EndingManager {
       // Registra l'ending scoperto tra i trofei
       this.save?.recordEnding?.(result.endingId);
 
-      // Presenta l'epilogo a tutto schermo
+      // Assegna Tavolette Antiche τ calcolate sulla sabbia totale estratta
+      const tabletsEarned = calculateTabletsEarned(this.state?.totalSand ?? 0);
+      this.save?.addTablets?.(tabletsEarned);
+      if (this.state) {
+        this.state.tablets = this.save?.getTablets?.() ?? 0;
+      }
+
+      // Presenta l'epilogo a tutto schermo con Tavolette Antiche
       this.overlay?.show({
         ...result,
         stats: {
@@ -89,13 +101,14 @@ export class EndingManager {
           sandTotal: this.state?.totalSand ?? 0,
           clicks: this.state?.clicks ?? 0,
           completion: this.state?.completion ?? 1.0,
+          tabletsEarned,
         },
         onRestart: () => this.game?.startNewRun?.(),
         onMenu: () => this.game?.returnToMenu?.(),
         onSandbox: result.sandboxAvailable ? () => this.enterSandbox() : null,
       });
 
-      events.emit('ending:completed', result);
+      events.emit('ending:completed', { ...result, tabletsEarned });
     });
   }
 

@@ -1,0 +1,210 @@
+// Gestione degli Eventi Spontanei nel Deserto (Tempesta di Sabbia, Mercante Nomade).
+import * as THREE from 'three';
+import { events } from '../core/Events.js';
+import { toast } from '../ui/Modal.js';
+
+export class WorldEvents {
+  constructor({ scene, terrain, state, audio, particles, banner, modal }) {
+    this.scene = scene;
+    this.terrain = terrain;
+    this.state = state;
+    this.audio = audio;
+    this.particles = particles;
+    this.banner = banner;
+    this.modal = modal;
+
+    this.timer = 0;
+    this.nextEventTime = 180 + Math.random() * 120; // 3-5 minuti
+    this.activeEvent = null; // null | 'sandstorm' | 'merchant'
+    this.eventDuration = 0;
+
+    this.merchantMesh = null;
+    this.boostTimer = 0;
+    this.origFogDensity = null;
+    this.origFogColor = null;
+  }
+
+  update(dt) {
+    // Aggiornamento eventuale boost residuo
+    if (this.boostTimer > 0) {
+      this.boostTimer -= dt;
+      if (this.boostTimer <= 0) {
+        this.state.sandMultiplier = 1.0;
+        events.emit('event:boost', { active: false, label: '' });
+      }
+    }
+
+    // Avanzamento evento attivo
+    if (this.activeEvent) {
+      this.eventDuration -= dt;
+      if (this.eventDuration <= 0) {
+        this._endActiveEvent();
+      }
+      return;
+    }
+
+    // Conteggio per il prossimo evento spontaneo
+    this.timer += dt;
+    if (this.timer >= this.nextEventTime) {
+      this.timer = 0;
+      this.nextEventTime = 180 + Math.random() * 120;
+      const pick = Math.random() < 0.5 ? 'sandstorm' : 'merchant';
+      this.triggerEvent(pick);
+    }
+  }
+
+  /** Forza l'attivazione di un evento (utile anche per test e debug). */
+  triggerEvent(type) {
+    if (this.activeEvent) this._endActiveEvent();
+
+    if (type === 'sandstorm') {
+      this._startSandstorm();
+    } else if (type === 'merchant') {
+      this._startMerchant();
+    }
+  }
+
+  _startSandstorm() {
+    this.activeEvent = 'sandstorm';
+    this.eventDuration = 30; // 30s
+
+    this.audio?.playStormSound?.();
+    if (this.scene?.scene?.fog) {
+      this.origFogDensity = this.scene.scene.fog.density;
+      this.origFogColor = this.scene.scene.fog.color.clone();
+      this.scene.scene.fog.density = 0.012;
+      this.scene.scene.fog.color.setHex(0xC89849);
+    }
+
+    this.state.sandMultiplier = 1.5;
+    events.emit('event:boost', { active: true, label: '⚡ Tempesta: +50% Sabbia (30s)' });
+
+    this.banner?.show({
+      icon: '🌪️',
+      title: 'Tempesta di Sabbia!',
+      message: 'Un vento impetuoso solleva la duna: +50% Sabbia per ogni colpo (30s)!',
+      duration: 6000,
+    });
+  }
+
+  _startMerchant() {
+    this.activeEvent = 'merchant';
+    this.eventDuration = 60; // 60s
+    this._spawnMerchantCamp();
+
+    this.banner?.show({
+      icon: '🐪',
+      title: 'Carovana Nomade',
+      message: 'Un mercante del deserto si è accampato ai margini dello scavo!',
+      actionLabel: 'Commercia',
+      duration: 10000,
+      onAction: () => this.openMerchantOffer(),
+    });
+  }
+
+  _spawnMerchantCamp() {
+    this._removeMerchantCamp();
+    const g = new THREE.Group();
+
+    // Tenda a cupola/piramide low-poly con drappo oricalco e paletto
+    const tentGeo = new THREE.ConeGeometry(2.0, 2.4, 4);
+    const tentMat = new THREE.MeshStandardMaterial({
+      color: 0xD87D38,
+      flatShading: true,
+      roughness: 0.7,
+    });
+    const tent = new THREE.Mesh(tentGeo, tentMat);
+    tent.position.set(0, 1.2, 0);
+
+    // Cassa merci
+    const boxGeo = new THREE.BoxGeometry(0.8, 0.6, 0.8);
+    const boxMat = new THREE.MeshStandardMaterial({ color: 0xF5BA23, roughness: 0.4, flatShading: true });
+    const crate = new THREE.Mesh(boxGeo, boxMat);
+    crate.position.set(1.4, 0.3, 0.6);
+
+    g.add(tent, crate);
+
+    // Posiziona al bordo dello scavo
+    const x = 28, z = 28;
+    const y = this.terrain ? this.terrain.heightAt(x, z) : 12;
+    g.position.set(x, y, z);
+
+    this.merchantMesh = g;
+    this.scene?.scene?.add(g);
+  }
+
+  _removeMerchantCamp() {
+    if (this.merchantMesh) {
+      this.scene?.scene?.remove(this.merchantMesh);
+      this.merchantMesh.traverse((o) => {
+        if (o.isMesh) {
+          o.geometry?.dispose?.();
+          o.material?.dispose?.();
+        }
+      });
+      this.merchantMesh = null;
+    }
+  }
+
+  openMerchantOffer() {
+    if (!this.activeEvent || this.activeEvent !== 'merchant') return;
+    const content = document.createElement('div');
+    content.className = 'merchant-modal';
+    content.innerHTML = `
+      <p class="muted">"Il deserto nasconde segreti a chi ha fretta, ma ricompensa chi sa commerciare."</p>
+      <div class="merchant-offers">
+        <div class="merchant-offer-card panel">
+          <div class="offer-title">Iper-Scavo Nomade</div>
+          <div class="offer-desc">+100% Sabbia per i prossimi 45 secondi.</div>
+          <button type="button" class="btn btn-offer" data-offer="boost">Acquista (150 Sabbia)</button>
+        </div>
+      </div>
+    `;
+
+    content.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-offer]');
+      if (!btn) return;
+      if (this.state.sand >= 150) {
+        this.state.spend(150);
+        this.state.sandMultiplier = 2.0;
+        this.boostTimer = 45;
+        events.emit('event:boost', { active: true, label: '✨ Iper-Scavo (x2.0): 45s' });
+        toast('Hai acquistato Iper-Scavo Nomade! (+100% Sabbia per 45s)');
+        this.modal?.close?.();
+        this._endActiveEvent();
+      } else {
+        toast('Sabbia insufficiente per questa merce!');
+      }
+    });
+
+    this.modal?.open?.({
+      title: 'Mercante Nomade',
+      content,
+      actions: [{ label: 'Rinuncia' }],
+    });
+  }
+
+  _endActiveEvent() {
+    if (this.activeEvent === 'sandstorm') {
+      if (this.scene?.scene?.fog && this.origFogDensity !== null) {
+        this.scene.scene.fog.density = this.origFogDensity;
+        if (this.origFogColor) this.scene.scene.fog.color.copy(this.origFogColor);
+      }
+      this.state.sandMultiplier = 1.0;
+      events.emit('event:boost', { active: false, label: '' });
+      toast('La tempesta di sabbia si è placata.');
+    } else if (this.activeEvent === 'merchant') {
+      this._removeMerchantCamp();
+      toast('La carovana nomade è ripartita per le dune.');
+    }
+    this.activeEvent = null;
+    this.eventDuration = 0;
+    this.banner?.hide?.();
+  }
+
+  dispose() {
+    this._endActiveEvent();
+    this.boostTimer = 0;
+  }
+}
+
