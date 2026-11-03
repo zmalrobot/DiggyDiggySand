@@ -523,6 +523,19 @@ export class AudioEngine {
     src.start(t);
   }
 
+  /** Modula progressivamente il vento ambientale durante la tempesta di sabbia (0..1). */
+  setStormWind(intensity = 0, rampTime = 0.3) {
+    if (!this.ambientFilters || !this._ok()) return;
+    const t = this.ctx.currentTime;
+    const clamped = Math.max(0, Math.min(1, intensity));
+    const targetGain = 0.08 + clamped * 0.36;
+    const bpFreq = 380 + clamped * 380;
+    const lpFreq = 320 + clamped * 420;
+    this.ambientFilters.windGain?.gain?.setTargetAtTime(targetGain, t, rampTime);
+    this.ambientFilters.bp?.frequency?.setTargetAtTime(bpFreq, t, rampTime);
+    this.ambientFilters.lp?.frequency?.setTargetAtTime(lpFreq, t, rampTime);
+  }
+
   /** Fanfara aurorale ed eco d'oricalco per l'Ascensione di Atlantide. */
   playAscensionChime() {
     if (!this._ok()) return;

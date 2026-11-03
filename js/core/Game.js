@@ -28,6 +28,7 @@ import { StatsModal } from '../ui/StatsModal.js';
 import { CosmeticsManager } from '../systems/CosmeticsManager.js';
 import { WardrobeModal } from '../ui/WardrobeModal.js';
 import { BiomeManager, BIOME_CATALOG } from '../world/BiomeManager.js';
+import { CameraController } from '../world/Camera.js';
 import { i18n } from './I18n.js';
 
 const WORLD_SIZE = 200;
@@ -247,7 +248,14 @@ export class Game {
     const biomeCfg = BIOME_CATALOG[biome] || BIOME_CATALOG.desert;
     this.state.sandMultiplier = biomeCfg.mechanics?.sandValueMultiplier ?? 1.0;
 
-    this.terrain = new Terrain({ size: WORLD_SIZE, res: coarse ? 128 : 256, startHeight: 12, floor: 0, biome });
+    this.terrain = new Terrain({
+      size: WORLD_SIZE,
+      res: coarse ? 128 : 256,
+      startHeight: 12,
+      floor: 0,
+      biome,
+      maxAnisotropy: this.sceneMgr?.maxAnisotropy ?? 16,
+    });
     this.group.add(this.terrain.group);
 
     // Città sepolta procedurale differenziata per bioma (Y=0..8.8)
@@ -383,6 +391,7 @@ export class Game {
     c.mouseButtons = { LEFT: -1, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE };
     c.touches = { ONE: -1, TWO: THREE.TOUCH.DOLLY_ROTATE };
     this.controls = c;
+    this.cameraController = new CameraController(cam, this.controls, this.canvas);
     if (this.endingManager) this.endingManager.controls = c;
     this._unsubSens = this.settings.subscribe('controls.cameraSens', (v) => { c.rotateSpeed = v; }, { immediate: true });
   }
@@ -402,11 +411,13 @@ export class Game {
         this.phase = 'play';
         this.controls.update();
         this.controls.enabled = !this.paused;
+        this.cameraController?._syncFromCamera?.();
         this.digging.setEnabled(!this.paused);
         this.tutorial?.start();
       }
     } else {
       this._keyboardPan(dt);
+      this.cameraController?.update(dt, this.keys);
       this.controls.update();
       this._clampTarget();
     }
@@ -504,6 +515,7 @@ export class Game {
     this.paused = p;
     if (this.phase !== 'play') return;
     this.controls.enabled = !p;
+    if (this.cameraController) this.cameraController.enabled = !p;
     this.digging.setEnabled(!p);
     if (p) this.keys.clear();
   }
@@ -559,6 +571,7 @@ export class Game {
     this.debugTools?.close?.();
     this.sceneMgr.updaters.delete(this._tick);
     this._unsubSens?.();
+    if (this.cameraController) { this.cameraController.dispose(); this.cameraController = null; }
     if (this.controls) { this.controls.dispose(); this.controls = null; }
     this.sceneMgr.scene.remove(this.group);
     this._disposeWorld();

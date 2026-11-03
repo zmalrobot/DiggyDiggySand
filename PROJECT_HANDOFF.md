@@ -323,6 +323,19 @@ Verifiche manuali da fare: valori persistiti dopo il ricaricamento; `localStorag
     - `Ideas/asset_manifest_download_guide.md`: formalizzazione architettura asset a doppio binario (asincrono GLTF/audio con fallback procedurale `ProceduralFactory` e `SoundSynth`) e gestione timeout.
     - `README.md`: riscrittura completa, badge aggiornati a 92 test, tabella controlli, guida cheat e comandi console `window.DDS_DEBUG`.
 
+- [x] **M17** Nitidezza Texture (2048x2048 & Max Anisotropia), Transizioni Continue e Controlli Camera (Q/E & Wheel Zoom):
+  - Qualità e Definizione Texture (Anti-Blur & Anisotropia Massima):
+    - *Anisotropia Massima Automatica:* helper `configureTextureAnisotropy(texture, maxAnisotropy)` integrato in `SceneManager.js`, `AssetLoader.js` e `Terrain.js`, configurando `renderer.capabilities.getMaxAnisotropy()`, `LinearMipmapLinearFilter`, `LinearFilter` e `generateMipmaps` su ogni texture procedurale e modello GLTF.
+    - *Micro-Texture Procedurale 2048x2048:* introdotta `createSandMicroTexture()` in `Terrain.js`, che sintetizza un canvas ad altissima risoluzione con grana minerale e glint brillanti di silice/quarzo. Applicata come `roughnessMap` e `bumpMap` (`bumpScale: 0.04`, `repeat.set(64, 64)`, `wrapS = wrapT = RepeatWrapping`) preservando `flatShading: true` e la palette cromatica dei biomi.
+  - Transizioni Fluide e Continue (Giorno/Notte & Eventi Atmosferici):
+    - *Ciclo Giorno/Notte Continuo (`DayNightCycle.js` & `Sky.js`):* rimossi tutti gli switch a soglia discreta. S-curve continua (`THREE.MathUtils.smoothstep`) per `nightFactor`, curva gaussiana per `sunsetFactor`, e lerp continuo a 4 stop cromatici su canvas per il gradiente della volta celeste. Sole, emisferica e nebbia interpolati dolcemente senza scatti.
+    - *Dissolvenza Torce/Lanterne (`Torches.js`):* rampa morbida con `smoothstep(nightFactor, 0.02, 0.35)`, fiamma semitrasparente e intensità d'illuminazione graduale all'imbrunire.
+    - *Tempeste di Sabbia Progressive (`WorldEvents.js` & `AudioEngine.js`):* transizione graduale di 2.5 secondi per entrata e uscita. La nebbia si infittisce dolcemente verso l'ocra dorato `#C89849`, e il nuovo metodo `AudioEngine.setStormWind(intensity)` alza progressivamente il guadagno del vento e la frequenza del filtro passa-banda.
+  - Controlli Camera Avanzati (`js/world/Camera.js`):
+    - *Rotazione Orbitale Q/E:* rotazione orbitale con tasti `KeyQ` (orario) e `KeyE` (antiorario), accelerazione angolare ed esponenziale smorzamento inerziale per rotazioni cinematografiche fluide anche durante lo scavo.
+    - *Zoom Cinematico con Wheel:* intercettazione eventi rotellina con `e.preventDefault()`, damping esponenziale della distanza e clamping rigoroso tra `12.0m` (fondo dello scavo) e `135.0m` (panoramica completa).
+  - Verificata con 96 test unitari complessivi (4 suite specifiche M17 in `tests/phase16.test.mjs`, 100% superati) e browser QA end-to-end (`tests/phase16_browser_qa.mjs`, 0 errori console, screenshot `dds_qa_camera_zoomed_grain.png`, `dds_qa_camera_rotated_qe.png`, `dds_qa_storm_fade_in.png`).
+
 Piano dettagliato con codice e verifiche: vedi la sezione "Roadmap" sopra e le formule in `Ideas/upgrade_tree_specification.md`.
 
 ## 6. Convenzioni

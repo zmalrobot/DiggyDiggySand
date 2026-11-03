@@ -40,10 +40,10 @@ export class Torches {
       );
       brazier.position.set(cfg.x, cfg.y - 0.2, cfg.z);
 
-      // Fiamma luminescente
+      // Fiamma luminescente con trasparenza per rampa di accensione morbida
       const flame = new THREE.Mesh(
         new THREE.OctahedronGeometry(0.2, 0),
-        new THREE.MeshBasicMaterial({ color: 0xFFBA44 })
+        new THREE.MeshBasicMaterial({ color: 0xFFBA44, transparent: true, opacity: 0.0 })
       );
       flame.position.set(cfg.x, cfg.y + 0.15, cfg.z);
 
@@ -65,22 +65,27 @@ export class Torches {
   update(dt, nightFactor) {
     this._time += dt;
 
+    // Rampa continua e graduale tra 0.02 e 0.35 nightFactor
+    const ramp = THREE.MathUtils.smoothstep(nightFactor, 0.02, 0.35);
+
     for (let i = 0; i < this.lights.length; i++) {
       const item = this.lights[i];
-      if (nightFactor <= 0.05) {
+      if (ramp <= 0.001) {
         item.light.intensity = 0;
         item.flame.visible = false;
+        if (item.flame.material) item.flame.material.opacity = 0;
         continue;
       }
 
       item.flame.visible = true;
+      if (item.flame.material) item.flame.material.opacity = ramp;
 
       // Sfarfallio procedurale morbido
       const flicker1 = Math.sin(this._time * 11 + item.phase) * 0.12;
       const flicker2 = Math.sin(this._time * 23 + item.phase * 2) * 0.08;
       const flicker = 1.0 + flicker1 + flicker2;
 
-      const targetIntensity = BASE_INTENSITY * nightFactor * flicker;
+      const targetIntensity = BASE_INTENSITY * ramp * flicker;
       item.light.intensity = Math.max(0, targetIntensity);
 
       // Micro pulsazione scala fiamma

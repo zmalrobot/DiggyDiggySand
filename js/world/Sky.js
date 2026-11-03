@@ -69,10 +69,12 @@ export class Sky {
   }
 
   _buildMoon() {
-    // Disco lunare oricalco/argento
+    // Disco lunare oricalco/argento con dissolvenza continua all'orizzonte
     const geo = new THREE.SphereGeometry(4.5, 12, 12);
     const mat = new THREE.MeshBasicMaterial({
       color: 0xE8F4F8,
+      transparent: true,
+      opacity: 0.0,
     });
     this.moonMat = mat;
     this.moon = new THREE.Mesh(geo, mat);
@@ -97,9 +99,14 @@ export class Sky {
     if (this.moon) {
       if (moonPos) {
         this.moon.position.copy(moonPos);
-        this.moon.visible = moonPos.y > -10;
+        const moonOpacity = THREE.MathUtils.smoothstep(moonPos.y, -12, 6);
+        if (this.moonMat) this.moonMat.opacity = moonOpacity;
+        this.moon.visible = moonOpacity > 0.001;
       } else {
         this.moon.position.y = -40 + nightFactor * 85;
+        const moonOpacity = THREE.MathUtils.smoothstep(this.moon.position.y, -12, 6);
+        if (this.moonMat) this.moonMat.opacity = moonOpacity;
+        this.moon.visible = moonOpacity > 0.001;
       }
     }
   }

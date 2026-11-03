@@ -186,9 +186,45 @@ export function layerColor(y, i, out = new THREE.Color(), biome = currentBiome, 
   return out.multiplyScalar(0.94 + h * 0.12);
 }
 
+/** Genera una micro-texture procedurale 2048x2048 per grana della sabbia e glint di quarzo con anisotropia massima. */
+export function createSandMicroTexture({ size = 2048, maxAnisotropy = 16 } = {}) {
+  if (typeof document === 'undefined' || !document.createElement) return null;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+
+  const img = ctx.createImageData(size, size);
+  const buf = new Uint32Array(img.data.buffer);
+  const total = size * size;
+  let seed = 42831;
+
+  for (let i = 0; i < total; i++) {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    const n = (seed >>> 24);
+    // Variazione di grana con micro-glint brillanti di quarzo e venature minerali
+    const isGlitter = (n > 248);
+    const lum = isGlitter ? 255 : Math.floor(175 + (n / 255) * 65);
+    buf[i] = 0xFF000000 | (lum << 16) | (lum << 8) | lum;
+  }
+
+  ctx.putImageData(img, 0, 0);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(64, 64);
+  texture.anisotropy = Math.max(1, maxAnisotropy || 1);
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.generateMipmaps = true;
+  texture.needsUpdate = true;
+  return texture;
+}
 
 export class Terrain {
-  constructor({ size = 200, res = 256, startHeight = 12, floor = 0, biome = 'desert', flat = false } = {}) {
+  constructor({ size = 200, res = 256, startHeight = 12, floor = 0, biome = 'desert', flat = false, maxAnisotropy = 16 } = {}) {
     this.size = size;
     this.res = res;
     this.expeditionBiome = BIOME_CATALOG[biome] ? biome : 'desert';
@@ -258,7 +294,19 @@ export class Terrain {
     this.geometry.computeBoundingSphere();
     this.geometry.computeBoundingBox();
 
-    this.material = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.95, metalness: 0 });
+    this.sandGrainTexture = createSandMicroTexture({ size: 2048, maxAnisotropy });
+    const matConfig = {
+      vertexColors: true,
+      flatShading: true,
+      roughness: 0.94,
+      metalness: 0.04,
+    };
+    if (this.sandGrainTexture) {
+      matConfig.roughnessMap = this.sandGrainTexture;
+      matConfig.bumpMap = this.sandGrainTexture;
+      matConfig.bumpScale = 0.04;
+    }
+    this.material = new THREE.MeshStandardMaterial(matConfig);
     this.mesh = new THREE.Mesh(this.geometry, this.material);
     this.mesh.receiveShadow = true;
     this.mesh.castShadow = true;
@@ -572,6 +620,10 @@ export class Terrain {
   }
 
   dispose() {
+    if (this.sandGrainTexture) {
+      this.sandGrainTexture.dispose();
+      this.sandGrainTexture = null;
+    }
     this.geometry.dispose();
     this.material.dispose();
     this.group.traverse((o) => { if (o !== this.mesh && o.isMesh) { o.geometry?.dispose(); o.material?.dispose?.(); } });

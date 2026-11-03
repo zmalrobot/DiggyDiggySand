@@ -55,7 +55,10 @@ async function boot() {
   let scene = null;
   try {
     scene = new SceneManager(document.getElementById('game'), settings, assets);
-    if (scene.ok) scene.start();
+    if (scene.ok) {
+      if (scene.maxAnisotropy) assets.setMaxAnisotropy(scene.maxAnisotropy);
+      scene.start();
+    }
     else scene = null;
   } catch (e) {
     console.error('[DDS] scena 3D non inizializzata', e);

@@ -22,6 +22,12 @@ export class WorldEvents {
     this.boostTimer = 0;
     this.origFogDensity = null;
     this.origFogColor = null;
+
+    // Transizione graduale di 2.5s per nebbia dorata e raffiche di vento AudioEngine
+    this.stormFactor = 0;
+    this.stormTransition = 0; // 0 = idle, 1 = fade in, -1 = fade out
+    this.STORM_FADE_DURATION = 2.5;
+    this.STORM_FOG_COLOR = new THREE.Color(0xC89849);
   }
 
   update(dt) {
@@ -34,11 +40,36 @@ export class WorldEvents {
       }
     }
 
+    // Gestione transizione progressiva continua per la tempesta
+    if (this.stormTransition === 1) {
+      this.stormFactor = Math.min(1, this.stormFactor + dt / this.STORM_FADE_DURATION);
+      if (this.stormFactor >= 1) this.stormTransition = 0;
+    } else if (this.stormTransition === -1) {
+      this.stormFactor = Math.max(0, this.stormFactor - dt / this.STORM_FADE_DURATION);
+      if (this.stormFactor <= 0) {
+        this._finalizeStormEnd();
+        return;
+      }
+    }
+
+    if (this.stormFactor > 0 || this.activeEvent === 'sandstorm') {
+      if (this.scene?.scene?.fog && this.origFogColor) {
+        this.scene.scene.fog.density = THREE.MathUtils.lerp(this.origFogDensity, 0.0125, this.stormFactor);
+        this.scene.scene.fog.color.copy(this.origFogColor).lerp(this.STORM_FOG_COLOR, this.stormFactor);
+      }
+      this.audio?.setStormWind?.(this.stormFactor, 0.2);
+    }
+
     // Avanzamento evento attivo
     if (this.activeEvent) {
       this.eventDuration -= dt;
       if (this.eventDuration <= 0) {
-        this._endActiveEvent();
+        if (this.activeEvent === 'sandstorm' && this.stormTransition !== -1) {
+          this.stormTransition = -1; // Avvia dissolvenza morbida d'uscita (2.5s)
+          this.eventDuration = 0;
+        } else if (this.activeEvent !== 'sandstorm') {
+          this._endActiveEvent();
+        }
       }
       return;
     }
@@ -67,13 +98,12 @@ export class WorldEvents {
   _startSandstorm() {
     this.activeEvent = 'sandstorm';
     this.eventDuration = 30; // 30s
+    this.stormTransition = 1; // Avvia dissolvenza morbida d'entrata (2.5s)
 
     this.audio?.playStormSound?.();
     if (this.scene?.scene?.fog) {
       this.origFogDensity = this.scene.scene.fog.density;
       this.origFogColor = this.scene.scene.fog.color.clone();
-      this.scene.scene.fog.density = 0.012;
-      this.scene.scene.fog.color.setHex(0xC89849);
     }
 
     this.state.sandMultiplier = 1.5;
@@ -184,22 +214,31 @@ export class WorldEvents {
     });
   }
 
+  _finalizeStormEnd() {
+    if (this.scene?.scene?.fog && this.origFogDensity !== null) {
+      this.scene.scene.fog.density = this.origFogDensity;
+      if (this.origFogColor) this.scene.scene.fog.color.copy(this.origFogColor);
+    }
+    this.audio?.setStormWind?.(0, 0.1);
+    this.state.sandMultiplier = 1.0;
+    this.activeEvent = null;
+    this.stormTransition = 0;
+    this.stormFactor = 0;
+    events.emit('event:boost', { active: false, label: '' });
+    toast('La tempesta di sabbia si è placata.');
+    this.banner?.hide?.();
+  }
+
   _endActiveEvent() {
     if (this.activeEvent === 'sandstorm') {
-      if (this.scene?.scene?.fog && this.origFogDensity !== null) {
-        this.scene.scene.fog.density = this.origFogDensity;
-        if (this.origFogColor) this.scene.scene.fog.color.copy(this.origFogColor);
-      }
-      this.state.sandMultiplier = 1.0;
-      events.emit('event:boost', { active: false, label: '' });
-      toast('La tempesta di sabbia si è placata.');
+      this._finalizeStormEnd();
     } else if (this.activeEvent === 'merchant') {
       this._removeMerchantCamp();
       toast('La carovana nomade è ripartita per le dune.');
+      this.activeEvent = null;
+      this.eventDuration = 0;
+      this.banner?.hide?.();
     }
-    this.activeEvent = null;
-    this.eventDuration = 0;
-    this.banner?.hide?.();
   }
 
   dispose() {

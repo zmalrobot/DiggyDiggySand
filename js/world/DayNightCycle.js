@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { Sky } from './Sky.js';
 import { Torches } from './Torches.js';
 import { BIOME_CATALOG } from './BiomeManager.js';
+import { configureTextureAnisotropy } from './SceneManager.js';
 
 export const CYCLE_DURATION = 240; // 4 minuti per un ciclo completo (secondi)
 
@@ -63,6 +64,7 @@ export class DayNightCycle {
       this._bgCtx = this._bgCanvas.getContext('2d');
       this._bgTexture = new THREE.CanvasTexture(this._bgCanvas);
       this._bgTexture.colorSpace = THREE.SRGBColorSpace;
+      configureTextureAnisotropy(this._bgTexture, this.sm?.maxAnisotropy ?? 16);
       if (this.scene) this.scene.background = this._bgTexture;
     } else {
       this._bgCanvas = null;
@@ -142,11 +144,11 @@ export class DayNightCycle {
 
     // Calcolo altitudine normalizzata del sole (-1..1)
     const sinElev = Math.sin(angle);
-    // nightFactor: 0 a pieno giorno (sinElev > 0.2), 1 a notte fonda (sinElev < -0.15)
-    this.nightFactor = Math.max(0, Math.min(1, (-sinElev + 0.2) / 0.5));
+    // nightFactor: transizione ad S continua tramite smoothstep (0 a giorno, 1 a notte fonda)
+    this.nightFactor = THREE.MathUtils.smoothstep(-sinElev, -0.2, 0.3);
 
-    // sunsetFactor: picco a sinElev ~ 0 (orizzonte)
-    const sunsetFactor = Math.max(0, 1.0 - Math.abs(sinElev) * 4.5);
+    // sunsetFactor: curva gaussiana morbida con picco a sinElev ~ 0 (orizzonte alba/tramonto)
+    const sunsetFactor = Math.exp(-(sinElev * sinElev) * 20);
 
     this._updateAtmosphere(sinElev, sunsetFactor, this.nightFactor);
     this.sky.update(this.nightFactor, moonPos);
@@ -154,26 +156,26 @@ export class DayNightCycle {
   }
 
   _updateAtmosphere(sinElev, sunsetFactor, nightFactor) {
-    // 1. Luce Solare / Lunare
+    // 1. Luce Solare / Lunare (interpolazione continua senza salti o switch binari)
     if (this.sun) {
-      if (nightFactor >= 0.95) {
-        // Luce notturna lunare tenue
-        this.sun.color.copy(COLOR_SUN_NIGHT);
-        this.sun.intensity = 0.35;
-      } else {
-        const sunCol = this._sunDayColor.clone().lerp(COLOR_SUN_SUNSET, sunsetFactor);
-        this.sun.color.copy(sunCol);
-        this.sun.intensity = Math.max(0.4, 2.4 * (1.0 - nightFactor * 0.85));
-      }
+      const sunCol = this._sunDayColor.clone()
+        .lerp(COLOR_SUN_SUNSET, sunsetFactor)
+        .lerp(COLOR_SUN_NIGHT, nightFactor);
+      this.sun.color.copy(sunCol);
+
+      // Intensità sole/luna continua: da pieno sole (2.4) a tramonto (1.35) a luna (0.35)
+      const dayIntensity = THREE.MathUtils.lerp(2.4, 1.35, sunsetFactor);
+      const curIntensity = THREE.MathUtils.lerp(dayIntensity, 0.35, nightFactor);
+      this.sun.intensity = Math.max(0.35, curIntensity);
     }
 
-    // 2. Luce Ambientale Emisferica (Intensità cielo notturno mai inferiore a 0.25)
+    // 2. Luce Ambientale Emisferica (Intensità cielo notturno garantita mai inferiore a 0.25)
     if (this.hemi) {
       const hemiSky = this._hemiSkyDayColor.clone().lerp(COLOR_HEMI_SKY_NIGHT, nightFactor);
       const hemiGnd = this._hemiGndDayColor.clone().lerp(COLOR_HEMI_GND_NIGHT, nightFactor);
       this.hemi.color.copy(hemiSky);
       this.hemi.groundColor.copy(hemiGnd);
-      this.hemi.intensity = Math.max(0.25, 0.9 - nightFactor * 0.62);
+      this.hemi.intensity = Math.max(0.25, THREE.MathUtils.lerp(0.9, 0.28, nightFactor));
     }
 
     // Luce Ambientale Floor: mantiene sempre attiva l'illuminazione minima dal suolo
@@ -181,7 +183,7 @@ export class DayNightCycle {
       this.sm.ambientLight.intensity = 0.15;
     }
 
-    // 3. Nebbia (Fog)
+    // 3. Nebbia (Fog) continua
     if (this.scene?.fog) {
       const fogCol = this._fogDayColor.clone()
         .lerp(COLOR_FOG_SUNSET, sunsetFactor)
@@ -189,7 +191,7 @@ export class DayNightCycle {
       this.scene.fog.color.copy(fogCol);
     }
 
-    // 4. Gradiente Sfondo Cielo Dinamico
+    // 4. Gradiente Sfondo Cielo Dinamico continuo frame per frame
     this._renderSkyGradient(sunsetFactor, nightFactor);
   }
 
@@ -198,24 +200,32 @@ export class DayNightCycle {
     const g = this._bgCtx;
     const grad = g.createLinearGradient(0, 0, 0, 256);
 
-    if (nightFactor > 0.85) {
-      // Notte Abisso Stellare
-      grad.addColorStop(0, '#02060a');
-      grad.addColorStop(0.5, '#060b11');
-      grad.addColorStop(1, '#0b1522');
-    } else if (sunsetFactor > 0.25) {
-      // Tramonto Cremisi & Oro
-      grad.addColorStop(0, '#2e153b');
-      grad.addColorStop(0.5, '#8c3e38');
-      grad.addColorStop(0.8, '#d96b34');
-      grad.addColorStop(1, '#f5ba23');
-    } else {
-      // Giorno adattato al bioma
-      grad.addColorStop(0, this._skyStops.top);
-      grad.addColorStop(0.55, this._skyStops.mid);
-      grad.addColorStop(0.85, this._skyStops.horizon);
-      grad.addColorStop(1, this._skyStops.bottom);
-    }
+    // Stop cromatici per ciascuna fase
+    const dayTop = new THREE.Color(this._skyStops.top);
+    const dayMid = new THREE.Color(this._skyStops.mid);
+    const dayHor = new THREE.Color(this._skyStops.horizon);
+    const dayBot = new THREE.Color(this._skyStops.bottom);
+
+    const sunsetTop = new THREE.Color(0x2E153B);
+    const sunsetMid = new THREE.Color(0x8C3E38);
+    const sunsetHor = new THREE.Color(0xD96B34);
+    const sunsetBot = new THREE.Color(0xF5BA23);
+
+    const nightTop = new THREE.Color(0x02060A);
+    const nightMid = new THREE.Color(0x060B11);
+    const nightHor = new THREE.Color(0x0B1522);
+    const nightBot = new THREE.Color(0x0D1A29);
+
+    // Interpolazione continua fluida senza switch a soglia
+    const curTop = dayTop.clone().lerp(sunsetTop, sunsetFactor).lerp(nightTop, nightFactor);
+    const curMid = dayMid.clone().lerp(sunsetMid, sunsetFactor).lerp(nightMid, nightFactor);
+    const curHor = dayHor.clone().lerp(sunsetHor, sunsetFactor).lerp(nightHor, nightFactor);
+    const curBot = dayBot.clone().lerp(sunsetBot, sunsetFactor).lerp(nightBot, nightFactor);
+
+    grad.addColorStop(0, curTop.getStyle());
+    grad.addColorStop(0.55, curMid.getStyle());
+    grad.addColorStop(0.85, curHor.getStyle());
+    grad.addColorStop(1, curBot.getStyle());
 
     g.fillStyle = grad;
     g.fillRect(0, 0, 2, 256);

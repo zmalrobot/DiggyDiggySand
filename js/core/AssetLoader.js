@@ -33,6 +33,7 @@ export class AssetLoader {
     this.models = new Map();   // id -> THREE.Object3D caricato
     this.pending = new Set();  // item ancora in corso (per il timeout globale)
     this.report = { loaded: [], fallback: [] };
+    this.maxAnisotropy = 16;
     this.manifest = null;
   }
 
@@ -109,7 +110,12 @@ export class AssetLoader {
     await Promise.all([...fonts, factory, ...models]);
   }
 
+  setMaxAnisotropy(val) {
+    this.maxAnisotropy = Math.max(1, val || 1);
+  }
+
   _prepareMesh(root) {
+    const texKeys = ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'bumpMap', 'aoMap', 'emissiveMap'];
     root.traverse((o) => {
       if (o.isMesh) {
         o.castShadow = true;
@@ -118,6 +124,16 @@ export class AssetLoader {
           if (mt) {
             mt.flatShading = true;
             mt.roughness = Math.max(0.2, mt.roughness ?? 0.5);
+            for (const k of texKeys) {
+              const tex = mt[k];
+              if (tex && typeof tex === 'object' && tex.isTexture) {
+                tex.anisotropy = this.maxAnisotropy;
+                tex.minFilter = THREE.LinearMipmapLinearFilter;
+                tex.magFilter = THREE.LinearFilter;
+                tex.generateMipmaps = true;
+                tex.needsUpdate = true;
+              }
+            }
             mt.needsUpdate = true;
           }
         });

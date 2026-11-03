@@ -19,6 +19,16 @@ export function terrainHeight(x, z) {
 const fract = (n) => n - Math.floor(n);
 const faceHash = (i) => fract(Math.sin(i * 12.9898) * 43758.5453);
 
+/** Configura l'anisotropia massima e filtri lineari per garantire nitidezza su superfici e texture. */
+export function configureTextureAnisotropy(texture, maxAnisotropy = 16) {
+  if (!texture || typeof texture !== 'object') return;
+  texture.anisotropy = Math.max(1, maxAnisotropy || 1);
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.generateMipmaps = true;
+  texture.needsUpdate = true;
+}
+
 export class SceneManager {
   constructor(canvas, settings, assets) {
     this.canvas = canvas;
@@ -52,6 +62,7 @@ export class SceneManager {
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.0;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.maxAnisotropy = this.renderer.capabilities?.getMaxAnisotropy?.() ?? 16;
 
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(50, 1, 0.5, 400);
@@ -94,6 +105,7 @@ export class SceneManager {
     g.fillRect(0, 0, 2, 256);
     const tex = new THREE.CanvasTexture(c);
     tex.colorSpace = THREE.SRGBColorSpace;
+    configureTextureAnisotropy(tex, this.maxAnisotropy);
     this.scene.background = tex;
     this.scene.fog = new THREE.FogExp2(0xd9b97a, 0.011);
   }
