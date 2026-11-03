@@ -27,6 +27,7 @@ import { Achievements } from '../systems/Achievements.js';
 import { StatsModal } from '../ui/StatsModal.js';
 import { CosmeticsManager } from '../systems/CosmeticsManager.js';
 import { WardrobeModal } from '../ui/WardrobeModal.js';
+import { BiomeManager, BIOME_CATALOG } from '../world/BiomeManager.js';
 import { i18n } from './I18n.js';
 
 const WORLD_SIZE = 200;
@@ -39,7 +40,7 @@ const PAN_SPEED = 38; // m/s con WASD / frecce
 const smoothstep = (t) => t * t * (3 - 2 * t);
 
 export class Game {
-  constructor({ scene, settings, audio, save, modal, settingsModal, menu, canvas, hudRoot, assets = null, cosmeticsManager = null, wardrobeModal = null }) {
+  constructor({ scene, settings, audio, save, modal, settingsModal, menu, canvas, hudRoot, assets = null, cosmeticsManager = null, wardrobeModal = null, biomeManager = null }) {
     this.sceneMgr = scene;
     this.settings = settings;
     this.audio = audio;
@@ -61,6 +62,7 @@ export class Game {
     });
     this.statsModal = new StatsModal(this.modal, this.statsManager, this.achievements, this.audio);
     this.cosmeticsManager = cosmeticsManager ?? new CosmeticsManager(this.save);
+    this.biomeManager = biomeManager ?? menu?.biomeManager ?? new BiomeManager(this.save, this.statsManager);
     this.wardrobeModal = wardrobeModal ?? new WardrobeModal(this.modal, this.cosmeticsManager, this.save, this.audio, this);
     if (!this.wardrobeModal.game) this.wardrobeModal.game = this;
 
@@ -232,12 +234,23 @@ export class Game {
     this.particles.alive = 0;
     this.particles.mesh.count = 0;
     const coarse = window.matchMedia?.('(pointer: coarse)').matches;
-    this.terrain = new Terrain({ size: WORLD_SIZE, res: coarse ? 128 : 256, startHeight: 12, floor: 0 });
+    const biome = this.state.currentBiome || this.biomeManager?.currentBiome || 'desert';
+    this.state.currentBiome = biome;
+
+    const biomeCfg = BIOME_CATALOG[biome] || BIOME_CATALOG.desert;
+    this.state.sandMultiplier = biomeCfg.mechanics?.sandValueMultiplier ?? 1.0;
+
+    this.terrain = new Terrain({ size: WORLD_SIZE, res: coarse ? 128 : 256, startHeight: 12, floor: 0, biome });
     this.group.add(this.terrain.group);
 
-    // Città sepolta procedurale (collocata sotto la sabbia tra Y=0 e Y=8.8)
-    this.city = new City({ endingId: this.state.endingId, floor: this.terrain.floor, assets: this.assets });
+    // Città sepolta procedurale differenziata per bioma (Y=0..8.8)
+    this.city = new City({ endingId: this.state.endingId, floor: this.terrain.floor, assets: this.assets, biome });
     this.group.add(this.city.group);
+
+    // Particelle, Audio e Atmosfera adattati al bioma attivo
+    this.particles.setBiome(biome);
+    this.audio?.setBiome?.(biome);
+    this.sceneMgr?.dayNight?.setBiome?.(biome);
 
     // Sistema lavoratori 3D
     this.workers = new Workers({
@@ -286,9 +299,11 @@ export class Game {
     this.sceneMgr.scene.add(this.group);
     this.digging.setTerrain(this.terrain);
 
-    // Applica personalizzazioni cosmetiche equipaggiate
+    // Applica personalizzazioni cosmetiche equipaggiate (sovrascrive la sabbia solo se diversa da sand_classic o nel bioma desert)
     const sandSkin = this.cosmeticsManager?.getEquipped('sand');
-    if (sandSkin) this.terrain.setBiomePalette(sandSkin);
+    if (sandSkin && (sandSkin !== 'sand_classic' || biome === 'desert')) {
+      this.terrain.setBiomePalette(sandSkin);
+    }
     const machSkin = this.cosmeticsManager?.getEquipped('machinery');
     if (machSkin) this.workers.setSkin(machSkin);
     const shovelSkin = this.cosmeticsManager?.getEquipped('shovel');
@@ -491,10 +506,11 @@ export class Game {
 
 
   /** Avvia direttamente una nuova spedizione (usato dall'overlay epilogo). */
-  async startNewRun() {
+  async startNewRun(biomeOverride = null) {
     this.overlay?.hide();
+    const biome = biomeOverride || this.state.currentBiome || this.biomeManager?.currentBiome || 'desert';
     this.save.clear();
-    const data = this.save.createNew();
+    const data = this.save.createNew({ biome });
     this._leave();
     await this.start(data);
   }

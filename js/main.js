@@ -16,6 +16,8 @@ import { StatsManager } from './core/StatsManager.js';
 import { Achievements } from './systems/Achievements.js';
 import { CosmeticsManager } from './systems/CosmeticsManager.js';
 import { WardrobeModal } from './ui/WardrobeModal.js';
+import { BiomeManager } from './world/BiomeManager.js';
+import { BiomeSelectModal } from './ui/BiomeSelectModal.js';
 
 window.addEventListener('error', (e) => console.error('[DDS] errore non gestito', e.error ?? e.message));
 window.addEventListener('unhandledrejection', (e) => console.error('[DDS] promise rifiutata', e.reason));
@@ -63,9 +65,12 @@ async function boot() {
   const settingsModal = new SettingsModal({ settings, modal, save, audio });
   const cosmeticsManager = new CosmeticsManager(save);
   const wardrobeModal = new WardrobeModal(modal, cosmeticsManager, save, audio, null);
+  const biomeManager = new BiomeManager(save, statsManager);
+  const biomeSelectModal = new BiomeSelectModal(biomeManager, save, statsManager, audio, null);
   const menu = new MainMenu(document.getElementById('menu'), {
-    save, modal, settingsModal, audio, scene, statsManager, achievements, cosmeticsManager, wardrobeModal,
+    save, modal, settingsModal, audio, scene, statsManager, achievements, cosmeticsManager, wardrobeModal, biomeManager, biomeSelectModal,
   });
+  biomeSelectModal.onConfirmBiome = (chosenBiome) => menu.startNewExpedition(chosenBiome);
   document.addEventListener('dds:save-cleared', () => menu.refresh());
 
   // Fase 1: "Nuova Spedizione" / "Continua" (eventi game:new / game:continue) avviano la partita.
@@ -73,7 +78,7 @@ async function boot() {
     scene, settings, audio, save, modal, settingsModal, menu,
     canvas: document.getElementById('game'),
     hudRoot: document.getElementById('hud'),
-    cosmeticsManager, wardrobeModal,
+    cosmeticsManager, wardrobeModal, biomeManager,
   });
 
   // Suite di Debug e Memory Audit (Fase 7)
@@ -81,7 +86,7 @@ async function boot() {
   game.debugTools = debugTools;
 
   // Hook di debug per i test.
-  window.__dds = { settings, settingsModal, audio, save, scene, assets, menu, game, debugTools, statsManager, achievements, cosmeticsManager, wardrobeModal, i18n };
+  window.__dds = { settings, settingsModal, audio, save, scene, assets, menu, game, debugTools, statsManager, achievements, cosmeticsManager, wardrobeModal, biomeManager, biomeSelectModal, i18n };
 
   await startClicked;
   menu.show();

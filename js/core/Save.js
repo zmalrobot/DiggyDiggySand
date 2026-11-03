@@ -161,7 +161,7 @@ export class Save {
   }
 
   /** Nuova spedizione: genera il seed (da cui sarà scelto il finale) e scrive il salvataggio. */
-  createNew() {
+  createNew({ biome = 'desert' } = {}) {
     const seed = (crypto.getRandomValues(new Uint32Array(1))[0]) | 0;
     const seen = this.getEndingsSeen();
     const endingId = pickEnding(seed, seen);
@@ -178,6 +178,7 @@ export class Save {
       version: SAVE_VERSION,
       seed,
       endingId,
+      currentBiome: biome || 'desert',
       createdAt: Date.now(),
       lastSaved: Date.now(),
       sand: 0,

@@ -41,6 +41,8 @@ export class DebugTools {
       unlockAchievement: (id) => this.unlockAchievement(id),
       setTimeOfDay: (val) => this.setTimeOfDay(val),
       unlockAllSkins: () => this.unlockAllSkins(),
+      unlockAllBiomes: () => this.unlockAllBiomes(),
+      setBiome: (biomeId) => this.setBiome(biomeId),
       setLanguage: (lang) => this.setLanguage(lang),
       cleanVRAM: () => this.cleanVRAM(),
       resetAll: (hard) => this.resetAll(hard),
@@ -155,6 +157,31 @@ export class DebugTools {
       return true;
     }
     return false;
+  }
+
+  unlockAllBiomes() {
+    const bMgr = this.game?.biomeManager ?? window.__dds?.biomeManager;
+    if (bMgr) {
+      bMgr.unlockAll();
+      toast('[DEBUG] Tutti i biomi di spedizione sbloccati!');
+      return true;
+    }
+    return false;
+  }
+
+  setBiome(biomeId = 'ocean') {
+    const bMgr = this.game?.biomeManager ?? window.__dds?.biomeManager;
+    if (bMgr) {
+      bMgr.unlockAll();
+      bMgr.selectBiome(biomeId);
+    }
+    if (this.game?.running) {
+      this.game.startNewRun(biomeId);
+    } else if (window.__dds?.menu) {
+      window.__dds.menu.startNewExpedition(biomeId);
+    }
+    toast(`[DEBUG] Bioma di spedizione impostato: ${biomeId}`);
+    return biomeId;
   }
 
   setLanguage(lang = 'en') {

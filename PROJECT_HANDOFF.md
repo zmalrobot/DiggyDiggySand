@@ -14,8 +14,8 @@ Condotta con l'utente (Simone):
 - Non dichiarare "fatto" senza verifica reale. Dire sempre cosa NON è stato verificato.
 
 ## 1. Stato reale
-**Milestones 0, 0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 e 11 COMPLETATE E VERIFICATE.**
-73 test unitari automatici su 73 passati con successo (100% green).
+**Milestones 0, 0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 e 12 COMPLETATE E VERIFICATE.**
+78 test unitari automatici su 78 passati con successo (100% green).
 Server locale `http://127.0.0.1:8080` attivo e collaudato con browser headless.
 0 errori o warning critici nella console del browser.
 
@@ -220,6 +220,27 @@ Verifiche manuali da fare: valori persistiti dopo il ricaricamento; `localStorag
     - Impostazione `graphics.dayNightCycle` ('auto' | 'day' | 'night') in `SettingsModal.js` e persistenza su `localStorage`.
     - Comandi debug `setTimeOfDay(time)` e `unlockAllSkins()` su `window.DDS_DEBUG`.
   - Verificata con 73 test unitari complessivi (7 specifici M11, 100% superati) e browser testing end-to-end.
+
+- [x] **M12** Spedizioni nei Biomi Alternativi (Oceano Prosciugato, Ghiacciaio Arcaico e Giungla Sepolta):
+  - Manager dei Biomi (`js/world/BiomeManager.js`):
+    - Configurazione strutturata dei 4 biomi giocabili (`BIOME_CATALOG`):
+      - *Deserto d'Oro (`desert`):* parametri base originali.
+      - *Oceano Prosciugato (`ocean`):* strati `#f5e6ca` (sabbia corallina), `#4a7c82` (sedimenti marini), `#1b3240` (basamento abissale); bolle d'aria effimere e frammenti di conchiglie dorate; resistenza `-20%` (`0.8`), volume `+15%` (`1.15`), valore sabbia `+25%`.
+      - *Ghiacciaio Arcaico (`glacier`):* strati `#e8f4f8` (neve compatta), `#7baec2` (permafrost traslucido), `#2a3b45` (roccia scistosa); strato intermedio con resistenza `+35%` (`midLayerResistance: 1.35`), schegge di ghiaccio cristalline, valore sabbia `+35%`.
+      - *Giungla Sepolta (`jungle`):* strati `#3d5c38` (humus con muschio), `#5c4028` (argilla densa), `#2e241c` (arenaria umida); radici sepolte per chunk (`rootDurability = 3`) che bloccano il `35%` del raggio dello scavo finché non spezzate con 3 colpi multipli, valore sabbia `+40%`.
+    - Sblocco biomi tramite vittorie (`runsCompleted` / `endingsSeen`) oppure spendendo Tavolette Antiche τ (`unlockWithTablets`), con persistenza su `dds_biomes_v1`.
+  - Generazione Rovine Differenziata (`js/world/City.js`):
+    - *Oceano:* nave sommersa spezzata in due con prua cabrata verso l'alto (`sunkenShip`), archi di conchiglie giganti (`shellArches`) e colonne incrostate di cristalli marini luminescenti.
+    - *Ghiacciaio:* monolite esagonale centrale di ghiaccio (`iceMonolith`), guglie cristalline (`crystallineSpires`) e templi congelati in rovina.
+    - *Giungla:* grande tempio a ziggurat a 5 gradoni bassi (`steppedZiggurat`), blocchi monolitici avvolti da radici e menhir incisi con glifi smeraldo (`engravedMenhirs`).
+    - Reperto finale (`curseSeal`, `treasureChest`, `businessBucket`) preservato al centro in ogni bioma.
+  - Selettore di Spedizione nel Menu Principale (`js/ui/BiomeSelectModal.js`):
+    - Modale con 4 schede `<article class="biome-card">` con illustrazioni vettoriali SVG dedicate, campioni colore strati, descrizione lore, badge modificatori attivi e sblocco con τ o vittorie.
+  - Adattamento Audio & Atmosfera (`js/core/AudioEngine.js` & `js/world/DayNightCycle.js`):
+    - Profili sonori procedurali dedicati (`setBiome`): risacca marina e colpi acquatici ovattati (Oceano), vento polare e tintinnio cristallino del permafrost (Ghiacciaio), ronzio tropicale e tonfi sordi su terra umida (Giungla).
+    - Luce solare, nebbia volumetrica (`scene.fog`) e gradiente cielo adattati dinamicamente alla palette del bioma attivo.
+  - Persistenza `currentBiome` in `State.js` e `Save.js`, più comandi debug `setBiome(id)` e `unlockAllBiomes()` su `window.DDS_DEBUG`.
+  - Verificata con 78 test unitari complessivi (5 suite specifiche M12 in `tests/phase12.test.mjs`, 100% superati) e verifica browser end-to-end (`tests/phase12_browser_qa.mjs`, 0 errori console).
 
 Piano dettagliato con codice e verifiche: vedi la sezione "Roadmap" sopra e le formule in `Ideas/upgrade_tree_specification.md`.
 

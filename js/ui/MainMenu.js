@@ -4,11 +4,13 @@ import { GalleryModal } from './GalleryModal.js';
 import { PrestigeModal } from './PrestigeModal.js';
 import { StatsModal } from './StatsModal.js';
 import { WardrobeModal } from './WardrobeModal.js';
+import { BiomeSelectModal } from './BiomeSelectModal.js';
 import { CosmeticsManager } from '../systems/CosmeticsManager.js';
+import { BiomeManager } from '../world/BiomeManager.js';
 import { i18n } from '../core/I18n.js';
 
 export class MainMenu {
-  constructor(root, { save, modal, settingsModal, audio, scene, statsManager, achievements, cosmeticsManager, wardrobeModal }) {
+  constructor(root, { save, modal, settingsModal, audio, scene, statsManager, achievements, cosmeticsManager, wardrobeModal, biomeManager, biomeSelectModal }) {
     this.root = root;
     this.save = save;
     this.modal = modal;
@@ -18,10 +20,18 @@ export class MainMenu {
     this.statsManager = statsManager;
     this.achievements = achievements;
     this.cosmeticsManager = cosmeticsManager ?? new CosmeticsManager(save);
+    this.biomeManager = biomeManager ?? new BiomeManager(save, statsManager);
     this.galleryModal = new GalleryModal(modal, save);
     this.prestigeModal = new PrestigeModal(modal, save, null, audio);
     this.statsModal = new StatsModal(modal, statsManager, achievements, audio);
     this.wardrobeModal = wardrobeModal ?? new WardrobeModal(modal, this.cosmeticsManager, save, audio, null);
+    this.biomeSelectModal = biomeSelectModal ?? new BiomeSelectModal(
+      this.biomeManager,
+      save,
+      statsManager,
+      audio,
+      (chosenBiome) => this.startNewExpedition(chosenBiome),
+    );
     this._build();
   }
 
@@ -43,7 +53,7 @@ export class MainMenu {
           <button type="button" class="btn" data-act="settings" data-i18n="menu.settings">Impostazioni</button>
           <button type="button" class="btn" data-act="credits" data-i18n="menu.credits">Crediti</button>
         </nav>
-        <footer class="menu-foot muted">v11.0 · Fase 11</footer>
+        <footer class="menu-foot muted">v12.0 · Fase 12</footer>
       </div>`;
     this.root.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-act]');
@@ -54,6 +64,7 @@ export class MainMenu {
     this.galleryCount = this.root.querySelector('.gallery-count');
     this.tabletsCount = this.root.querySelector('.tablets-count');
     events.on('meta:bought', () => this.refresh());
+    events.on('biome:unlocked', () => this.refresh());
     events.on('i18n:changed', () => this.refresh());
   }
 
@@ -108,10 +119,17 @@ export class MainMenu {
       });
       if (!ok) return;
     }
-    const data = this.save.createNew();
+    this.biomeSelectModal.open((chosenBiome) => this.startNewExpedition(chosenBiome));
+  }
+
+  startNewExpedition(biomeId = null) {
+    const biome = biomeId || this.biomeManager?.currentBiome || 'desert';
+    this.biomeManager?.selectBiome(biome);
+    const data = this.save.createNew({ biome });
     this.scene?.shake(0.5);
     this.refresh();
     events.emit('game:new', data);
+    return data;
   }
 
   _continue() {

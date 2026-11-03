@@ -13,6 +13,7 @@ export class Particles {
     this.settings = settings;
     this.capacity = BUDGET.high[0];
     this.activeWorkers = 0;
+    this.currentBiome = 'desert';
 
     const geo = new THREE.TetrahedronGeometry(0.11, 0);
     const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, flatShading: true, roughness: 0.7, emissive: 0x3a2a08, emissiveIntensity: 0.35 });
@@ -31,6 +32,7 @@ export class Particles {
     this.life = new Float32Array(n); this.maxLife = new Float32Array(n);
     this.size = new Float32Array(n);
     this.rot = new Float32Array(n); this.spin = new Float32Array(n);
+    this.pkind = new Uint8Array(n); // 0 = sand/stone, 1 = bubble (ocean), 2 = ice shard (glacier)
     this.alive = 0;
     this._dummy = new THREE.Object3D();
     this._color = new THREE.Color();
@@ -41,6 +43,10 @@ export class Particles {
 
   get maxAlive() { return BUDGET[this.quality]?.[0] ?? BUDGET.med[0]; }
   get emitFactor() { return BUDGET[this.quality]?.[1] ?? BUDGET.med[1]; }
+
+  setBiome(biomeId) {
+    this.currentBiome = biomeId || 'desert';
+  }
 
   setWorkerCount(count) {
     this.activeWorkers = Math.max(0, count);
@@ -81,18 +87,50 @@ export class Particles {
   _spawn(i, x, y, z, radius, color, sparks) {
     const a = Math.random() * Math.PI * 2;
     const spread = (0.6 + Math.random() * 1.4) * Math.min(2.5, 0.8 + radius * 0.5);
+    const isOcean = this.currentBiome === 'ocean';
+    const isGlacier = this.currentBiome === 'glacier';
+    const isJungle = this.currentBiome === 'jungle';
+
+    const isBubble = isOcean && Math.random() < 0.45;
+    const isIceShard = isGlacier && Math.random() < 0.55;
     const isSpark = sparks && Math.random() < 0.3;
+
+    this.pkind[i] = isBubble ? 1 : (isIceShard ? 2 : 0);
     this.px[i] = x + Math.cos(a) * radius * 0.25 * Math.random();
     this.py[i] = y + 0.05;
     this.pz[i] = z + Math.sin(a) * radius * 0.25 * Math.random();
-    this.vx[i] = Math.cos(a) * spread;
-    this.vz[i] = Math.sin(a) * spread;
-    this.vy[i] = 4.5 + Math.random() * 4.5; // fontana
-    this.maxLife[i] = this.life[i] = 0.4 + Math.random() * 0.3;
-    this.size[i] = (isSpark ? 0.7 : 0.6 + Math.random() * 0.8) * Math.min(1.6, 0.7 + radius * 0.2);
-    this.rot[i] = Math.random() * 6.28;
-    this.spin[i] = (Math.random() - 0.5) * 14;
-    this._color.set(isSpark ? PALETTE_3D.particleSpark : color);
+
+    if (isBubble) {
+      // Bolle d'aria effimere che salgono dolcemente
+      this.vx[i] = Math.cos(a) * spread * 0.45;
+      this.vz[i] = Math.sin(a) * spread * 0.45;
+      this.vy[i] = 2.8 + Math.random() * 3.2;
+      this.maxLife[i] = this.life[i] = 0.55 + Math.random() * 0.35;
+      this.size[i] = (0.5 + Math.random() * 0.7) * Math.min(1.5, 0.7 + radius * 0.18);
+      this.rot[i] = Math.random() * 6.28;
+      this.spin[i] = (Math.random() - 0.5) * 4;
+      this._color.set(Math.random() < 0.35 ? 0xf5ba23 : 0x9be0e8); // Conchiglie dorate o bolle celesti
+    } else if (isIceShard) {
+      // Schegge di ghiaccio cristalline ad alta rotazione
+      this.vx[i] = Math.cos(a) * spread * 1.25;
+      this.vz[i] = Math.sin(a) * spread * 1.25;
+      this.vy[i] = 5.2 + Math.random() * 5.0;
+      this.maxLife[i] = this.life[i] = 0.45 + Math.random() * 0.3;
+      this.size[i] = (0.65 + Math.random() * 0.75) * Math.min(1.6, 0.7 + radius * 0.2);
+      this.rot[i] = Math.random() * 6.28;
+      this.spin[i] = (Math.random() - 0.5) * 22;
+      this._color.set(Math.random() < 0.5 ? 0xe8f4f8 : 0x00f2ff);
+    } else {
+      this.vx[i] = Math.cos(a) * spread;
+      this.vz[i] = Math.sin(a) * spread;
+      this.vy[i] = 4.5 + Math.random() * 4.5; // fontana
+      this.maxLife[i] = this.life[i] = 0.4 + Math.random() * 0.3;
+      this.size[i] = (isSpark ? 0.7 : 0.6 + Math.random() * 0.8) * Math.min(1.6, 0.7 + radius * 0.2);
+      this.rot[i] = Math.random() * 6.28;
+      this.spin[i] = (Math.random() - 0.5) * 14;
+      const sparkHex = isJungle ? 0x2ecc71 : (isOcean ? 0xf5ba23 : PALETTE_3D.particleSpark);
+      this._color.set(isSpark ? sparkHex : color);
+    }
     this._color.multiplyScalar(0.85 + Math.random() * 0.3);
     this.mesh.setColorAt(i, this._color);
   }
@@ -110,7 +148,12 @@ export class Particles {
         if (i !== n) this._copy(n, i);
         continue;
       }
-      this.vy[i] -= GRAVITY * dt;
+      if (this.pkind[i] === 1) {
+        // Bolla d'aria: galleggiamento leggero verso l'alto con oscillazione
+        this.vy[i] += 1.5 * dt;
+      } else {
+        this.vy[i] -= GRAVITY * dt;
+      }
       this.px[i] += this.vx[i] * dt;
       this.py[i] += this.vy[i] * dt;
       this.pz[i] += this.vz[i] * dt;
@@ -129,7 +172,7 @@ export class Particles {
   }
 
   _copy(from, to) {
-    for (const k of ['px', 'py', 'pz', 'vx', 'vy', 'vz', 'life', 'maxLife', 'size', 'rot', 'spin']) this[k][to] = this[k][from];
+    for (const k of ['px', 'py', 'pz', 'vx', 'vy', 'vz', 'life', 'maxLife', 'size', 'rot', 'spin', 'pkind']) this[k][to] = this[k][from];
     this.mesh.getColorAt(from, this._color);
     this.mesh.setColorAt(to, this._color);
     this.mesh.instanceColor.needsUpdate = true;

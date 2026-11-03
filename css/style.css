@@ -1785,6 +1785,259 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
   box-shadow: 0 0 12px rgba(15, 227, 193, 0.35);
 }
 
+/* ==========================================================================
+   FASE 12: Selettore Biomi di Spedizione (BiomeSelectModal)
+   ========================================================================== */
+
+#biome-select-modal[hidden] {
+  display: none !important;
+}
+
+#biome-select-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 2100;
+  background: rgba(3, 24, 38, 0.72);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+.biome-modal-dialog {
+  --b: var(--bevel);
+  width: min(1100px, 96vw);
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 24px;
+  background:
+    linear-gradient(135deg, rgba(15, 227, 193, 0.08), transparent 40%),
+    var(--ui-bg);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  clip-path: polygon(
+    var(--b) 0, calc(100% - var(--b)) 0, 100% var(--b),
+    100% calc(100% - var(--b)), calc(100% - var(--b)) 100%,
+    var(--b) 100%, 0 calc(100% - var(--b)), 0 var(--b)
+  );
+  box-shadow:
+    inset 0 0 0 1.5px var(--ui-border-gold),
+    inset 0 0 0 4px rgba(3, 24, 38, 0.9),
+    inset 0 0 0 5px var(--ui-border-teal),
+    inset 0 0 28px rgba(15, 227, 193, 0.08);
+}
+
+.biome-modal-dialog .modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(200, 152, 73, 0.25);
+}
+
+.biome-modal-dialog .wardrobe-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.biome-modal-dialog .btn-icon {
+  background: rgba(3, 24, 38, 0.8);
+  border: 1px solid var(--ui-border-gold);
+  color: var(--gold-glow);
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.biome-modal-dialog .btn-icon:hover {
+  border-color: var(--atlantis-teal);
+  color: var(--text-main);
+}
+
+.biome-modal-subtitle {
+  margin: 0.2rem 0 0;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: rgba(244, 232, 193, 0.72);
+}
+
+.biome-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(195px, 1fr));
+  gap: 0.9rem;
+  padding: 1rem 0.5rem;
+  overflow-y: auto;
+}
+
+@media (max-width: 920px) {
+  .biome-cards-grid {
+    grid-template-columns: repeat(2, minmax(190px, 1fr));
+  }
+}
+
+@media (max-width: 540px) {
+  .biome-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.biome-card {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  background: rgba(6, 16, 26, 0.84);
+  border: 1px solid rgba(200, 152, 73, 0.35);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  padding: 0.85rem;
+  gap: 0.65rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.biome-card.is-unlocked {
+  cursor: pointer;
+}
+
+.biome-card.is-unlocked:hover {
+  border-color: rgba(15, 227, 193, 0.7);
+  transform: translateY(-2px);
+}
+
+.biome-card.is-selected {
+  border-color: var(--atlantis-teal);
+  box-shadow: 0 0 18px rgba(15, 227, 193, 0.28), inset 0 0 14px rgba(15, 227, 193, 0.12);
+}
+
+.biome-card.is-locked {
+  opacity: 0.88;
+  border-color: rgba(200, 152, 73, 0.22);
+}
+
+.biome-card__art {
+  position: relative;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.biome-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.biome-card__swatches {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  display: flex;
+  gap: 4px;
+  background: rgba(3, 12, 20, 0.75);
+  padding: 3px 5px;
+  border-radius: 4px;
+}
+
+.biome-swatch {
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.biome-swatch--vein {
+  border-radius: 50%;
+  box-shadow: 0 0 5px currentColor;
+}
+
+.biome-card__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.biome-card__title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 1.02rem;
+  color: var(--gold-bright);
+  letter-spacing: 0.04em;
+}
+
+.biome-card__subtitle {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 0.74rem;
+  color: var(--atlantis-teal);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.biome-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  flex: 1;
+}
+
+.biome-card__lore {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: rgba(244, 232, 193, 0.86);
+}
+
+.biome-card__modifier {
+  margin-top: auto;
+  padding: 0.38rem 0.55rem;
+  background: rgba(15, 227, 193, 0.1);
+  border: 1px solid rgba(15, 227, 193, 0.32);
+  border-radius: 4px;
+  font-family: var(--font-data);
+  font-size: 0.73rem;
+  font-weight: 600;
+  color: var(--atlantis-teal);
+}
+
+.biome-modifier-dot {
+  color: var(--gold-pharaoh);
+  margin-right: 0.25rem;
+}
+
+.biome-card__footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid rgba(200, 152, 73, 0.18);
+}
+
+.biome-lock-req {
+  font-family: var(--font-data);
+  font-size: 0.72rem;
+  color: rgba(245, 186, 35, 0.88);
+  text-align: center;
+}
+
+.biome-action-btn {
+  width: 100%;
+  font-size: 0.8rem;
+  padding: 0.45rem 0.6rem;
+}
+
+.biome-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 0.85rem 1.25rem;
+  border-top: 1px solid rgba(200, 152, 73, 0.25);
+}
+
+
 
 
 

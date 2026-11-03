@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { Sky } from './Sky.js';
 import { Torches } from './Torches.js';
+import { BIOME_CATALOG } from './BiomeManager.js';
 
 export const CYCLE_DURATION = 240; // 4 minuti per un ciclo completo (secondi)
 
@@ -35,6 +36,19 @@ export class DayNightCycle {
     this.timeOfDay = opts.initialTime ?? 0.45; // 0.0 = mezzanotte, 0.25 = alba, 0.5 = mezzogiorno, 0.75 = tramonto
     this.mode = 'auto'; // 'auto' | 'day' | 'night'
     this.paused = false;
+    this.currentBiome = opts.biome ?? 'desert';
+
+    this._sunDayColor = COLOR_SUN_DAY.clone();
+    this._fogDayColor = COLOR_FOG_DAY.clone();
+    this._hemiSkyDayColor = COLOR_HEMI_SKY_DAY.clone();
+    this._hemiGndDayColor = COLOR_HEMI_GND_DAY.clone();
+    this._skyStops = {
+      top: '#1d3b52',
+      mid: '#7d8f8c',
+      horizon: '#e0b979',
+      bottom: '#ecd599',
+    };
+    this._applyBiomePalette(this.currentBiome);
 
     this.sky = new Sky(this.scene);
     this.torches = new Torches(this.scene);
@@ -69,6 +83,30 @@ export class DayNightCycle {
   set time(t) { this.setTimeOfDay(t); }
 
   _applyTime(t) { this.setTimeOfDay(t); }
+
+  _applyBiomePalette(biomeId = 'desert') {
+    const b = BIOME_CATALOG[biomeId] || BIOME_CATALOG.desert;
+    const atm = b.atmosphere;
+    if (atm) {
+      this._sunDayColor.set(atm.sunColor);
+      this._fogDayColor.set(atm.fogColor);
+      this._hemiSkyDayColor.set(atm.hemiSky);
+      this._hemiGndDayColor.set(atm.hemiGround);
+      this._skyStops = {
+        top: atm.skyTop,
+        mid: atm.skyMid,
+        horizon: atm.skyHorizon,
+        bottom: atm.skyBottom,
+      };
+    }
+  }
+
+  /** Imposta l'atmosfera e la nebbia volumetrica in base al bioma attivo. */
+  setBiome(biomeId = 'desert') {
+    this.currentBiome = BIOME_CATALOG[biomeId] ? biomeId : 'desert';
+    this._applyBiomePalette(this.currentBiome);
+    this.update(0);
+  }
 
   setMode(mode) {
     if (['auto', 'day', 'night'].includes(mode)) {
@@ -123,7 +161,7 @@ export class DayNightCycle {
         this.sun.color.copy(COLOR_SUN_NIGHT);
         this.sun.intensity = 0.35;
       } else {
-        const sunCol = COLOR_SUN_DAY.clone().lerp(COLOR_SUN_SUNSET, sunsetFactor);
+        const sunCol = this._sunDayColor.clone().lerp(COLOR_SUN_SUNSET, sunsetFactor);
         this.sun.color.copy(sunCol);
         this.sun.intensity = Math.max(0.4, 2.4 * (1.0 - nightFactor * 0.85));
       }
@@ -131,16 +169,16 @@ export class DayNightCycle {
 
     // 2. Luce Ambientale Emisferica
     if (this.hemi) {
-      const hemiSky = COLOR_HEMI_SKY_DAY.clone().lerp(COLOR_HEMI_SKY_NIGHT, nightFactor);
-      const hemiGnd = COLOR_HEMI_GND_DAY.clone().lerp(COLOR_HEMI_GND_NIGHT, nightFactor);
+      const hemiSky = this._hemiSkyDayColor.clone().lerp(COLOR_HEMI_SKY_NIGHT, nightFactor);
+      const hemiGnd = this._hemiGndDayColor.clone().lerp(COLOR_HEMI_GND_NIGHT, nightFactor);
       this.hemi.color.copy(hemiSky);
       this.hemi.groundColor.copy(hemiGnd);
       this.hemi.intensity = 0.9 - nightFactor * 0.62;
     }
 
     // 3. Nebbia (Fog)
-    if (this.scene.fog) {
-      const fogCol = COLOR_FOG_DAY.clone()
+    if (this.scene?.fog) {
+      const fogCol = this._fogDayColor.clone()
         .lerp(COLOR_FOG_SUNSET, sunsetFactor)
         .lerp(COLOR_FOG_NIGHT, nightFactor);
       this.scene.fog.color.copy(fogCol);
@@ -167,11 +205,11 @@ export class DayNightCycle {
       grad.addColorStop(0.8, '#d96b34');
       grad.addColorStop(1, '#f5ba23');
     } else {
-      // Giorno Dorato
-      grad.addColorStop(0, '#1d3b52');
-      grad.addColorStop(0.55, '#7d8f8c');
-      grad.addColorStop(0.85, '#e0b979');
-      grad.addColorStop(1, '#ecd599');
+      // Giorno adattato al bioma
+      grad.addColorStop(0, this._skyStops.top);
+      grad.addColorStop(0.55, this._skyStops.mid);
+      grad.addColorStop(0.85, this._skyStops.horizon);
+      grad.addColorStop(1, this._skyStops.bottom);
     }
 
     g.fillStyle = grad;

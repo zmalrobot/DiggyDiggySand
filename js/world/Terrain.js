@@ -6,6 +6,7 @@
 //   `flush()` viene chiamato al massimo una volta per frame: è il throttling dell'aggiornamento.
 import * as THREE from 'three';
 import { PALETTE_3D } from './ProceduralFactory.js';
+import { BIOME_CATALOG } from './BiomeManager.js';
 
 export const CHUNK = 8;                 // vertici per lato del chunk
 
@@ -46,6 +47,43 @@ export const BIOME_PALETTES = {
     hex2: 0x2C2F36,
     hex3: 0x17181C,
   },
+  // Biomi di spedizione (Fase 12)
+  desert: {
+    layer1: new THREE.Color(0xE0C27A),
+    layer2: new THREE.Color(0xB88A44),
+    layer3: new THREE.Color(0x6E563B),
+    vein: new THREE.Color(PALETTE_3D.atlantisCoreTeal),
+    hex1: 0xE0C27A,
+    hex2: 0xB88A44,
+    hex3: 0x6E563B,
+  },
+  ocean: {
+    layer1: new THREE.Color(0xF5E6CA),
+    layer2: new THREE.Color(0x4A7C82),
+    layer3: new THREE.Color(0x1B3240),
+    vein: new THREE.Color(0xF5BA23),
+    hex1: 0xF5E6CA,
+    hex2: 0x4A7C82,
+    hex3: 0x1B3240,
+  },
+  glacier: {
+    layer1: new THREE.Color(0xE8F4F8),
+    layer2: new THREE.Color(0x7BAEC2),
+    layer3: new THREE.Color(0x2A3B45),
+    vein: new THREE.Color(0x00F2FF),
+    hex1: 0xE8F4F8,
+    hex2: 0x7BAEC2,
+    hex3: 0x2A3B45,
+  },
+  jungle: {
+    layer1: new THREE.Color(0x3D5C38),
+    layer2: new THREE.Color(0x5C4028),
+    layer3: new THREE.Color(0x2E241C),
+    vein: new THREE.Color(0x2ECC71),
+    hex1: 0x3D5C38,
+    hex2: 0x5C4028,
+    hex3: 0x2E241C,
+  },
 };
 BIOME_PALETTES.classic = BIOME_PALETTES.sand_classic;
 BIOME_PALETTES.mars = BIOME_PALETTES.sand_mars;
@@ -80,28 +118,35 @@ export function layerColor(y, i, out = new THREE.Color(), biome = currentBiome) 
 
 
 export class Terrain {
-  constructor({ size = 200, res = 256, startHeight = 12, floor = 0 } = {}) {
+  constructor({ size = 200, res = 256, startHeight = 12, floor = 0, biome = 'desert' } = {}) {
     this.size = size;
     this.res = res;
-    this.startHeight = startHeight;
+    this.expeditionBiome = BIOME_CATALOG[biome] ? biome : 'desert';
+    this.biomeConfig = BIOME_CATALOG[this.expeditionBiome];
+    this.biomeMechanics = { ...this.biomeConfig.mechanics };
+    this.activeBiome = this.expeditionBiome;
+    currentBiome = this.activeBiome;
+
+    const volMult = this.biomeMechanics.volumeMultiplier ?? 1.0;
+    this.startHeight = startHeight * volMult;
     this.floor = floor;
     this.cell = size / res;
     this.stride = res + 1;
     this.half = size / 2;
 
     const count = this.stride * this.stride;
-    this.heights = new Float32Array(count).fill(startHeight);
+    this.heights = new Float32Array(count).fill(this.startHeight);
 
     this.geometry = new THREE.PlaneGeometry(size, size, res, res);
     this.geometry.rotateX(-Math.PI / 2); // orizzontale; riga iz -> z = -size/2 + iz*cell
     const pos = this.geometry.attributes.position;
-    for (let i = 0; i < count; i++) pos.setY(i, startHeight);
+    for (let i = 0; i < count; i++) pos.setY(i, this.startHeight);
     this.colors = new THREE.BufferAttribute(new Float32Array(count * 3), 3);
     this.colors.setUsage(THREE.DynamicDrawUsage);
     pos.setUsage(THREE.DynamicDrawUsage);
     this.geometry.setAttribute('color', this.colors);
     const c = new THREE.Color();
-    for (let i = 0; i < count; i++) layerColor(startHeight, i, c).toArray(this.colors.array, i * 3);
+    for (let i = 0; i < count; i++) layerColor(this.startHeight, i, c, this.activeBiome).toArray(this.colors.array, i * 3);
     this.geometry.computeBoundingSphere();
     this.geometry.computeBoundingBox();
 
@@ -114,7 +159,7 @@ export class Terrain {
     this.group.add(this.mesh, this._buildWalls());
 
     // Volume in m^3 (somma delle altezze sui vertici per cell^2).
-    this.initialVolume = count * (startHeight - floor) * this.cell * this.cell;
+    this.initialVolume = count * (this.startHeight - floor) * this.cell * this.cell;
     this.remainingVolume = this.initialVolume;
 
     this.chunksX = Math.ceil(this.stride / CHUNK);
@@ -122,7 +167,12 @@ export class Terrain {
     this.dirtyCount = 0;
     this.dirtyRowMin = Infinity;
     this.dirtyRowMax = -Infinity;
-    this._box = new THREE.Box3(new THREE.Vector3(-this.half, floor, -this.half), new THREE.Vector3(this.half, startHeight, this.half));
+    // Giungla Sepolta: durabilità delle radici sepolte per ciascun chunk
+    const rootHits = this.biomeMechanics.rootHitsRequired || 0;
+    this.rootDurability = new Uint8Array(this.chunksX * this.chunksX).fill(rootHits);
+    this.lastRootBlocked = false;
+
+    this._box = new THREE.Box3(new THREE.Vector3(-this.half, floor, -this.half), new THREE.Vector3(this.half, this.startHeight, this.half));
     this._tmpColor = new THREE.Color();
   }
 
@@ -210,16 +260,44 @@ export class Terrain {
     return Math.max(tMax, t0);
   }
 
+  /** Indice del chunk corrispondente alle coordinate mondo (x, z). */
+  getChunkIndexAt(x, z) {
+    const ix = Math.max(0, Math.min(this.res, Math.floor((x + this.half) / this.cell)));
+    const iz = Math.max(0, Math.min(this.res, Math.floor((z + this.half) / this.cell)));
+    return (iz / CHUNK | 0) * this.chunksX + (ix / CHUNK | 0);
+  }
+
+  /** Restituisce la durabilità residua delle radici sepolte in (x, z) (Giungla Sepolta). */
+  getRootDurabilityAt(x, z) {
+    const k = this.getChunkIndexAt(x, z);
+    return this.rootDurability ? (this.rootDurability[k] || 0) : 0;
+  }
+
   /**
    * Scava in (x, z). Altezza abbassata di `power * falloff` con falloff = 1 - dist/radius, clamp al bedrock.
    * Ritorna il volume rimosso in m^3.
    */
   dig(x, z, radius, power) {
     const cell = this.cell, s = this.stride;
-    const ixMin = Math.max(0, Math.floor((x - radius + this.half) / cell));
-    const ixMax = Math.min(this.res, Math.ceil((x + radius + this.half) / cell));
-    const izMin = Math.max(0, Math.floor((z - radius + this.half) / cell));
-    const izMax = Math.min(this.res, Math.ceil((z + radius + this.half) / cell));
+    let effectiveRadius = radius;
+    this.lastRootBlocked = false;
+
+    if (this.biomeMechanics?.rootBlockFactor > 0 && this.rootDurability) {
+      const k = this.getChunkIndexAt(x, z);
+      if (this.rootDurability[k] > 0) {
+        effectiveRadius = radius * (1 - this.biomeMechanics.rootBlockFactor);
+        this.rootDurability[k]--;
+        this.lastRootBlocked = true;
+      }
+    }
+
+    const baseRes = this.biomeMechanics?.resistance ?? 1.0;
+    const midRes = this.biomeMechanics?.midLayerResistance ?? baseRes;
+
+    const ixMin = Math.max(0, Math.floor((x - effectiveRadius + this.half) / cell));
+    const ixMax = Math.min(this.res, Math.ceil((x + effectiveRadius + this.half) / cell));
+    const izMin = Math.max(0, Math.floor((z - effectiveRadius + this.half) / cell));
+    const izMax = Math.min(this.res, Math.ceil((z + effectiveRadius + this.half) / cell));
     const pos = this.geometry.attributes.position.array;
     const cellArea = cell * cell;
     let removed = 0;
@@ -229,10 +307,12 @@ export class Terrain {
       for (let ix = ixMin; ix <= ixMax; ix++) {
         const vx = -this.half + ix * cell;
         const dist = Math.hypot(vx - x, vz - z);
-        if (dist >= radius) continue;
+        if (dist >= effectiveRadius) continue;
         const i = iz * s + ix;
         const h = this.heights[i];
-        const newH = Math.max(this.floor, h - power * (1 - dist / radius));
+        const resFactor = (h > 3 && h <= 8) ? midRes : baseRes;
+        const effectivePower = resFactor === 1.0 ? power : (power / resFactor);
+        const newH = Math.max(this.floor, h - effectivePower * (1 - dist / effectiveRadius));
         if (newH === h) continue;
         removed += (h - newH) * cellArea;
         this.heights[i] = newH;
@@ -255,6 +335,7 @@ export class Terrain {
   flush() {
     if (!this.dirtyCount) return false;
     const s = this.stride, c = this._tmpColor, col = this.colors.array;
+    const activePalette = this.activeBiome || currentBiome;
     for (let k = 0; k < this.dirty.length; k++) {
       if (!this.dirty[k]) continue;
       this.dirty[k] = 0;
@@ -263,7 +344,7 @@ export class Terrain {
       for (let iz = cz * CHUNK; iz < z1; iz++) {
         for (let ix = cx * CHUNK; ix < x1; ix++) {
           const i = iz * s + ix;
-          layerColor(this.heights[i], i, c).toArray(col, i * 3);
+          layerColor(this.heights[i], i, c, activePalette).toArray(col, i * 3);
         }
       }
     }

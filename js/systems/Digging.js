@@ -162,12 +162,15 @@ export class Digging {
     this.state.addSand(amount);
     this.state.setCompletion(this.terrain.completion);
 
-    const col = getLayerColor(p.y);
-    this.particles.burst(p.x, p.y, p.z, { radius, color: col, sparks: p.y <= 3.2 });
+    const activePalette = this.terrain?.activeBiome;
+    const col = getLayerColor(p.y, activePalette);
+    const biomeId = this.terrain?.expeditionBiome || 'desert';
+    const hasSparks = p.y <= 3.2 || biomeId === 'glacier' || biomeId === 'ocean';
+    this.particles.burst(p.x, p.y, p.z, { radius, color: col, sparks: hasSparks });
 
     this.audio.playDigSound(Math.min(1.5, 0.6 + power * 0.2));
     this.scene.shake(0.05);
-    events.emit('dig:hit', { x: p.x, y: p.y, z: p.z, amount, removed, radius });
+    events.emit('dig:hit', { x: p.x, y: p.y, z: p.z, amount, removed, radius, rootBlocked: !!this.terrain?.lastRootBlocked });
     return amount;
   }
 

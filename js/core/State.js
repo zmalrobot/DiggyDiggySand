@@ -18,6 +18,7 @@ export class State {
     this.version = STATE_VERSION;
     this.seed = data.seed ?? 0;
     this.endingId = data.endingId ?? 'curse';
+    this.currentBiome = data.currentBiome ?? 'desert';
     this.sand = Number.isFinite(data.sand) ? Math.max(0, data.sand) : 0;
     this.totalSand = Number.isFinite(data.totalSand) ? Math.max(0, data.totalSand) : this.sand;
     this.upgrades = { ...(data.upgrades ?? {}) };
@@ -87,6 +88,7 @@ export class State {
       version: base.version ?? 1,
       seed: this.seed,
       endingId: this.endingId,
+      currentBiome: this.currentBiome || 'desert',
       sand: this.sand,
       totalSand: this.totalSand,
       upgrades: this.upgrades,

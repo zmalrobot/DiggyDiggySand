@@ -9,6 +9,7 @@ export class AudioEngine {
     this.ambientFilters = null;
     this.buffers = new Map();
     this.samplesLoading = false;
+    this.currentBiome = 'desert';
     this.supported = typeof window !== 'undefined' && !!(window.AudioContext || window.webkitAudioContext);
     settings?.subscribe?.('*', (_v, key) => {
       if (key.startsWith('audio.')) this._applyGains();
@@ -203,9 +204,42 @@ export class AudioEngine {
   }
 
 
+  /** Imposta il profilo sonoro del bioma attivo (desert, ocean, glacier, jungle). */
+  setBiome(biomeId = 'desert') {
+    this.currentBiome = biomeId || 'desert';
+    if (this.ambientFilters && this._ok()) {
+      const t = this.ctx.currentTime;
+      if (this.currentBiome === 'ocean') {
+        // Risacca marina in lontananza
+        this.ambientFilters.bp.frequency.setTargetAtTime(240, t, 0.25);
+        this.ambientFilters.bp.Q.setTargetAtTime(0.9, t, 0.25);
+        this.ambientFilters.lp.frequency.setTargetAtTime(220, t, 0.25);
+      } else if (this.currentBiome === 'glacier') {
+        // Vento polare fischiante
+        this.ambientFilters.bp.frequency.setTargetAtTime(680, t, 0.25);
+        this.ambientFilters.bp.Q.setTargetAtTime(2.2, t, 0.25);
+        this.ambientFilters.lp.frequency.setTargetAtTime(420, t, 0.25);
+      } else if (this.currentBiome === 'jungle') {
+        // Ronzio di cicale/insetti attutito e brezza umida
+        this.ambientFilters.bp.frequency.setTargetAtTime(880, t, 0.25);
+        this.ambientFilters.bp.Q.setTargetAtTime(1.6, t, 0.25);
+        this.ambientFilters.lp.frequency.setTargetAtTime(260, t, 0.25);
+      } else {
+        // Deserto d'Oro
+        this.ambientFilters.bp.frequency.setTargetAtTime(380, t, 0.25);
+        this.ambientFilters.bp.Q.setTargetAtTime(0.6, t, 0.25);
+        this.ambientFilters.lp.frequency.setTargetAtTime(320, t, 0.25);
+      }
+    }
+  }
+
+  setBiomeAudio(biomeId = 'desert') {
+    this.setBiome(biomeId);
+  }
+
   /**
-   * Colpo di pala nella sabbia: riproduce il campione audio se disponibile (con variazione di pitch ±15%),
-   * altrimenti fallback procedurale (raschio di rumore filtrato + tonfo sordo). `intensity` (0..1.5) scala il volume.
+   * Colpo di pala nel terreno: adatta timbrica ed inviluppo al bioma attivo (desert, ocean, glacier, jungle).
+   * `intensity` (0..1.5) scala il volume.
    */
   playDigSound(intensity = 1) {
     if (!this._ok()) return;
@@ -213,7 +247,7 @@ export class AudioEngine {
     const vol = 0.35 * Math.min(1.5, Math.max(0.2, intensity));
 
     const sample = this.buffers.get('sfx_dig');
-    if (sample) {
+    if (sample && this.currentBiome === 'desert') {
       try {
         const src = this.ctx.createBufferSource();
         src.buffer = sample;
@@ -233,11 +267,61 @@ export class AudioEngine {
     const src = this.ctx.createBufferSource();
     src.buffer = this._noiseBuffer(0.22);
     const bp = this.ctx.createBiquadFilter();
+    const g = this.ctx.createGain();
+
+    if (this.currentBiome === 'ocean') {
+      // Oceano: suono ovattato acquatico + bolla d'aria risonante
+      bp.type = 'lowpass';
+      bp.Q.value = 1.4;
+      bp.frequency.setValueAtTime(950 * p, t);
+      bp.frequency.exponentialRampToValueAtTime(340 * p, t + 0.19);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(vol * 0.9, t + 0.015);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.21);
+      src.connect(bp); bp.connect(g); g.connect(this.nodes.sfx);
+      src.start(t);
+
+      this._blip({ type: 'sine', f0: 290 * p, f1: 620 * p, dur: 0.11, vol: vol * 0.55 });
+      return;
+    }
+
+    if (this.currentBiome === 'glacier') {
+      // Ghiacciaio: suono cristallino e scricchiolio di permafrost
+      bp.type = 'bandpass';
+      bp.Q.value = 2.0;
+      bp.frequency.setValueAtTime(3600 * p, t);
+      bp.frequency.exponentialRampToValueAtTime(1600 * p, t + 0.16);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(vol * 0.85, t + 0.008);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+      src.connect(bp); bp.connect(g); g.connect(this.nodes.sfx);
+      src.start(t);
+
+      this._blip({ type: 'triangle', f0: 1420 * p, f1: 860 * p, dur: 0.12, vol: vol * 0.5 });
+      return;
+    }
+
+    if (this.currentBiome === 'jungle') {
+      // Giungla: colpo sordo su terra umida e radici legnose
+      bp.type = 'lowpass';
+      bp.Q.value = 0.8;
+      bp.frequency.setValueAtTime(720 * p, t);
+      bp.frequency.exponentialRampToValueAtTime(260 * p, t + 0.17);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(vol, t + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.19);
+      src.connect(bp); bp.connect(g); g.connect(this.nodes.sfx);
+      src.start(t);
+
+      this._blip({ type: 'triangle', f0: 165 * p, f1: 68 * p, dur: 0.14, vol: vol * 0.8 });
+      return;
+    }
+
+    // Deserto d'Oro (default)
     bp.type = 'bandpass';
     bp.Q.value = 0.9;
     bp.frequency.setValueAtTime(2400 * p, t);
     bp.frequency.exponentialRampToValueAtTime(700 * p, t + 0.18);
-    const g = this.ctx.createGain();
     g.gain.setValueAtTime(0.0001, t);
     g.gain.exponentialRampToValueAtTime(vol, t + 0.012);
     g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
@@ -281,6 +365,7 @@ export class AudioEngine {
 
     [wind, lfo, ...oscs].forEach((n) => n.start());
     this.ambientFilters = { bp, lp, droneGain, windGain };
+    this.setBiome(this.currentBiome);
     this.ambient = {
       stop: () => {
         [wind, lfo, ...oscs].forEach((n) => { try { n.stop(); } catch { /* già fermo */ } });

@@ -250,6 +250,41 @@ export const DICTIONARY = {
         desc: 'Raggiungi il 100% di scavo di una duna.',
       },
     },
+    biomes: {
+      modalTitle: 'Seleziona Bioma di Spedizione',
+      modalSubtitle: 'Scegli il sito archeologico per la tua nuova spedizione',
+      startBtn: 'Avvia Spedizione',
+      cancelBtn: 'Annulla',
+      selectedBadge: 'Selezionato',
+      selectBtn: 'Seleziona Bioma',
+      unlockTabletsBtn: 'Sblocca ({cost} τ)',
+      lockedReq: 'Richiede {wins} Vittoria/e oppure {cost} τ',
+      modifiersLabel: 'Modificatori Attivi',
+      desert: {
+        name: "Deserto d'Oro",
+        subtitle: 'Le Dune Ancestrali di Kemet',
+        lore: 'Sabbie dorate millenarie che celano il Santuario dell\'Obelisco, viali colonnati e camere d\'oricalco.',
+        modifier: 'Resistenza Standard | Volume 100%',
+      },
+      ocean: {
+        name: 'Oceano Prosciugato',
+        subtitle: 'Abisso Corallino Sommerso',
+        lore: 'Un antico fondale oceanico prosciugato dove giace un galeone atlantideo spezzato in due tra archi di conchiglie giganti.',
+        modifier: 'Resistenza -20% | Volume +15% | Valore +25%',
+      },
+      glacier: {
+        name: 'Ghiacciaio Arcaico',
+        subtitle: 'Cripta del Permafrost Eterno',
+        lore: 'Monoliti esagonali di ghiaccio, guglie cristalline e templi congelati custoditi da uno strato di permafrost.',
+        modifier: 'Permafrost +35% Res. | Schegge Ghiaccio | Valore +35%',
+      },
+      jungle: {
+        name: 'Giungla Sepolta',
+        subtitle: 'Ziggurat di Smeraldo e Radici',
+        lore: 'Bassi templi a ziggurat e menhir incisi avvolti da radici fossili che richiedono colpi multipli per essere spezzate.',
+        modifier: 'Radici Sepolte (-35% Raggio) | Valore +40%',
+      },
+    },
   },
 
   en: {
@@ -498,6 +533,41 @@ export const DICTIONARY = {
         desc: 'Reach 100% completion of a desert excavation.',
       },
     },
+    biomes: {
+      modalTitle: 'Select Expedition Biome',
+      modalSubtitle: 'Choose the archaeological site for your new expedition',
+      startBtn: 'Launch Expedition',
+      cancelBtn: 'Cancel',
+      selectedBadge: 'Selected',
+      selectBtn: 'Select Biome',
+      unlockTabletsBtn: 'Unlock ({cost} τ)',
+      lockedReq: 'Requires {wins} Win(s) or {cost} τ',
+      modifiersLabel: 'Active Modifiers',
+      desert: {
+        name: 'Golden Desert',
+        subtitle: 'The Ancestral Dunes of Kemet',
+        lore: 'Millenary golden sands hiding the Obelisk Sanctuary, colonnaded avenues, and orichalcum chambers.',
+        modifier: 'Standard Resistance | Volume 100%',
+      },
+      ocean: {
+        name: 'Drained Ocean',
+        subtitle: 'Submerged Coral Abyss',
+        lore: 'An ancient drained seabed where a sunken Atlantean galleon lies broken in two amidst giant shell arches.',
+        modifier: 'Resistance -20% | Volume +15% | Value +25%',
+      },
+      glacier: {
+        name: 'Glacial Frost',
+        subtitle: 'Crypt of Eternal Permafrost',
+        lore: 'Hexagonal ice monoliths, crystalline spires, and frozen temples guarded by a dense permafrost layer.',
+        modifier: 'Permafrost +35% Res. | Ice Shards | Value +35%',
+      },
+      jungle: {
+        name: 'Overgrown Oasis',
+        subtitle: 'Emerald Ziggurat & Roots',
+        lore: 'Low stepped ziggurat temples and engraved menhirs wrapped in buried roots requiring multiple strikes to break.',
+        modifier: 'Buried Roots (-35% Radius) | Value +40%',
+      },
+    },
   },
 };
 
@@ -528,6 +598,10 @@ export class I18n {
 
   getLanguage() {
     return this.lang;
+  }
+
+  onLanguageChange(fn) {
+    return events.on('i18n:changed', fn);
   }
 
   /**
