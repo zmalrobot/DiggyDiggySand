@@ -37,7 +37,7 @@ t('State: statistiche iniziali (Shovel T1, raggio 1.5, 2 colpi/s)', () => {
   assert.equal(s.spend(2), true); assert.equal(s.sand, 3);
 });
 
-const mk = () => new Terrain({ size: 100, res: 100, startHeight: 12, floor: 0 });
+const mk = () => new Terrain({ size: 100, res: 100, startHeight: 12, floor: 0, flat: true });
 
 t('Terrain: quote iniziali e sincronizzazione heights/position', () => {
   const tr = mk();

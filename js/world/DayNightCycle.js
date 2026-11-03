@@ -16,9 +16,9 @@ const COLOR_FOG_SUNSET = new THREE.Color(0x8C3E38);
 const COLOR_FOG_NIGHT = new THREE.Color(0x060B11);
 
 const COLOR_HEMI_SKY_DAY = new THREE.Color(0xA4D4F4);
-const COLOR_HEMI_SKY_NIGHT = new THREE.Color(0x0E2233);
+const COLOR_HEMI_SKY_NIGHT = new THREE.Color(0x1B2A40); // blu abissale #1b2a40
 const COLOR_HEMI_GND_DAY = new THREE.Color(0x6E563B);
-const COLOR_HEMI_GND_NIGHT = new THREE.Color(0x03080E);
+const COLOR_HEMI_GND_NIGHT = new THREE.Color(0x0D131A); // suolo riflesso #0d131a
 
 export class DayNightCycle {
   constructor(sceneOrManager, options = {}) {
@@ -167,13 +167,18 @@ export class DayNightCycle {
       }
     }
 
-    // 2. Luce Ambientale Emisferica
+    // 2. Luce Ambientale Emisferica (Intensità cielo notturno mai inferiore a 0.25)
     if (this.hemi) {
       const hemiSky = this._hemiSkyDayColor.clone().lerp(COLOR_HEMI_SKY_NIGHT, nightFactor);
       const hemiGnd = this._hemiGndDayColor.clone().lerp(COLOR_HEMI_GND_NIGHT, nightFactor);
       this.hemi.color.copy(hemiSky);
       this.hemi.groundColor.copy(hemiGnd);
-      this.hemi.intensity = 0.9 - nightFactor * 0.62;
+      this.hemi.intensity = Math.max(0.25, 0.9 - nightFactor * 0.62);
+    }
+
+    // Luce Ambientale Floor: mantiene sempre attiva l'illuminazione minima dal suolo
+    if (this.sm?.ambientLight) {
+      this.sm.ambientLight.intensity = 0.15;
     }
 
     // 3. Nebbia (Fog)

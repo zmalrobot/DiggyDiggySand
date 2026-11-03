@@ -102,6 +102,50 @@ function noise2D(ix, iz) {
   return s1 * 0.65 + s2 * 0.35;
 }
 
+/** Calcola la deformazione d'altitudine procedurale per bioma (dune, bacini, creste, collinette). */
+export function getInitialBiomeHeightOffset(vx, vz, biome = 'desert') {
+  switch (biome) {
+    case 'ocean':
+    case 'sand_caribbean': {
+      // Oceano prosciugato: avvallamento/depressione a bacino centrale con increspature del fondale
+      const distSq = vx * vx + vz * vz;
+      const basin = -2.8 * Math.exp(-distSq / 3000);
+      const ripples = Math.sin(vx * 0.12) * 0.4 + Math.cos(vz * 0.12) * 0.4;
+      return basin + ripples;
+    }
+    case 'glacier': {
+      // Ghiacciaio: creste angolari e sfaccettate / formazioni di permafrost
+      const ridge1 = Math.abs(Math.sin(vx * 0.05)) * 1.8;
+      const ridge2 = -Math.abs(Math.cos(vz * 0.05)) * 1.4;
+      const step = (Math.sin(vx * 0.14 + vz * 0.11) > 0 ? 0.5 : -0.5);
+      return ridge1 + ridge2 + step;
+    }
+    case 'jungle': {
+      // Giungla: dislivelli organici e collinette di radici/humus
+      const mound1 = Math.sin(vx * 0.04) * 1.6 + Math.cos(vz * 0.045) * 1.3;
+      const roots = Math.sin(vx * 0.09 + vz * 0.08) * 0.7;
+      return mound1 + roots;
+    }
+    case 'mars':
+    case 'sand_mars': {
+      return Math.sin(vx * 0.05) * 1.8 + Math.cos(vz * 0.035) * 1.4;
+    }
+    case 'volcanic':
+    case 'sand_volcanic': {
+      return Math.sin(vx * 0.06) * 1.3 + Math.cos(vz * 0.06) * 1.3;
+    }
+    case 'desert':
+    case 'sand_classic':
+    default: {
+      // Deserto (Default): creste di duna morbide e ondulate a bassa frequenza
+      const duna1 = Math.sin(vx * 0.05) * 1.5;
+      const duna2 = Math.cos(vz * 0.03) * 1.2;
+      const duna3 = Math.sin((vx + vz) * 0.04) * 0.6;
+      return duna1 + duna2 + duna3;
+    }
+  }
+}
+
 /** Ritorna il codice colore esadecimale dello strato per la quota Y (usato per le particelle). */
 export function getLayerColor(y, biome = currentBiome) {
   const p = BIOME_PALETTES[biome] || BIOME_PALETTES.sand_classic;
@@ -144,7 +188,7 @@ export function layerColor(y, i, out = new THREE.Color(), biome = currentBiome, 
 
 
 export class Terrain {
-  constructor({ size = 200, res = 256, startHeight = 12, floor = 0, biome = 'desert' } = {}) {
+  constructor({ size = 200, res = 256, startHeight = 12, floor = 0, biome = 'desert', flat = false } = {}) {
     this.size = size;
     this.res = res;
     this.expeditionBiome = BIOME_CATALOG[biome] ? biome : 'desert';
@@ -161,12 +205,41 @@ export class Terrain {
     this.half = size / 2;
 
     const count = this.stride * this.stride;
-    this.heights = new Float32Array(count).fill(this.startHeight);
+    this.heights = new Float32Array(count);
+
+    if (flat) {
+      this.heights.fill(this.startHeight);
+    } else {
+      // Deformazione procedurale naturale per bioma
+      const rawOffsets = new Float32Array(count);
+      let sumOffset = 0;
+      for (let i = 0; i < count; i++) {
+        const ix = i % this.stride;
+        const iz = (i / this.stride) | 0;
+        const vx = -this.half + ix * this.cell;
+        const vz = -this.half + iz * this.cell;
+        const off = getInitialBiomeHeightOffset(vx, vz, this.activeBiome);
+        rawOffsets[i] = off;
+        sumOffset += off;
+      }
+      const meanOffset = sumOffset / count;
+
+      for (let i = 0; i < count; i++) {
+        const adjustedOffset = rawOffsets[i] - meanOffset;
+        this.heights[i] = Math.max(this.floor + 0.2, this.startHeight + adjustedOffset);
+      }
+    }
+
+    const cellArea = this.cell * this.cell;
+    let totalVolume = 0;
+    for (let i = 0; i < count; i++) {
+      totalVolume += (this.heights[i] - this.floor) * cellArea;
+    }
 
     this.geometry = new THREE.PlaneGeometry(size, size, res, res);
     this.geometry.rotateX(-Math.PI / 2); // orizzontale; riga iz -> z = -size/2 + iz*cell
     const pos = this.geometry.attributes.position;
-    for (let i = 0; i < count; i++) pos.setY(i, this.startHeight);
+    for (let i = 0; i < count; i++) pos.setY(i, this.heights[i]);
     this.colors = new THREE.BufferAttribute(new Float32Array(count * 3), 3);
     this.colors.setUsage(THREE.DynamicDrawUsage);
     pos.setUsage(THREE.DynamicDrawUsage);
@@ -179,8 +252,9 @@ export class Terrain {
     for (let i = 0; i < count; i++) {
       const ix = i % this.stride;
       const iz = (i / this.stride) | 0;
-      layerColor(this.startHeight, i, c, this.activeBiome, ix, iz).toArray(this.colors.array, i * 3);
+      layerColor(this.heights[i], i, c, this.activeBiome, ix, iz).toArray(this.colors.array, i * 3);
     }
+    this.geometry.computeVertexNormals();
     this.geometry.computeBoundingSphere();
     this.geometry.computeBoundingBox();
 
@@ -192,9 +266,9 @@ export class Terrain {
     this.group = new THREE.Group();
     this.group.add(this.mesh, this._buildWalls());
 
-    // Volume in m^3 (somma delle altezze sui vertici per cell^2).
-    this.initialVolume = count * (this.startHeight - floor) * this.cell * this.cell;
-    this.remainingVolume = this.initialVolume;
+    // Volume in m^3 (somma delle altezze effettive sui vertici per cell^2)
+    this.initialVolume = totalVolume;
+    this.remainingVolume = totalVolume;
 
     this.chunksX = Math.ceil(this.stride / CHUNK);
     this.dirty = new Uint8Array(this.chunksX * this.chunksX);
@@ -212,7 +286,7 @@ export class Terrain {
     this.rootDurability = new Uint8Array(this.chunksX * this.chunksX).fill(rootHits);
     this.lastRootBlocked = false;
 
-    this._box = new THREE.Box3(new THREE.Vector3(-this.half, floor, -this.half), new THREE.Vector3(this.half, this.startHeight, this.half));
+    this._box = new THREE.Box3(new THREE.Vector3(-this.half, floor, -this.half), new THREE.Vector3(this.half, this.startHeight + 5, this.half));
     this._tmpColor = new THREE.Color();
   }
 

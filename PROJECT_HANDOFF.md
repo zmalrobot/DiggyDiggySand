@@ -294,6 +294,27 @@ Verifiche manuali da fare: valori persistiti dopo il ricaricamento; `localStorag
     - Safe-area insets CSS per notch e display sagomati (`env(safe-area-inset-*)`).
   - Verificata con 89 test unitari complessivi (6 suite specifiche M14 in `tests/phase14.test.mjs`, 100% superati) e browser QA end-to-end (`tests/phase14_browser_qa.mjs`, 0 errori console, 4 screenshot salvati).
 
+- [x] **M15** Risoluzione Blackout Grafica Alta, Antialiasing (FXAA & MSAA 4x) e Terreno Procedurale con Dune:
+  - Bugfix Blackout Grafica Alta e Calibrazione Notturna (`js/world/DayNightCycle.js`, `js/world/SceneManager.js`, `js/world/PostProcessing.js`):
+    - *Illuminazione Ambient Floor:* aggiunta luce `THREE.AmbientLight(0x0D131A, 0.15)` denominata `ambientFloor` in `SceneManager.js` per garantire una base di luce non nulla su tutta la scena in qualunque orientamento o fossa profonda.
+    - *Cielo Notturno Garantito:* calibrazione `DayNightCycle.js` con colore cielo notturno `#1B2A40` (blu abissale), intensità minima non inferiore a `0.25` e luce riflessa dal suolo `#0D131A`. Intensità minima sole/luna garantita a $\ge 0.35$.
+    - *Tone Mapping & Exposure:* configurato in `SceneManager.js` `renderer.toneMapping = THREE.ACESFilmicToneMapping` e `renderer.toneMappingExposure = 1.0`.
+    - *PostProcessing Alfa Opaco:* corretto l'output del fragment shader in `gl_FragColor = vec4(finalColor, 1.0);`, prevenendo canali alfa nulli o trasparenti che causavano lo schermo nero su canvas WebGLRenderTarget.
+    - *Calibrazione Bloom e Vignette:* uniform ricalibrate (`threshold: 0.85, strength: 0.4, radius: 0.5, darkness: 0.28, offset: 0.95`) per evitare l'oscuramento dei margini.
+  - Antialiasing su Tutte le Configurazioni (`js/world/PostProcessing.js`):
+    - *Hardware MSAA 4x:* configurato `samples: 4` nel `THREE.WebGLRenderTarget` su WebGL2, garantendo campionamento multi-sample nativo nel buffer offscreen del post-processing.
+    - *FXAA Integrato nello Shader:* routine di campionamento a contrasto di luminanza (Fast Approximate Anti-Aliasing) nel shader compositore, lisciando le scalettature geometriche dei poligoni low-poly.
+  - Generazione Duna Naturale e Deformazione Iniziale del Terreno (`js/world/Terrain.js`):
+    - Rimossa la quota iniziale piatta a lastra squadrata (`startHeight = 12` uniforme).
+    - Introdotta la funzione `getInitialBiomeHeightOffset(vx, vz, biome)` con modellazione altimetrica differenziata per bioma:
+      - *Deserto (Default):* creste di duna morbide e ondulate con funzioni sinusoidali a bassa frequenza (`Math.sin(vx * 0.05) * 1.5 + Math.cos(vz * 0.03) * 1.2 + Math.sin((vx + vz) * 0.04) * 0.6`).
+      - *Oceano Prosciugato:* avvallamento centrale a bacino (`-2.8 * exp(-r²/3000)`) con increspature del fondale.
+      - *Ghiacciaio:* creste angolari sfaccettate e gradini di permafrost (`abs(sin)` e `abs(cos)`).
+      - *Giungla:* dislivelli organici e collinette di radici/humus.
+    - *Ricalcolo Rigoroso del Volume Iniziale:* `this.initialVolume = sum((heights[i] - floor) * cellArea)`. La percentuale di scavo `completion` parte esattamente da `0.00%` e si aggiorna con precisione geometrica millimetrica ad ogni colpo.
+    - *Calcolo Immediato delle Normali:* esecuzione di `geometry.computeVertexNormals()` fin dal frame 1 della duna, conferendo plasticità visiva e ombreggiatura tridimensionale immediata.
+  - Verificata con 92 test unitari complessivi (3 suite specifiche M15 in `tests/phase15.test.mjs`, 100% superati) e test QA browser headless (`tests/phase15_browser_qa.mjs`, 0 errori console, 0 eccezioni, screenshot `dds_qa_dunes_terrain.png`, `dds_qa_high_graphics_lit.png`, `dds_qa_night_visible.png`).
+
 Piano dettagliato con codice e verifiche: vedi la sezione "Roadmap" sopra e le formule in `Ideas/upgrade_tree_specification.md`.
 
 ## 6. Convenzioni

@@ -50,7 +50,7 @@ export class SceneManager {
 
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.05;
+    this.renderer.toneMappingExposure = 1.0;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     this.scene = new THREE.Scene();
@@ -101,6 +101,12 @@ export class SceneManager {
   _buildLights() {
     this.hemi = new THREE.HemisphereLight(PALETTE_3D.ambientSky, PALETTE_3D.sandBedrock, 0.9);
     this.scene.add(this.hemi);
+
+    // Illuminazione di sicurezza suolo (Ambient Floor): impedisce il blackout completo nelle zone d'ombra
+    this.ambientLight = new THREE.AmbientLight(0x0D131A, 0.15);
+    this.ambientLight.name = 'ambientFloor';
+    this.scene.add(this.ambientLight);
+
     const sun = new THREE.DirectionalLight(PALETTE_3D.sunLight, 2.4);
     sun.position.set(30, 40, 20);
     sun.shadow.camera.left = sun.shadow.camera.bottom = -45;
