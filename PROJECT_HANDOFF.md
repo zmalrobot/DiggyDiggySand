@@ -315,6 +315,14 @@ Verifiche manuali da fare: valori persistiti dopo il ricaricamento; `localStorag
     - *Calcolo Immediato delle Normali:* esecuzione di `geometry.computeVertexNormals()` fin dal frame 1 della duna, conferendo plasticità visiva e ombreggiatura tridimensionale immediata.
   - Verificata con 92 test unitari complessivi (3 suite specifiche M15 in `tests/phase15.test.mjs`, 100% superati) e test QA browser headless (`tests/phase15_browser_qa.mjs`, 0 errori console, 0 eccezioni, screenshot `dds_qa_dunes_terrain.png`, `dds_qa_high_graphics_lit.png`, `dds_qa_night_visible.png`).
 
+- [x] **M16** Aggiornamento e Sincronizzazione Completa di Tutta la Documentazione:
+  - Revisione e allineamento bidirezionale di tutti i documenti di specifica (`Ideas/` e `README.md`):
+    - `Ideas/diggy-diggy-sand-project.md`: roadmap reale a 15 fasi, 4 finali con il segreto (Ascensione di Atlantide), scheda Trucchi e lockout permanente trofei, chiarimento superamento multiplayer verso biomi single-player.
+    - `Ideas/brand_book_art_bible.md`: palette estesa dei 4 biomi (Deserto, Oceano, Ghiacciaio, Giungla), regole di illuminazione notturna anti-blackout (ambient floor 0.15, cielo $\ge 0.25$), tone mapping ACESFilmic e pass post-processing calibrato.
+    - `Ideas/upgrade_tree_specification.md`: meta-progressione Tavolette Antiche $\tau$, perk del Santuario, matrice del Guardaroba cosmetico e sblocchi biomi.
+    - `Ideas/asset_manifest_download_guide.md`: formalizzazione architettura asset a doppio binario (asincrono GLTF/audio con fallback procedurale `ProceduralFactory` e `SoundSynth`) e gestione timeout.
+    - `README.md`: riscrittura completa, badge aggiornati a 92 test, tabella controlli, guida cheat e comandi console `window.DDS_DEBUG`.
+
 Piano dettagliato con codice e verifiche: vedi la sezione "Roadmap" sopra e le formule in `Ideas/upgrade_tree_specification.md`.
 
 ## 6. Convenzioni

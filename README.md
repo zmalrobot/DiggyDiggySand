@@ -3,36 +3,47 @@
 [![Licenza: MIT](https://img.shields.io/badge/Licenza-MIT-F5BA23.svg)](LICENSE)
 [![Three.js](https://img.shields.io/badge/Three.js-r160%20(Locale)-0FE3C1.svg)](https://threejs.org/)
 [![PWA](https://img.shields.io/badge/PWA-Standalone%20Ready-00B4D8.svg)](manifest.json)
-[![Tests](https://img.shields.io/badge/Test%20Suite-48%2F48%20Passing-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Test%20Suite-92%2F92%20Passing-brightgreen.svg)](tests/)
 [![Build Status](https://img.shields.io/badge/Deploy-GitHub%20Pages-blue.svg)](https://pages.github.com/)
 
 > *"Svuota il deserto. Scopri cosa dorme sotto le sabbie d'Egitto."*
 
-**Diggy Diggy Sand** è un gioco incrementale 3D (3D Sand Miner / Reverse City-Builder) per browser desktop e mobile. Il giocatore scava manualmente e con una flotta di macchinari autonomi una duna desertica deformabile in tempo reale, portando alla luce una metropoli monumentale sepolta della civiltà perduta di Atlantide, fino a innescare uno dei 4 finali dinamici.
+**Diggy Diggy Sand** è un gioco incrementale 3D (3D Sand Miner / Reverse City-Builder) per browser desktop e mobile. Il giocatore scava manualmente e con una flotta di macchinari e automi autonomi una duna desertica deformabile in tempo reale, portando alla luce una metropoli monumentale sepolta della civiltà perduta di Atlantide, fino a innescare uno dei 4 finali dinamici con risvolti narrativi imprevedibili.
 
 ---
 
-## 🏛️ Pilastri di Design & Architettura
+## 🏛️ Pilastri di Design & Architettura Tecnica
 
 - **Stile Visivo "Chiseled Low-Poly":** Geometrie angolate con `flatShading: true`, palette cromatica Atlantean-Kemet (oro e sabbia `#F5BA23`, `#E4C580` contrapposti a ciano e oricalco `#0FE3C1`, `#00B4D8`).
-- **Terreno Deformabile Stratificato:** Heightmap ad alte prestazioni a chunk 8×8 con dirty flags e ricolorazione dinamica per quota (Superficie dorata $Y>8$, Sabbia aranciata $3<Y\le8$, Roccia scura e detriti $Y\le3$ con venature cerulee).
-- **Città Sepolta Procedurale:** Santuario centrale con obelisco, viali colonnati sui punti cardinali e quartieri a terrazze posizionati interamente al di sotto della duna iniziale ($Y \le 8.8$), rivelati naturalmente dallo scavo.
-- **Economia Disaccoppiata dal Rendering:** Calcolo Sand Per Second (SPS), usura e guadagni offline con timestamp reali indipendenti dal frame rate.
-- **Flotta Lavoratori 3D:** Scarafaggi meccanici, Escavatori a vapore e Draghe sabbiose che pattugliano la fossa e scavano fisicamente il terreno.
+- **Terreno Procedurale a Dune Ondulate:** Generazione altimetrica non-piatta differenziata per bioma (`getInitialBiomeHeightOffset`), conservazione rigorosa del volume iniziale e calcolo immediato delle normali 3D per un'illuminazione plastica fin dal frame 1.
+- **Ottimizzazione Sub-Grid delle Normali $O(k)$:** Eliminato il ricalcolo globale della mesh $256 \times 256$ a ogni colpo. Aggiornamento analitico delle normali circoscritto alla sola sub-regione di scavo, mantenendo 60 FPS granitici.
+- **Pipeline Grafica & Antialiasing:**
+  - *Illuminazione Ambient Floor:* sorgente di sicurezza `#0D131A` (0.15) e cielo notturno $\ge 0.25$ che scongiurano lo schermo nero a grafica alta.
+  - *Tone Mapping:* standard cinematografico `THREE.ACESFilmicToneMapping` con esposizione 1.0.
+  - *Selective Bloom & Post-Processing:* estrazione mirata della bioluminescenza dei cristalli e riflessi dorati senza scurire la sabbia.
+  - *Doppio Antialiasing:* Hardware MSAA 4x su `WebGLRenderTarget` e shader pass FXAA su scala di luminanza per levigare i poligoni low-poly.
 - **I Quattro Finali Dinamici:**
-  - ☠️ **La Maledizione di Atlantide (`curse`):** Tempesta di sangue cosmico e risveglio dell'antico terrore.
-  - 👑 **Il Tesoro d'Oro Puro (`treasure`):** Cascata di monete e gemme preziose d'oro massiccio.
-  - 🏗️ **L'Impresa Mineraria (`business`):** Anticlimax corporativo, cantieristica industriale e modalità Sandbox libera.
-  - 🔱 **L'Ascensione di Atlantide (`secret`):** Il risveglio del cuore d'oricalco, geyser di luce ciano e levitazione delle rovine.
-- **Meta-Progressione (New Game+):** Guadagno di Tavolette Antiche ($\tau$) ad ogni epilogo per sbloccare perk permanenti nel *Santuario dei Predecessori*.
-- **Eventi Spontanei nel Deserto:** Tempeste di sabbia con bonus $+50\%$ e carovane del Mercante Nomade con contratti a tempo limitato.
-- **Zero Build Step:** HTML5, CSS3 moderno, ES Modules nativi e copia pinnata locale di Three.js r160 in `vendor/three/`.
+  - ☠️ **La Maledizione di Atlantide (`curse`):** Tempesta cremisi, pioggia di sangue e risveglio dell'antico orrore cosmico.
+  - 👑 **Il Tesoro d'Oro Puro (`treasure`):** Cascata di gemme preziose e monete d'oro con minigioco di raccolta a click.
+  - 🏗️ **L'Impresa Mineraria SRL (`business`):** Anticlimax corporativo, cantieristica moderna e contratti in modalità Sandbox libera.
+  - 🔱 **L'Ascensione di Atlantide (`secret`):** Sbloccato dopo aver visto tutti e 3 i finali base; il risveglio dell'antico cuore d'oricalco, geyser di luce ciano e levitazione delle rovine verso la volta celeste.
+- **Spedizioni nei 4 Biomi Alternativi:**
+  - 🏜️ **Deserto d'Oro Egizio (`desert`):** Baseline classica con rilievi dunari morbidi.
+  - 🌊 **Oceano Prosciugato (`ocean`):** Bacino a depressione centrale, $+15\%$ volume totale e $-20\%$ resistenza del suolo.
+  - ❄️ **Ghiacciaio Arcaico (`glacier`):** Rilievi sfaccettati e strato intermedio di permafrost con resistenza $+35\%$.
+  - 🌴 **Giungla Sepolta (`jungle`):** Dislivelli organici e radici sotterranee da spezzare con colpi multipli.
+- **Ciclo Giorno/Notte Dinamico & Torce:** Orbita continua di 4 minuti con sole, luna oricalco, cupola stellata procedurale e torce arcaiche con luce tremolante.
+- **Guardaroba Cosmetico:** Personalizzazione dell'aspetto di pale, biomi sabbia e automi tramite Tavolette Antiche ($\tau$).
+- **Economia Disaccoppiata:** Calcolo Sand Per Second (SPS), progresso offline e usura basati su timestamp reali `performance.now()`, totalmente indipendenti dal frame rate.
+- **Doppio Binario Asset:** Caricamento asincrono GLTF/Audio campionato con fallback trasparente e immediato sui generatori procedurali Three.js (`ProceduralFactory.js`) e Web Audio API (`SoundSynth`).
+- **Internazionalizzazione (i18n):** Supporto bilingue reattivo Italiano / Inglese.
+- **Zero Build Step:** HTML5, CSS3 Glassmorphism, ES Modules nativi e Three.js r160 locale in `vendor/three/`.
 
 ---
 
 ## 🎮 Controlli di Gioco
 
-Il gioco supporta nativamente mouse/tastiera su desktop e gesture touch avanzate su smartphone e tablet:
+Il gioco supporta nativamente mouse/tastiera su desktop e gesture touch su smartphone e tablet:
 
 | Azione | Desktop (Mouse / Tastiera) | Mobile / Touch Screen |
 |---|---|---|
@@ -40,68 +51,71 @@ Il gioco supporta nativamente mouse/tastiera su desktop e gesture touch avanzate
 | **Rotazione Camera** | Click destro + Trascina | Gesto a due dita (Pinch & Orbit Drag) |
 | **Pan / Spostamento** | Tasti `W`, `A`, `S`, `D` o Frecce direzionali | Shift + Click destro oppure Pan a due dita |
 | **Zoom / Dolly** | Rotellina del mouse | Pinch to zoom con due dita |
-| **Officina Upgrade** | Click sul pulsante `Officina` nell'HUD | Tap su `Officina` (cassetto espanso a tutto schermo) |
-| **Pausa & Opzioni** | Tasto `Esc` o pulsante `⚙️ Pausa` | Tap sul pulsante `⚙️ Pausa` nell'HUD |
-| **Suite Debug** | Tasto rapido **`F2`** o **`~` / `` ` ``** (Backquote) | Tramite console o parametro URL `?debug=1` |
+| **Officina Upgrade** | Click sul pulsante `Officina` nell'HUD | Tap su `Officina` nell'HUD |
+| **Pausa & Menu** | Tasto `Esc` o pulsante `⚙️ Pausa` | Tap sul pulsante `⚙️ Pausa` |
+| **Suite Debug** | Tasto rapido **`F2`** o **`~` / `` ` ``** | Parametro query string `?debug=1` |
 
 ---
 
-## 🛠️ Suite Debug & Parametri URL
+## 🛠️ Suite Debug, Trucchi & Parametri URL
 
-Diggy Diggy Sand include strumenti di collaudo e parametri query per testare rapidamente ogni meccanica:
+Diggy Diggy Sand include strumenti di collaudo avanzati sia visivi che da console:
+
+### Scheda "Trucchi" nel Pannello Impostazioni
+All'interno del modale Impostazioni è presente la scheda **Trucchi / Modalità Creativa**:
+- **Conferma Irreversibile:** Al primo tocco di qualsiasi comando di debug, viene mostrato un avviso chiaro: l'attivazione dei cheat disabilita in modo permanente lo sblocco di tutti gli Obiettivi per la run in corso.
+- **Lockout Obiettivi:** Confermando, viene scritto immediatamente `cheatsEnabled = true` nel salvataggio persistente (`dds_save_v1`). `Achievements.js` blocca l'assegnazione dei trofei, l'HUD mostra il badge `🔧 Cheats` e la schermata Trofei espone il banner di blocco.
+- **Comandi Disponibili:** Accredito immediato $+100.000$ o $+1.000.000$ Sabbia, completamento rapido a $50\%$, $95\%$ o $99\%$, forzatura del climax narrativo (Curse, Treasure, Business, Secret), innesco di Tempeste o Mercanti, Super Pala (God Mode) e sblocco di tutti gli upgrade al massimo.
 
 ### Parametri URL
 | Parametro | Descrizione | Esempio |
 |---|---|---|
-| `?debug=1` | Attiva la suite di debug estesa con log dettagliati | `index.html?debug=1` |
+| `?debug=1` | Attiva la console di diagnostica avanzata e overlay FPS | `index.html?debug=1` |
 | `?cheat=1` | Abilita i comandi cheat immediati | `index.html?cheat=1` |
-| `?ending=<id>` | Forza il finale della run: `curse`, `treasure`, `business`, `secret` | `index.html?ending=secret` |
+| `?ending=<id>` | Forza il finale della spedizione: `curse`, `treasure`, `business`, `secret` | `index.html?ending=secret` |
 
 ### Comandi Console Rapidi (`window.DDS_DEBUG`)
-Aprendo gli Strumenti per Sviluppatori (`F12`), è disponibile l'interfaccia:
+Aprendo la console DevTools (`F12`), sono disponibili le API:
 ```javascript
 // Accredita sabbia istantanea
-window.DDS_DEBUG.addSand(50000);
+window.DDS_DEBUG.addSand(500000);
 
-// Forza percentuale di scavo al 99%
-window.DDS_DEBUG.setCompletion(0.99);
+// Imposta la percentuale di completamento dello scavo
+window.DDS_DEBUG.setCompletion(0.95);
 
-// Forza l'attivazione immediata di un finale
+// Avvia immediatamente un finale
 window.DDS_DEBUG.forceEnding('secret'); // 'curse' | 'treasure' | 'business' | 'secret'
 
-// Lancia un evento dinamico nel deserto
+// Scatena un evento dinamico nel deserto
 window.DDS_DEBUG.triggerEvent('sandstorm'); // oppure 'merchant'
 
-// Sblocca tutti gli upgrade al livello massimo
+// Massimizza tutti gli strumenti e lavoratori
 window.DDS_DEBUG.unlockAllUpgrades();
 
-// Aggiungi Tavolette Antiche tau
-window.DDS_DEBUG.addTablets(10);
+// Aggiungi Tavolette Antiche meta-valuta
+window.DDS_DEBUG.addTablets(25);
 
-// Sblocca tutti i finali nella Galleria trofei
-window.DDS_DEBUG.unlockAllEndings();
+// Sblocca tutti i cosmetici nel Guardaroba
+window.DDS_DEBUG.unlockAllSkins();
 
-// Monitoraggio risorse WebGL e memoria
+// Sblocca tutti i biomi di spedizione
+window.DDS_DEBUG.unlockAllBiomes();
+
+// Report della memoria GPU (geometrie, texture, particelle)
 console.table(window.DDS_DEBUG.getMemoryReport());
-
-// Pulisci liste di rendering VRAM GPU
-window.DDS_DEBUG.cleanVRAM();
-
-// Apri / Chiudi il pannello grafico live
-window.DDS_DEBUG.togglePanel();
 ```
 
 ---
 
 ## 🚀 Avvio Locale Rapido
 
-Poiché il gioco utilizza i moduli JavaScript ES nativi (`import`/`export`), è necessario servirlo tramite un server HTTP statico locale (non tramite doppio click su `file://`):
+Poiché il progetto adotta i moduli ES nativi di JavaScript (`import`/`export`) e import map, è necessario servirlo tramite un web server HTTP statico (non via doppio click con protocollo `file://`):
 
-### Con Python (Preinstallato su Linux/macOS/Windows):
+### Con Python (Linux / macOS / Windows):
 ```bash
 python3 -m http.server 8080
 ```
-Apri poi il browser su: **`http://localhost:8080`**
+Apri poi il browser all'indirizzo: **`http://localhost:8080`**
 
 ### Con Node.js / npx:
 ```bash
@@ -113,46 +127,29 @@ Installa l'estensione **Live Server**, fai clic destro su `index.html` e selezio
 
 ---
 
-## 📦 Deployment su GitHub Pages
-
-Il repository include il workflow GitHub Actions pronto all'uso in [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml).
-
-### Istruzioni per la pubblicazione:
-1. Crea un repository su GitHub e carica il codice:
-   ```bash
-   git remote add origin https://github.com/<tuo-utente>/<tuo-repo>.git
-   git push -u origin main
-   ```
-2. Vai su **Settings** > **Pages** del repository GitHub.
-3. Nella sezione **Build and deployment** > **Source**, seleziona **GitHub Actions**.
-4. Il workflow si avvierà automaticamente a ogni commit e renderà il gioco giocabile all'indirizzo:
-   `https://<tuo-utente>.github.io/<tuo-repo>/`
-
----
-
 ## 🧪 Esecuzione della Suite di Test
 
-Il progetto dispone di una suite di test completa (48 unit test) eseguibili direttamente da riga di comando senza dipendenze pesanti:
+Il progetto dispone di una suite di 92 test unitari automatizzati, eseguibili con il loader nativo dei moduli di Node.js:
 
 ```bash
-# Esegui tutti i test (Fasi 1-7)
-node --import ./tests/register.mjs tests/phase1.test.mjs
-node --import ./tests/register.mjs tests/phase2.test.mjs
-node --import ./tests/register.mjs tests/phase3.test.mjs
-node --import ./tests/register.mjs tests/phase4.test.mjs
-node --import ./tests/register.mjs tests/phase5.test.mjs
-node --import ./tests/register.mjs tests/phase6.test.mjs
-node --import ./tests/register.mjs tests/phase7.test.mjs
+# Esegui tutte le suite di test (Fasi 1-15)
+for f in tests/phase*.test.mjs; do node --import ./tests/register.mjs "$f"; done
 ```
 
 ---
 
-## 📜 Licenza & Riconoscimenti
+## 📦 Deployment su GitHub Pages
 
-- **Codice:** Rilasciato sotto Licenza [MIT](LICENSE).
-- **Libreria 3D:** [Three.js r160](https://threejs.org/) (Licenza MIT) inclusa in copia locale in `vendor/three/`.
-- **Tipografia:** Google Fonts:
-  - *Cinzel Decorative* (700, 900) per titoli e display epiloghi.
-  - *Cinzel* (600, 700) per pulsanti, header e officina.
-  - *Syne* (400–800) per metriche numeriche, contatori e corpo del testo.
-- **Audio:** Sintetizzatore procedurale basato su Web Audio API nativa (`AudioEngine.js`), senza dipendenze o file audio esterni proprietari.
+Il repository include il workflow GitHub Actions pronto all'uso in [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml).
+
+1. Su GitHub, accedi a **Settings** > **Pages**.
+2. Nella sezione **Build and deployment** > **Source**, seleziona **GitHub Actions**.
+3. A ogni push su `master`, il gioco viene compilato e pubblicato automaticamente su GitHub Pages.
+
+---
+
+## 📜 Licenza & Diritti
+
+- **Codice sorgente:** Licenza MIT — vedi il file [`LICENSE`](LICENSE).
+- **Tipografia:** SIL Open Font License (Cinzel Decorative, Cinzel, Syne).
+- **Asset 3D & Audio:** CC0 1.0 Universal / Public Domain (Kenney, Quaternius, OpenGameArt).

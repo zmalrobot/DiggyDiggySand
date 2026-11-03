@@ -203,21 +203,60 @@ These abilities sit on the main HUD as circular stone medallions with cooldown s
 
 ---
 
-## 7. Replayability & Meta-Progression (New Game+)
+## 7. Replayability, Sanctuary Meta-Progression & Cosmetic Wardrobe
 
-When an ending is completed, the player earns **Ancient Tablets** ($\tau$) based on run completion time and ending discovered:
-* Base clear reward: $5\ \tau$
-* Under 30 minutes bonus: $+3\ \tau$
-* First-time ending discovery: $+5\ \tau$
+When an expedition reaches its climax, the player earns **Ancient Tablets** ($\tau$) based on total sand excavated and run performance:
+$$\tau = \left\lfloor \sqrt{\frac{\text{TotalSand}}{100,000}} \right\rfloor + 5$$
 
-### Meta-Shop (Persistent Between Runs via `localStorage`)
+Tablets are stored persistently across all runs (`dds_save_v1`) and never reset upon starting a new expedition.
 
-| Meta Upgrade | Cost ($\tau$) | Effect |
+### 7.1 Ancestral Sanctuary (Persistent Meta-Upgrades)
+
+The Ancestral Sanctuary can be accessed from the Main Menu or pause screen to permanently enhance future expeditions:
+
+| ID | Meta Upgrade | Base Cost ($\tau$) | Multiplier | Max Level | Effect |
+|---|---|---|---|---|---|
+| `shovelEcho` | **Eco della Pala (Shovel Echo)** | $3\ \tau$ | $1.6$ | 10 | $+15\%$ base click digging power per level across all expeditions. |
+| `excavatorBlueprint` | **Progetto Escavatore (Excavator Blueprint)** | $5\ \tau$ | $2.0$ | 5 | Start every future expedition with active Beetle Automata digging from frame 1. |
+| `tabletMagnetism` | **Magnetismo Tavolette (Tablet Magnetism)** | $4\ \tau$ | $1.8$ | 5 | Ancient favor: $-5\%$ discount per level on all workshop sand costs (up to $-25\%$). |
+
+### 7.2 Dune Wardrobe (Cosmetics & Custom Skins)
+
+Players can spend Ancient Tablets ($\tau$) in the **Dune Wardrobe** modal (`WardrobeModal.js` / `CosmeticsManager.js`) to personalize the visual look of their excavation tools, terrain particles, and machinery without altering physical hitboxes:
+
+#### 1. Shovels & Digging Tools (`category: shovel`)
+| Skin ID | Name | Cost ($\tau$) | Visual & Particle Look |
+|---|---|---|---|
+| `shovel_bronze` | **Pala di Bronzo (Bronze Spade)** | $0\ \tau$ (Default) | Weathered bronze blade, granular sand sparks (`#B88A44`). |
+| `shovel_gold` | **Pala d'Oro Reale (Royal Gold)** | $15\ \tau$ | Burnished pharaonic gold, radiant sun glints (`#FFDF00`). |
+| `shovel_crystal` | **Pala di Cristallo (Atlantean Crystal)** | $25\ \tau$ | Ethereal cyan blade, bioluminescent energy sparks (`#0FE3C1`). |
+| `shovel_obsidian` | **Pala d'Ossidiana (Abyssal Obsidian)** | $40\ \tau$ | Pitch-black volcanic glass, cosmic purple trail (`#2A1F2D`). |
+
+#### 2. Sand Tints & Cosmetic Biomes (`category: sand`)
+| Skin ID | Name | Cost ($\tau$) | Chromatic Banding & Dust |
+|---|---|---|---|
+| `sand_classic` | **Sabbia Classica Egizia** | $0\ \tau$ (Default) | Golden surface `#E0C27A`, ochre mid `#B88A44`, bedrock `#6E563B`. |
+| `sand_mars` | **Sabbia Rossa di Marte** | $20\ \tau$ | Crimson dust `#C84B31`, dark oxide `#8C2C1D`, ember `#2D1B1B`. |
+| `sand_caribbean` | **Sabbia Bianca Caraibica** | $25\ \tau$ | Pearl white `#F4F6F0`, seafoam `#D8E8E4`, deep lagoon `#2A6F7B`. |
+| `sand_volcanic` | **Sabbia Nera Vulcanica** | $35\ \tau$ | Basalt ash `#484B52`, charcoal `#2C2F36`, obsidian magma `#17181C`. |
+
+#### 3. Machinery & Automaton Chassis (`category: machinery`)
+| Skin ID | Name | Cost ($\tau$) | Mesh Material & Highlights |
+|---|---|---|---|
+| `machinery_standard` | **Flotta da Cantiere Standard** | $0\ \tau$ (Default) | Industrial bronze casing with steam pipes (`#8C5828`). |
+| `machinery_royal_gold` | **Flotta Aureo-Reale** | $30\ \tau$ | Polished ceremonial gold armor and solar insignias (`#F5BA23`). |
+| `machinery_atlantis_teal` | **Flotta d'Oricalco Celestiale** | $50\ \tau$ | Levitation conduits and pulsating turquoise energy cores (`#00F2FF`). |
+
+### 7.3 Expedition Biome Unlock Matrix
+
+In addition to cosmetics, Ancient Tablets or expedition victories unlock new geological destinations:
+
+| Bioma | Sblocco Requisito | Modificatore Fisico Principale |
 |---|---|---|
-| **Ancestral Shovel** | $3\ \tau$ | Start every new run with Level 5 Shovel and Level 3 Dig Rate. |
-| **Surveyor's Compass** | $5\ \tau$ | Hints for current secret ending appear at $35\%$ clearance instead of $60\%$. |
-| **Orichalcum Magnet** | $8\ \tau$ | Automatic passive generation continues for up to 2 hours while tab is closed (Offline Progress). |
-| **Golden Scarab Favor** | $12\ \tau$ | Base currency multiplier permanently boosted by $+20\%$ across all runs. |
+| **Deserto Egizio (`desert`)** | Disponibile all'inizio | Baseline standard di scavo e rilievi dunari morbidi. |
+| **Oceano Prosciugato (`ocean`)** | $10\ \tau$ oppure 1 Vittoria | $+15\%$ volume totale, $-20\%$ resistenza del suolo (scavo rapido). |
+| **Ghiacciaio Arcaico (`glacier`)** | $20\ \tau$ oppure 2 Vittorie | $+35\%$ resistenza allo strato di permafrost intermedio ($3 < Y \le 8$). |
+| **Giungla Sepolta (`jungle`)** | $35\ \tau$ oppure 3 Vittorie | Radici sepolte resistenti che richiedono colpi multipli per essere spezzate. |
 
 ---
 

@@ -129,12 +129,46 @@ echo "Asset initialization complete."
 
 ---
 
-## 6. Procedural Fallback Engine (Mandatory Antigravity Directive)
+## 6. Architettura Asset a Doppio Binario & Fallback Procedurale
 
-To ensure the game **never breaks** if network requests fail, external links change, or an asset fails to load, Antigravity **must** implement a procedural mesh factory fallback in Three.js (`ProceduralFactory.js`):
+Per rispettare i vincoli operativi di `AGENTS.md` e garantire che il gioco sia **immediatamente giocabile offline al 100%** anche in assenza di connessione internet, pacchetti `.zip` non scaricati o file binari corrotti, *Diggy Diggy Sand* implementa un'architettura rigorosa a **doppio binario**:
+
+```
+                              [AVVIO DEL GIOCO]
+                                      │
+                 ┌────────────────────┴────────────────────┐
+                 ▼                                         ▼
+        [BINARIO 1: ESTERNO]                      [BINARIO 2: PROCEDURALE]
+    File .glb / Campioni Audio               ProceduralFactory / SoundSynth
+                 │                                         │
+       Tentativo Asincrono                         Generazione Matematica
+      (Timeout 10s singolo,                         Immediata e Garantita
+       Timeout 30s globale)                                │
+                 │                                         │
+        ┌────────┴────────┐                                │
+        ▼                 ▼                                │
+   [Successo]        [Fallimento / 404]                    │
+  Usa Modello GLTF    Subentro Trasparente ───────────────►┘
+```
+
+### 6.1 Controllo di Disponibilità via `manifest.json`
+- Il file `assets/manifest.json` mappa ogni identificatore simbolico (`RUIN_OBELISK`, `TOOL_SHOVEL`, `SFX_DIG_SOFT`, ecc.) al rispettivo percorso relativo.
+- Ogni elemento include il flag booleano `"available": true|false`:
+  - Se `false`, `AssetLoader` e `AudioEngine` non tentano nemmeno la richiesta di rete, risparmiando cicli I/O e azzerando gli errori 404 in console.
+  - Se `true`, il loader avvia il recupero tramite `THREE.GLTFLoader` o `AudioContext.decodeAudioData()`.
+
+### 6.2 Politica Timeout e Resilienza
+- **Timeout per singolo asset:** 10 secondi.
+- **Timeout globale di caricamento:** 30 secondi.
+- Se una chiamata asincrona va in timeout, genera un errore di rete o il file `.glb` fallisce la validazione dei buffer, il sistema cattura l'eccezione (`onError` / `try...catch`) e commuta istantaneamente e silenziosamente sul generatore procedurale (`ProceduralFactory.js` o `SoundSynth`).
+- La schermata di caricamento `LoadingScreen.js` garantisce un avanzamento monotono senza mai bloccarsi.
+
+### 6.3 Generatore 3D Procedurale (`ProceduralFactory.js`)
+
+Se i modelli `.glb` esterni non sono presenti nella cartella `assets/models/`, `ProceduralFactory.js` genera al volo geometrie chiseled low-poly matematicamente conformi all'Art Bible (`flatShading: true`):
 
 ```javascript
-// Procedural fallback definitions when .glb files are missing
+// js/world/ProceduralFactory.js
 import * as THREE from 'three';
 
 export const FallbackMeshes = {
@@ -199,15 +233,15 @@ export const FallbackMeshes = {
 };
 ```
 
-### Fallback Web Audio Synthesizer
+### 6.4 Sintetizzatore Web Audio Procedurale (`SoundSynth`)
 
-If audio files cannot be loaded, Antigravity must generate procedural audio via Web Audio API:
+Qualora i campioni sonori `.ogg` o `.mp3` non siano presenti o l'utente giochi offline, `SoundSynth` genera tutti i suoni in tempo reale tramite oscillatori, rumore bianco filtrato e inviluppi esponenziali nativi:
 
 ```javascript
-// Zero-asset procedural SFX generator
+// js/core/AudioEngine.js - Sintetizzatore Web Audio a zero asset
 export class SoundSynth {
-  constructor() {
-    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+  constructor(audioCtx) {
+    this.ctx = audioCtx;
   }
 
   playDig() {

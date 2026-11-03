@@ -107,6 +107,17 @@ export const PALETTE_3D = {
 };
 ```
 
+### 3.3 Palette Ufficiale dei 4 Biomi di Spedizione
+
+Ciascun bioma possiede una precisa stratificazione cromatica per quota altimetrica ($Y>8$, $3<Y\le8$, $Y\le3$) e per le venature luminescenti del basamento:
+
+| Bioma | Strato 1: Superficie ($Y>8$) | Strato 2: Intermedio ($3<Y\le8$) | Strato 3: Basamento ($Y\le3$) | Venature Luminescenti |
+|---|---|---|---|---|
+| **Deserto Egizio (`desert`)** | Sabbia dorata fine `#E0C27A` (`0xE0C27A`) | Ocra compatta `#B88A44` (`0xB88A44`) | Arenaria scura `#6E563B` (`0x6E563B`) | Turchese atlantideo `#0FE3C1` |
+| **Oceano Prosciugato (`ocean`)** | Sabbia corallina chiara `#F5E6CA` (`0xF5E6CA`) | Sedimenti marini `#4A7C82` (`0x4A7C82`) | Abisso pietrificato `#1B3240` (`0x1B3240`) | Oro puro d'oricalco `#F5BA23` |
+| **Ghiacciaio Arcaico (`glacier`)** | Neve e permafrost `#E8F4F8` (`0xE8F4F8`) | Ghiaccio compatto azzurro `#7BAEC2` (`0x7BAEC2`) | Roccia scistosa fredda `#2A3B45` (`0x2A3B45`) | Ciano bioluminescente `#00F2FF` |
+| **Giungla Sepolta (`jungle`)** | Humus e muschio `#3D5C38` (`0x3D5C38`) | Argilla e corteccia `#5C4028` (`0x5C4028`) | Basamento di fango fossile `#2E241C` (`0x2E241C`) | Smeraldo vitale `#2ECC71` |
+
 ---
 
 ## 4. Linee Guida UI / HUD (Look & Feel)
@@ -151,15 +162,37 @@ Non semplici cubi generici, ma strutture che ricordano:
   1. Piccole particelle triangolari/quadrate di sabbia (`#E4C580`).
   2. Rari frammenti di scintille acquamarina luminescente (`#0FE3C1`), a suggerire che sotto la sabbia c'è energia viva che aspetta di essere liberata.
 
+### 5.4 Illuminazione Notturna, Floor di Sicurezza e Tone Mapping
+- **Ambient Floor di Sicurezza:**
+  - Nella scena deve essere **sempre attiva** una sorgente `THREE.AmbientLight(0x0D131A, 0.15)` denominata `ambientFloor` per prevenire il collasso al nero totale nelle cavità profonde.
+  - La luce emisferica notturna del cielo è ancorata al blu abissale `#1B2A40` con un'intensità minima inderogabile $\ge 0.25$, mentre la luce riflessa del terreno è `#0D131A`.
+  - La luce solare/lunare non si azzera mai completamente di notte ($\text{intensità} \ge 0.35$), mantenendo chiaramente visibile la silhouette plastica delle dune.
+- **Tone Mapping Standard:**
+  ```javascript
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.0;
+  ```
+
+### 5.5 Post-Processing Visivo & Antialiasing
+- **Selective Bloom Calibrato:**
+  - Estrazione multi-tap radiale applicata esclusivamente alle componenti con luminanza superiore a `0.85` (cristalli ciano, gemme, riflessi metallici dell'oricalco).
+  - Parametri di riferimento bilanciati: `uBloomThreshold: 0.85, uBloomIntensity: 0.4, uBloomRadius: 0.5`.
+  - Color grading caldo nei mezzitoni (`uWarmth: 0.08`) e vignette periferica morbida (`uVignetteDarkness: 0.28, uVignetteOffset: 0.95`).
+- **Antialiasing Doppia Barriera:**
+  - *Hardware MSAA 4x:* `samples: 4` su `THREE.WebGLRenderTarget` per il buffer offscreen.
+  - *FXAA Integrato:* campionamento sub-pixel anti-aliasing sul quad compositore per eliminare le scalettature sulle facce low-poly.
+  - *Opaque Output:* il fragment shader finale emette sempre `gl_FragColor = vec4(finalColor, 1.0)` per prevenire canvas trasparenti.
+
 ---
 
-## 6. Archetipi Visivi per i Tre Finali
+## 6. Archetipi Visivi per i Quattro Finali
 
 | Finale | Condizione Visiva Dominante | Palette Riservata |
 |---|---|---|
 | **A. La Maledizione (Curse)** | Il cielo terso viene oscurato; la luce ciana si trasforma in cremisi sanguigno o verde putrido; le rovine cominciano a fumare ombre scure. | Rosso carminio (`#8B0000`), Nero ossidiana (`#100A0A`), Viola vuoto (`#2E0854`) |
 | **B. Il Tesoro (Treasure)** | I canali d'acqua di Atlantide si riempiono di luce pura solare; le pietre si trasformano in oricalco fuso, zaffiri e lapislazzuli scintillanti. | Oro puro brillante (`#FFDF00`), Lapislazzulo (`#1D3557`), Bianco diamante (`#FFFFFF`) |
 | **C. L'Impresa di Scavo (Business)** | Il misticismo svanisce all'improvviso. La luce acquatica scompare lasciando posto a un cantiere moderno; compaiono cartelli arancioni fluo e coni spartitraffico low-poly sulla roccia sterile. | Arancione fluo da cantiere (`#FF6B00`), Grigio asfalto (`#333333`), Giallo segnaletica (`#FFDE00`) |
+| **D. L'Ascensione di Atlantide (Secret)** | Il cuore d'oricalco sepolto pulsa a frequenza armonica; fessure d'energia ciano squarciano la roccia, eruttando geyser di luce che sollevano obelischi e piloni verso la volta celeste. | Ciano nucleare (`#00F2FF`), Oricalco ardente (`#FF7A36`), Luce eterea (`#84FFF0`), Viola vuoto cosmico (`#1A0B2E`) |
 
 ---
 
