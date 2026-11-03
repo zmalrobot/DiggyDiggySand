@@ -282,28 +282,66 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
 
 /* ===== HUD di gioco ===== */
 #hud { position: fixed; inset: 0; z-index: 15; pointer-events: none; display: flex; justify-content: center; align-items: flex-start; padding: 14px 16px; animation: hudIn 0.8s ease both; }
-#hud .hud-top { pointer-events: auto; display: flex; align-items: center; gap: 28px; width: min(860px, 100%); padding: 12px 22px; }
+#hud .hud-top { pointer-events: auto; display: flex; align-items: center; gap: 24px; width: min(880px, 100%); padding: 12px 22px; }
 .hud-block { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .hud-label { font-family: var(--font-heading); font-weight: 600; font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sand-surface); }
-.hud-sand { min-width: 128px; }
+.hud-sand { min-width: 130px; }
+.hud-sand-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
 .hud-num { font-family: var(--font-data); font-weight: 800; font-size: 2rem; line-height: 1; color: var(--gold-pharaoh); text-shadow: 0 0 14px rgba(245, 186, 35, 0.45); font-variant-numeric: tabular-nums; display: inline-block; transform-origin: left center; }
 .hud-num.pop { animation: numPop 0.18s ease-out; }
+.hud-sps { font-family: var(--font-data); font-weight: 700; font-size: 0.85rem; color: var(--atlantis-teal); font-variant-numeric: tabular-nums; transition: color 0.3s; }
 .hud-progress { flex: 1; }
 .hud-progress-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
 .hud-percent { font-family: var(--font-data); font-weight: 700; font-size: 0.95rem; color: var(--atlantis-teal); font-variant-numeric: tabular-nums; }
-.hud-menu-btn { padding: 10px 16px; font-size: 0.78rem; white-space: nowrap; }
+.hud-actions { display: flex; align-items: center; gap: 10px; }
+.hud-btn { padding: 9px 14px; font-size: 0.78rem; white-space: nowrap; }
+.hud-shop-btn { border-color: var(--gold-pharaoh); box-shadow: inset 0 0 0 1.5px var(--gold-pharaoh), 0 0 10px rgba(245, 186, 35, 0.35); }
 @keyframes hudIn { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: none; } }
 @keyframes numPop { 0% { transform: scale(1); } 40% { transform: scale(1.12); } 100% { transform: scale(1); } }
 .game-fade { position: fixed; inset: 0; z-index: 18; background: var(--atlantis-abyss); opacity: 0; pointer-events: none; transition: opacity 0.45s ease; }
 .game-fade.on { opacity: 1; }
 
+/* ===== Officina / Negozio Upgrade ===== */
+.shop-container { position: fixed; inset: 0; z-index: 25; pointer-events: none; }
+.shop-container.open { pointer-events: auto; }
+.shop-backdrop { position: absolute; inset: 0; background: rgba(3, 24, 38, 0.55); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); opacity: 0; transition: opacity 0.3s ease; }
+.shop-container.open .shop-backdrop { opacity: 1; }
+.shop-drawer {
+  position: absolute; top: 0; right: 0; bottom: 0;
+  width: min(440px, 94vw);
+  display: flex; flex-direction: column; gap: 14px; padding: 22px 24px;
+  transform: translateX(100%); transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: -8px 0 32px rgba(3, 24, 38, 0.9), inset 0 0 0 1.5px var(--ui-border-gold);
+}
+.shop-container.open .shop-drawer { transform: translateX(0); }
+.shop-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; border-bottom: 1px solid rgba(212, 175, 55, 0.2); padding-bottom: 12px; }
+.shop-title-wrap { display: flex; flex-direction: column; gap: 2px; }
+.shop-title { font-family: var(--font-heading); font-size: 1.35rem; color: var(--gold-pharaoh); letter-spacing: 0.06em; margin: 0; }
+.shop-subtitle { font-size: 0.78rem; letter-spacing: 0.04em; }
+.shop-close-btn { padding: 4px 10px; font-size: 1.25rem; line-height: 1; }
+.shop-tabs { margin-bottom: 0; }
+.shop-content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-right: 4px; }
+.upgrade-card { padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; border: 1px solid rgba(212, 175, 55, 0.2); transition: border-color 0.2s, box-shadow 0.2s; }
+.upgrade-card:hover { border-color: var(--atlantis-teal); box-shadow: 0 0 12px rgba(15, 227, 193, 0.15); }
+.upgrade-card.maxed { opacity: 0.7; }
+.upgrade-card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.upgrade-name { font-family: var(--font-heading); font-weight: 700; font-size: 0.95rem; color: var(--gold-pharaoh); }
+.upgrade-level { font-family: var(--font-data); font-weight: 700; font-size: 0.85rem; color: var(--atlantis-teal); }
+.upgrade-desc { font-size: 0.8rem; line-height: 1.4; margin: 0; }
+.upgrade-benefit { font-family: var(--font-data); font-weight: 600; font-size: 0.82rem; }
+.upgrade-card-foot { display: flex; justify-content: flex-end; margin-top: 4px; }
+.btn-buy { min-width: 140px; display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 14px; font-size: 0.82rem; }
+.btn-buy.glow { box-shadow: inset 0 0 0 1.5px var(--gold-pharaoh), 0 0 12px rgba(245, 186, 35, 0.55); border-color: var(--gold-pharaoh); }
+.buy-cost { font-family: var(--font-data); font-weight: 800; font-size: 0.9rem; color: var(--gold-glow); }
+
 @media (max-width: 640px) {
   #hud { padding: 8px; }
-  #hud .hud-top { gap: 12px; padding: 10px 14px; flex-wrap: wrap; }
+  #hud .hud-top { gap: 10px; padding: 10px 12px; flex-wrap: wrap; }
   .hud-num { font-size: 1.5rem; }
   .hud-sand { min-width: 90px; }
-  .hud-menu-btn { padding: 8px 10px; font-size: 0.7rem; }
+  .hud-btn { padding: 7px 10px; font-size: 0.7rem; }
   .main-menu { padding-left: 20px; }
   .row { flex-direction: column; align-items: stretch; gap: 8px; }
   .ctl { width: 100%; }
 }
+

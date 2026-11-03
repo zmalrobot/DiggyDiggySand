@@ -77,13 +77,19 @@ Se la console mostra errori, sospettare in quest'ordine:
 Verifiche manuali da fare: valori persistiti dopo il ricaricamento; `localStorage.setItem('dds_settings_v1','{rotto')` seguito da ricarica ripristina i default senza errori; "Continua" attivo solo con un salvataggio valido; conferma di sovrascrittura e di eliminazione salvataggio.
 
 ## 5. Roadmap (dal piano approvato)
-- [x] **M0** Foundation (scritta, da verificare)
-- [x] **M0.5** Boot, Loading, Settings, Menu (scritta, da verificare)
-- [ ] **M1** Scavo e audio: `js/world/Terrain.js` (chunk 8×8, `flatShading`, colori per altezza), `js/systems/Digging.js` (raycast analitico, click e hold, tick `max(0.06, 0.35×0.93^n)`), `js/world/Particles.js` (`InstancedMesh`, sabbia `#E4C580` e scintille `#0FE3C1`), `playDig`/`playCrit` in `AudioEngine`, `js/world/Sky.js`, `js/core/Game.js`.
-- [ ] **M2** Economia e HUD: `js/core/State.js`, `js/systems/Economy.js` (timestamp reali, `dt` limitato), `js/systems/Upgrades.js` (U1.1-U1.4: costi 10/45/90/350, moltiplicatori 1.15/1.17/1.16/1.20), `js/ui/Hud.js`, `js/ui/Shop.js`.
-- [ ] **M3** Flotta e rovine: `js/systems/Workers.js` (Nomad, Excavator, Monolith), `js/world/City.js`.
-- [ ] **M4** Finali e persistenza: `js/endings/{EndingManager,CurseEnding,TreasureEnding,BusinessEnding}.js` (mulberry32, `?ending=`, `?cheat=1`), codec di salvataggio del terreno in `Save.js`, `js/ui/Overlay.js`, galleria finali.
-- [ ] **M5** Polish e mobile: `js/systems/TouchControls.js` (un dito scava, due ruotano e zoomano), simulazione di bilanciamento 30-40 min in `tests/`.
+- [x] **M0** Foundation (verificata in headless Chrome)
+- [x] **M0.5** Boot, Loading, Settings, Menu (verificata in headless Chrome)
+- [x] **M1** Scavo e audio: `js/world/Terrain.js` (heightmap, flatShading, colori per altezza, raycast analitico), `js/systems/Digging.js` (click e hold, tick cadenzati, audio `playDigSound`), `js/world/Particles.js` (burst a fontana con dissolvenza), `js/core/Game.js` (camera orbitale top-down con clamp). Verificata con 9 test unitari e browser QA.
+- [x] **M2** Economia, Negozio Upgrade, Flotta Lavoratori 3D e Persistenza:
+  - `js/systems/Upgrades.js`: catalogo rami Manuale e Flotta Autonoma, costi esponenziali, calcolo SPS.
+  - `js/systems/Economy.js`: gestione SPS disaccoppiata dal rendering e calcolo progresso offline (50% efficienza, cap 2h).
+  - `js/ui/Shop.js`: cassetto scorrevole Atlantean-Kemet, schede a tab, bagliore dorato su bottoni accessibili.
+  - `js/systems/Workers.js`: modelli 3D procedurali low-poly (Scarafaggio, Escavatore, Draga), movimento sul terreno e cicli di scavo autonomo.
+  - `js/core/Save.js` & `Game.js`: autosave ogni 10s e su `beforeunload`, popup modale di rientro offline.
+  - Verificata con 15 test unitari e 7/7 step browser QA (Puppeteer/Headless Chrome).
+- [ ] **M3** Città sepolta e rovine: `js/world/City.js` (strutture che emergono dallo scavo).
+- [ ] **M4** Finali e persistenza avanzata: `js/endings/{EndingManager,CurseEnding,TreasureEnding,BusinessEnding}.js` (mulberry32, `?ending=`, `?cheat=1`), codec compresso del terreno in `Save.js`, `js/ui/Overlay.js`, galleria finali.
+- [ ] **M5** Polish e mobile: `js/systems/TouchControls.js` (un dito scava, due ruotano e zoomano), bilanciamento ed eventi sonori completi.
 
 Piano dettagliato con codice e verifiche: vedi la sezione "Roadmap" sopra e le formule in `Ideas/upgrade_tree_specification.md`.
 

@@ -121,6 +121,20 @@ export class AudioEngine {
     this._blip({ type: 'sawtooth', f0: 220, f1: 110, dur: 0.25, vol: 0.2 });
   }
 
+  /** Chime metallico / cascata di monete per acquisto di upgrade. */
+  playPurchaseSound() {
+    if (!this._ok()) return;
+    const pitches = [587.33, 880.0, 1174.66]; // D5, A5, D6
+    pitches.forEach((f, i) => {
+      setTimeout(() => {
+        if (!this._ok()) return;
+        this._blip({ type: 'triangle', f0: f, f1: f * 1.02, dur: 0.16, vol: 0.2 });
+        this._blip({ type: 'sine', f0: f * 2, f1: f * 2.01, dur: 0.1, vol: 0.1 });
+      }, i * 50);
+    });
+  }
+
+
   /**
    * Colpo di pala nella sabbia: raschio di rumore filtrato + tonfo sordo. Il pitch varia di ±15% a ogni
    * chiamata per evitare ripetitività. `intensity` (0..1.5) scala il volume.

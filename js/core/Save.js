@@ -28,10 +28,20 @@ export class Save {
   /** Nuova spedizione: genera il seed (da cui sarà scelto il finale) e scrive il salvataggio. */
   createNew() {
     const seed = (crypto.getRandomValues(new Uint32Array(1))[0]) | 0;
-    const data = { version: SAVE_VERSION, seed, createdAt: Date.now(), sand: 0, upgrades: {}, endingsSeen: this.load()?.endingsSeen ?? [] };
+    const data = {
+      version: SAVE_VERSION,
+      seed,
+      createdAt: Date.now(),
+      lastSaved: Date.now(),
+      sand: 0,
+      totalSand: 0,
+      upgrades: {},
+      endingsSeen: this.load()?.endingsSeen ?? [],
+    };
     this.write(data);
     return data;
   }
+
 
   write(data) {
     try { this.storage?.setItem(SAVE_KEY, JSON.stringify(data)); return true; } catch { return false; }

@@ -106,6 +106,9 @@ export class Terrain {
     return (a * (1 - tx) + b * tx) * (1 - tz) + (c * (1 - tx) + d * tx) * tz;
   }
 
+  getHeightAt(x, z) { return this.heightAt(x, z); }
+
+
   /**
    * Raycast analitico sulla heightmap (nessun raycast sulla mesh da 130k triangoli):
    * clip sull'AABB del terreno, marcia a passo fisso, poi bisezione.

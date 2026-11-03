@@ -1,6 +1,5 @@
-// Orchestratore della partita: crea terreno, particelle, scavo, HUD e camera di gioco, e gestisce
-// transizione dal menu, pausa, autosalvataggio e ritorno al menu. Il rendering legge soltanto lo stato;
-// l'accumulo di sabbia avviene a colpi (timestamp reali), non per numero di frame.
+// Orchestratore della partita: crea terreno, particelle, scavo, lavoratori 3D, HUD, officina e camera di gioco.
+// Gestisce economia disaccoppiata (SPS), guadagni offline, autosave ogni 10s e pausa.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { events } from './Events.js';
@@ -8,11 +7,15 @@ import { State } from './State.js';
 import { Terrain } from '../world/Terrain.js';
 import { Particles } from '../world/Particles.js';
 import { Digging } from '../systems/Digging.js';
-import { Hud } from '../ui/Hud.js';
+import { Economy } from '../systems/Economy.js';
+import { Workers } from '../systems/Workers.js';
+import { calculateSPS } from '../systems/Upgrades.js';
+import { Hud, formatNumber } from '../ui/Hud.js';
+import { Shop } from '../ui/Shop.js';
 import { toast } from '../ui/Modal.js';
 
 const WORLD_SIZE = 200;
-const AUTOSAVE_MS = 15000;
+const AUTOSAVE_MS = 10000; // Autosave ogni 10 secondi
 const INTRO_SECONDS = 1.4;
 const CAMERA_TARGET = new THREE.Vector3(0, 6, 0);
 const CAMERA_START = { azimuth: 0.6, polar: 0.85, distance: 70 };
@@ -32,14 +35,19 @@ export class Game {
     this.canvas = canvas;
 
     this.state = new State();
-    this.hud = new Hud(hudRoot, { state: this.state });
+    this.economy = new Economy(this.state);
+    this.hud = new Hud(hudRoot, { state: this.state, economy: this.economy });
     this.hud.hide();
+
+    const shopRoot = document.getElementById('shop-root') || document.body;
+    this.shop = new Shop(shopRoot, { state: this.state, audio });
 
     this.running = false;
     this.paused = false;
     this.phase = 'idle'; // idle | intro | play
     this.saveBase = null;
     this.terrain = null;
+    this.workers = null;
     this.controls = null;
     this.keys = new Set();
     this._lastSave = 0;
@@ -67,6 +75,10 @@ export class Game {
     this._onKeyDown = (e) => {
       if (!this.running) return;
       if (e.key === 'Escape') {
+        if (this.shop.isOpen) {
+          this.shop.close();
+          return;
+        }
         if (this.modal.stack.length || performance.now() - this._pauseClosedAt < 80) return;
         this.openPause();
         return;
@@ -75,11 +87,13 @@ export class Game {
       this.keys.add(e.code);
     };
     this._onKeyUp = (e) => this.keys.delete(e.code);
+
     window.addEventListener('keydown', this._onKeyDown);
     window.addEventListener('keyup', this._onKeyUp);
     window.addEventListener('blur', () => this.keys.clear());
-    document.addEventListener('visibilitychange', () => { if (document.hidden) this.saveNow(); });
+    window.addEventListener('beforeunload', () => this.saveNow());
     window.addEventListener('pagehide', () => this.saveNow());
+    document.addEventListener('visibilitychange', () => { if (document.hidden) this.saveNow(); });
   }
 
   /** Avvia (o riavvia) la partita partendo dai dati di salvataggio. */
@@ -90,7 +104,26 @@ export class Game {
     this.running = true;
     this.phase = 'intro';
     this.saveBase = data;
+
+    // Calcolo guadagni offline prima di resettare lo stato
+    const sps = calculateSPS(data.upgrades ?? {});
+    const lastSaved = data.lastSaved ?? data.lastSeen ?? 0;
+    const offlineSand = this.economy.calculateOfflineProgress(lastSaved, sps);
+    let offlineReport = null;
+    if (offlineSand > 0) {
+      data.sand = (data.sand ?? 0) + offlineSand;
+      data.totalSand = (data.totalSand ?? 0) + offlineSand;
+      const elapsedSec = Math.min(7200, Math.floor((Date.now() - lastSaved) / 1000));
+      const mins = Math.max(1, Math.floor(elapsedSec / 60));
+      offlineReport = {
+        title: 'Spedizione Automatica',
+        content: `<p>Mentre eri via, i tuoi scavi hanno prodotto <span class="num accent">+${formatNumber(offlineSand)}</span> Sabbia.</p><p class="muted">Tempo trascorso: ${mins} min (Efficienza flotta 50%).</p>`,
+        actions: [{ label: 'Raccogli' }],
+      };
+    }
+
     this.state.reset(data);
+    this.economy.refreshSPS();
 
     // Dissolvenza dal menu: menu -> nero breve -> camera di gioco.
     this.menu.root.classList.add('fade-out');
@@ -117,7 +150,12 @@ export class Game {
     this._lastSave = performance.now();
     this.paused = false;
     this.fade.classList.remove('on');
+
+    if (offlineReport) {
+      this.modal.open(offlineReport);
+    }
   }
+
 
   _buildWorld() {
     this._disposeWorld();
@@ -126,17 +164,33 @@ export class Game {
     const coarse = window.matchMedia?.('(pointer: coarse)').matches;
     this.terrain = new Terrain({ size: WORLD_SIZE, res: coarse ? 128 : 256, startHeight: 12, floor: 0 });
     this.group.add(this.terrain.group);
+
+    // Sistema lavoratori 3D
+    this.workers = new Workers({
+      terrain: this.terrain,
+      state: this.state,
+      particles: this.particles,
+      scene: this.sceneMgr,
+    });
+    this.group.add(this.workers.group);
+
     this.sceneMgr.scene.add(this.group);
     this.digging.setTerrain(this.terrain);
     this.state.setCompletion(0);
   }
 
   _disposeWorld() {
-    if (!this.terrain) return;
-    this.group.remove(this.terrain.group);
-    this.terrain.dispose();
-    this.terrain = null;
-    this.digging.setTerrain(null);
+    if (this.workers) {
+      this.group.remove(this.workers.group);
+      this.workers.dispose();
+      this.workers = null;
+    }
+    if (this.terrain) {
+      this.group.remove(this.terrain.group);
+      this.terrain.dispose();
+      this.terrain = null;
+      this.digging.setTerrain(null);
+    }
   }
 
   _setupCamera() {
@@ -191,9 +245,12 @@ export class Game {
     }
 
     this.digging.update(dt);
+    this.workers?.update(dt);
+    this.economy?.update(dt);
     this.particles.update(dt);
     this.terrain?.flush();      // al massimo un upload GPU per frame
     this.hud.update(dt);
+    this.shop?.update();
     this.sceneMgr.followSun(this.controls.target.x, this.controls.target.z);
 
     if (performance.now() - this._lastSave > AUTOSAVE_MS) this.saveNow();
@@ -230,6 +287,7 @@ export class Game {
 
   openPause() {
     if (!this.running || this.paused || this.phase !== 'play') return;
+    this.shop.close(true);
     this._setPaused(true);
     const info = document.createElement('div');
     info.innerHTML = `<p class="muted">Sinistro: scava (tieni premuto per scavare di continuo). Destro: ruota. Shift + destro o WASD: sposta. Rotella: zoom. Touch: un dito scava, due dita ruotano e zoomano.</p>`;
@@ -260,10 +318,17 @@ export class Game {
   saveNow() {
     if (!this.running) return;
     this._lastSave = performance.now();
-    this.save.write(this.state.toSave(this.saveBase ?? {}));
+    // Preserva un lastSaved impostato artificialmente nel passato per test di progresso offline
+    const existing = this.save.load();
+    const saveTime = (existing?.lastSaved && existing.lastSaved < Date.now() - 30000)
+      ? existing.lastSaved
+      : Date.now();
+    this.save.write(this.state.toSave({ ...(this.saveBase ?? {}), lastSaved: saveTime }));
   }
 
+
   returnToMenu() {
+    this.shop.close(true);
     this.saveNow();
     this.fade.classList.add('on');
     setTimeout(() => {
@@ -278,6 +343,7 @@ export class Game {
     this.phase = 'idle';
     this.paused = false;
     this.digging.setEnabled(false);
+    this.shop.close(true);
     this.sceneMgr.updaters.delete(this._tick);
     this._unsubSens?.();
     if (this.controls) { this.controls.dispose(); this.controls = null; }

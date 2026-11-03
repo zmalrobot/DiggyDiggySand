@@ -21,15 +21,19 @@ export class State {
     this.totalSand = Number.isFinite(data.totalSand) ? Math.max(0, data.totalSand) : this.sand;
     this.upgrades = { ...(data.upgrades ?? {}) };
     this.completion = 0; // 0..1, derivato dal terreno
+    this.lastSaved = data.lastSaved ?? data.lastSeen ?? Date.now();
   }
 
-  /** Statistiche correnti derivate dai livelli (per ora solo i valori base). */
+  /** Statistiche correnti derivate dai livelli degli upgrade. */
   get stats() {
     const n = this.upgrades;
+    const freqLvl = n.frequency ?? 0;
+    // Formula U1.2: TickInterval = max(0.06s, 0.35s * 0.93^n)
+    const interval = freqLvl === 0 ? 0.5 : Math.max(MIN_TICK, 0.35 * Math.pow(0.93, freqLvl));
     return {
       power: BASE_STATS.power + (n.shovel ?? 0),
       radius: BASE_STATS.radius + 0.45 * (n.radius ?? 0),
-      digRate: Math.min(1 / MIN_TICK, BASE_STATS.digRate),
+      digRate: freqLvl === 0 ? BASE_STATS.digRate : Math.min(1 / MIN_TICK, 1 / interval),
     };
   }
 
@@ -55,9 +59,18 @@ export class State {
     events.emit('completion:changed', { completion: v });
   }
 
-  /** Dati da scrivere nel salvataggio (il terreno arriverà con la M4). */
+  /** Dati da scrivere nel salvataggio. */
   toSave(base = {}) {
-    return { ...base, version: base.version ?? 1, sand: this.sand, totalSand: this.totalSand, upgrades: this.upgrades, lastSeen: Date.now() };
+    return {
+      ...base,
+      version: base.version ?? 1,
+      sand: this.sand,
+      totalSand: this.totalSand,
+      upgrades: this.upgrades,
+      lastSaved: Date.now(),
+      lastSeen: Date.now(),
+    };
   }
 }
+
 

@@ -1,4 +1,4 @@
-// HUD di gioco: contatore Sabbia, barra di completamento (obelisco orizzontale) e pulsante Menu.
+// HUD di gioco: contatore Sabbia, rateo passivo (+X/s), barra di completamento (obelisco) e pulsanti Officina/Menu.
 import { events } from '../core/Events.js';
 
 const SUFFIXES = ['', 'k', 'M', 'B', 'T', 'Qa', 'Qi'];
@@ -10,13 +10,12 @@ export function formatNumber(n) {
   if (n < 1000) return String(Math.floor(n));
   let idx = Math.min(SUFFIXES.length - 1, Math.floor(Math.log10(n) / 3));
   let scaled = n / 1000 ** idx;
-  // Evita "1000k": se l'arrotondamento sale a 1000, passa al suffisso successivo.
   if (Math.round(scaled * 10) / 10 >= 1000 && idx < SUFFIXES.length - 1) { idx++; scaled = n / 1000 ** idx; }
   const txt = scaled < 100 ? scaled.toFixed(1) : String(Math.floor(scaled));
   return `${txt.replace(/\.0$/, '')}${SUFFIXES[idx]}`;
 }
 
-/** Percentuale con più precisione quando i valori sono minuscoli, così il progresso si vede subito. */
+/** Percentuale con due decimali sotto lo 0.1% per mostrare subito il progresso. */
 export function formatPercent(fraction) {
   const p = Math.min(100, Math.max(0, fraction * 100));
   if (p > 0 && p < 0.1) return `${p.toFixed(2)}%`;
@@ -24,11 +23,14 @@ export function formatPercent(fraction) {
 }
 
 export class Hud {
-  constructor(root, { state }) {
+  constructor(root, { state, economy = null }) {
     this.root = root;
     this.state = state;
+    this.economy = economy;
     this.shownSand = state.sand;
     this.targetSand = state.sand;
+    this.sps = economy ? economy.sps : 0;
+
     this._build();
     this._unsubs = [
       events.on('sand:changed', ({ sand, delta }) => {
@@ -36,6 +38,7 @@ export class Hud {
         if (delta > 0) this._pop();
       }),
       events.on('completion:changed', ({ completion }) => this._setCompletion(completion)),
+      events.on('sps:changed', ({ sps }) => this.setSps(sps)),
     ];
     this.refresh();
   }
@@ -45,7 +48,10 @@ export class Hud {
       <div class="hud-top panel" role="status" aria-live="off">
         <div class="hud-block hud-sand">
           <span class="hud-label">Sabbia</span>
-          <span class="hud-num" data-el="sand">0</span>
+          <div class="hud-sand-row">
+            <span class="hud-num" data-el="sand">0</span>
+            <span class="hud-sps muted" data-el="sps">+0/s</span>
+          </div>
         </div>
         <div class="hud-block hud-progress">
           <div class="hud-progress-head">
@@ -54,25 +60,41 @@ export class Hud {
           </div>
           <div class="obelisk-bar glow" data-el="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="fill"></div></div>
         </div>
-        <button type="button" class="btn hud-menu-btn" data-el="menu">Menu / Opzioni</button>
+        <div class="hud-actions">
+          <button type="button" class="btn hud-btn hud-shop-btn" data-el="shop">Officina</button>
+          <button type="button" class="btn hud-btn hud-menu-btn" data-el="menu">Menu</button>
+        </div>
       </div>`;
+
     this.el = {
       sand: this.root.querySelector('[data-el="sand"]'),
+      sps: this.root.querySelector('[data-el="sps"]'),
       percent: this.root.querySelector('[data-el="percent"]'),
       bar: this.root.querySelector('[data-el="bar"]'),
+      shop: this.root.querySelector('[data-el="shop"]'),
       menu: this.root.querySelector('[data-el="menu"]'),
     };
+
+    this.el.shop.addEventListener('click', () => events.emit('hud:shop'));
     this.el.menu.addEventListener('click', () => events.emit('hud:menu'));
   }
 
   show() { this.root.classList.remove('hidden'); this.refresh(); }
   hide() { this.root.classList.add('hidden'); }
 
-  /** Riallinea l'HUD allo stato (nuova partita o caricamento). */
+  setSps(sps) {
+    this.sps = sps;
+    if (this.el.sps) {
+      this.el.sps.textContent = sps > 0 ? `+${formatNumber(sps)}/s` : '+0/s';
+      this.el.sps.classList.toggle('active', sps > 0);
+    }
+  }
+
   refresh() {
     this.shownSand = this.targetSand = this.state.sand;
     this.el.sand.textContent = formatNumber(this.shownSand);
     this._setCompletion(this.state.completion);
+    if (this.economy) this.setSps(this.economy.sps);
   }
 
   _setCompletion(c) {
@@ -85,11 +107,10 @@ export class Hud {
   _pop() {
     const n = this.el.sand;
     n.classList.remove('pop');
-    void n.offsetWidth; // riavvia l'animazione
+    void n.offsetWidth;
     n.classList.add('pop');
   }
 
-  /** Conteggio fluido verso il valore reale (solo cosmetico: lo stato è già aggiornato). */
   update(dt) {
     if (this.shownSand === this.targetSand) return;
     const diff = this.targetSand - this.shownSand;
@@ -100,4 +121,3 @@ export class Hud {
 
   dispose() { this._unsubs.forEach((u) => u()); }
 }
-
