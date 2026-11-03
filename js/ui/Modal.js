@@ -86,7 +86,9 @@ export class ModalManager {
 }
 
 export function toast(message, ms = 4200) {
+  if (typeof document === 'undefined') return;
   let host = document.getElementById('toast-host');
+
   if (!host) {
     host = document.createElement('div');
     host.id = 'toast-host';

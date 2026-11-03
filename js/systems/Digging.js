@@ -4,7 +4,8 @@
 import * as THREE from 'three';
 import { events } from '../core/Events.js';
 import { MIN_TICK } from '../core/State.js';
-import { layerColor } from '../world/Terrain.js';
+import { getLayerColor } from '../world/Terrain.js';
+
 
 const DEPTH_PER_POWER = 0.6; // metri scavati al centro per punto di power
 const RETICLE_SEGMENTS = 48;
@@ -131,8 +132,9 @@ export class Digging {
     this.state.addSand(amount);
     this.state.setCompletion(this.terrain.completion);
 
-    const col = layerColor(p.y, 0);
-    this.particles.burst(p.x, p.y, p.z, { radius, color: col, sparks: p.y <= 3.4 });
+    const col = getLayerColor(p.y);
+    this.particles.burst(p.x, p.y, p.z, { radius, color: col, sparks: p.y <= 3.2 });
+
     this.audio.playDigSound(Math.min(1.5, 0.6 + power * 0.2));
     this.scene.shake(0.05);
     events.emit('dig:hit', { x: p.x, y: p.y, z: p.z, amount, removed, radius });

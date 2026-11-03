@@ -45,6 +45,19 @@ export const UPGRADE_CATALOG = {
       return `Raggio: ${(1.5 + lvl * 0.45).toFixed(2)}m (+0.45m)`;
     },
   },
+  georadar: {
+    id: 'georadar',
+    branch: 'manual',
+    name: 'Georadar di Profondità',
+    baseCost: 500,
+    multiplier: 1.0,
+    maxLevel: 1,
+    desc: 'Bussola a risonanza che scansiona il sottosuolo e rileva anomalie prima di dissotterrarle.',
+    getBenefit(lvl) {
+      return lvl > 0 ? 'Radar attivo nell\'HUD con letture live' : 'Sblocca bussola e letture criptiche del sottosuolo';
+    },
+  },
+
 
   // Ramo B: Autonomous Fleet
   scarab: {

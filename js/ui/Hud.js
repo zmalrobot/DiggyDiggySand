@@ -1,4 +1,5 @@
-// HUD di gioco: contatore Sabbia, rateo passivo (+X/s), barra di completamento (obelisco) e pulsanti Officina/Menu.
+// HUD di gioco: contatore Sabbia, rateo passivo (+X/s), barra di completamento (obelisco), pulsanti Officina/Menu
+// e modulo Georadar di profondità con visualizzazione a scansione sonar e letture criptiche.
 import { events } from '../core/Events.js';
 
 const SUFFIXES = ['', 'k', 'M', 'B', 'T', 'Qa', 'Qi'];
@@ -23,10 +24,11 @@ export function formatPercent(fraction) {
 }
 
 export class Hud {
-  constructor(root, { state, economy = null }) {
+  constructor(root, { state, economy = null, audio = null }) {
     this.root = root;
     this.state = state;
     this.economy = economy;
+    this.audio = audio;
     this.shownSand = state.sand;
     this.targetSand = state.sand;
     this.sps = economy ? economy.sps : 0;
@@ -39,6 +41,9 @@ export class Hud {
       }),
       events.on('completion:changed', ({ completion }) => this._setCompletion(completion)),
       events.on('sps:changed', ({ sps }) => this.setSps(sps)),
+      events.on('upgrade:bought', ({ id }) => {
+        if (id === 'georadar') this.refreshRadar(true);
+      }),
     ];
     this.refresh();
   }
@@ -64,6 +69,23 @@ export class Hud {
           <button type="button" class="btn hud-btn hud-shop-btn" data-el="shop">Officina</button>
           <button type="button" class="btn hud-btn hud-menu-btn" data-el="menu">Menu</button>
         </div>
+      </div>
+
+      <div class="hud-radar-wrap hidden" data-el="radar">
+        <div class="hud-radar-card panel surface glow-teal">
+          <div class="radar-scope">
+            <div class="radar-sweep"></div>
+            <div class="radar-crosshair"></div>
+            <div class="radar-blip"></div>
+          </div>
+          <div class="radar-info">
+            <div class="radar-head">
+              <span class="radar-title">Georadar</span>
+              <span class="radar-status accent">ATTIVO</span>
+            </div>
+            <div class="radar-reading muted" data-el="radarReading">Scansione in corso...</div>
+          </div>
+        </div>
       </div>`;
 
     this.el = {
@@ -73,6 +95,8 @@ export class Hud {
       bar: this.root.querySelector('[data-el="bar"]'),
       shop: this.root.querySelector('[data-el="shop"]'),
       menu: this.root.querySelector('[data-el="menu"]'),
+      radar: this.root.querySelector('[data-el="radar"]'),
+      radarReading: this.root.querySelector('[data-el="radarReading"]'),
     };
 
     this.el.shop.addEventListener('click', () => events.emit('hud:shop'));
@@ -90,11 +114,30 @@ export class Hud {
     }
   }
 
+  setRadarReading(text) {
+    if (this.el.radarReading && text) {
+      this.el.radarReading.textContent = text;
+    }
+  }
+
+  refreshRadar(justBought = false) {
+    const hasRadar = (this.state.upgrades.georadar ?? 0) >= 1;
+    if (hasRadar) {
+      this.el.radar.classList.remove('hidden');
+      if (justBought) {
+        this.audio?.playRadarPing?.();
+      }
+    } else {
+      this.el.radar.classList.add('hidden');
+    }
+  }
+
   refresh() {
     this.shownSand = this.targetSand = this.state.sand;
     this.el.sand.textContent = formatNumber(this.shownSand);
     this._setCompletion(this.state.completion);
     if (this.economy) this.setSps(this.economy.sps);
+    this.refreshRadar();
   }
 
   _setCompletion(c) {

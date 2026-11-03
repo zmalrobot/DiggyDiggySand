@@ -196,5 +196,49 @@ export class AudioEngine {
     [wind, lfo, ...oscs].forEach((n) => n.start());
     this.ambient = { stop: () => [wind, lfo, ...oscs].forEach((n) => { try { n.stop(); } catch { /* già fermo */ } }) };
   }
+
+  /** Sussurri oscuri e rombo sismico a bassa frequenza (Indizio Maledizione). */
+  playWhispers() {
+    if (!this._ok()) return;
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(65, t);
+    osc.frequency.exponentialRampToValueAtTime(42, t + 1.2);
+
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(140, t);
+
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0.001, t);
+    gain.gain.exponentialRampToValueAtTime(0.25, t + 0.3);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.nodes.sfx);
+
+    osc.start(t);
+    osc.stop(t + 1.25);
+  }
+
+  /** Tintinnio cristallino e scintillio metallico (Indizio Tesoro). */
+  playGlintChime() {
+    if (!this._ok()) return;
+    [1046.5, 1318.5, 1567.98, 2093.0].forEach((f, i) => {
+      setTimeout(() => {
+        if (!this._ok()) return;
+        this._blip({ type: 'sine', f0: f, f1: f * 1.01, dur: 0.35, vol: 0.14 });
+      }, i * 70);
+    });
+  }
+
+  /** Sonar ping criptico del Georadar. */
+  playRadarPing() {
+    if (!this._ok()) return;
+    this._blip({ type: 'sine', f0: 1760, f1: 880, dur: 0.08, vol: 0.15 });
+  }
 }
+
 

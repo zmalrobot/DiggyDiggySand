@@ -4,6 +4,8 @@ import * as THREE from 'three';
 import { PALETTE_3D } from '../world/ProceduralFactory.js';
 import { UPGRADE_CATALOG } from './Upgrades.js';
 import { events } from '../core/Events.js';
+import { getLayerColor } from '../world/Terrain.js';
+
 
 const mat = (color, extra = {}) =>
   new THREE.MeshStandardMaterial({ color, flatShading: true, roughness: 0.7, ...extra });
@@ -409,14 +411,16 @@ export class Workers {
     this.state.addSand(power);
     this.state.setCompletion(this.terrain.completion);
 
-    // Effetti grafici e particelle
+    // Effetti grafici e particelle conformi allo strato di scavo
     const intensity = w.type === 'scarab' ? 0.8 : w.type === 'excavator' ? 1.4 : 2.0;
+    const layerCol = getLayerColor(y);
     this.particles.burst(x, y, z, {
       radius,
-      color: PALETTE_3D.sandTop,
+      color: layerCol,
       intensity,
-      sparks: w.type === 'dredge',
+      sparks: y <= 3.2 || w.type === 'dredge',
     });
+
 
     if (w.type === 'excavator') {
       this.scene?.shake?.(0.03);

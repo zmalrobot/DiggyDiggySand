@@ -87,7 +87,13 @@ Verifiche manuali da fare: valori persistiti dopo il ricaricamento; `localStorag
   - `js/systems/Workers.js`: modelli 3D procedurali low-poly (Scarafaggio, Escavatore, Draga), movimento sul terreno e cicli di scavo autonomo.
   - `js/core/Save.js` & `Game.js`: autosave ogni 10s e su `beforeunload`, popup modale di rientro offline.
   - Verificata con 15 test unitari e 7/7 step browser QA (Puppeteer/Headless Chrome).
-- [ ] **M3** Città sepolta e rovine: `js/world/City.js` (strutture che emergono dallo scavo).
+- [x] **M3** Città sepolta procedurale, stratificazione e sistema di indizi:
+  - `js/world/Terrain.js`: stratificazione cromatica esatta a 3 strati (Layer 1 dorato `#e0c27a`, Layer 2 aranciato `#b88a44`, Layer 3 roccioso scuro `#6e563b` con venature teal), particelle conformi allo strato scavato.
+  - `js/world/City.js`: generazione procedurale low-poly (santuario centrale con obelisco dorato/teal fino a Y=8.8, viali monumentali colonnati sui 4 punti cardinali, quartieri a terrazze e scalinate nei 4 quadranti, varianti tematiche ending). Interamente collocata tra Y=0 e Y=8.8 sotto la duna iniziale, emerge naturalmente con lo scavo.
+  - `js/systems/Foreshadowing.js`: monitoraggio soglia 60% completion e seed ending (Curse, Treasure, Business), mutazione atmosferica (luce e nebbia), particelle contestuali, audio sussurri/chime, toast banner narrativo e letture criptiche Georadar.
+  - `js/ui/Hud.js`: widget del Georadar con oscilloscopio a scansione rotante, ping audio e readout di profondità reattivo alla quota scavata.
+  - `js/systems/Upgrades.js`: upgrade "Georadar di Profondità" integrato nell'Officina.
+  - Verificata con 20 test unitari complessivi e 7/7 step browser QA (Headless Chrome).
 - [ ] **M4** Finali e persistenza avanzata: `js/endings/{EndingManager,CurseEnding,TreasureEnding,BusinessEnding}.js` (mulberry32, `?ending=`, `?cheat=1`), codec compresso del terreno in `Save.js`, `js/ui/Overlay.js`, galleria finali.
 - [ ] **M5** Polish e mobile: `js/systems/TouchControls.js` (un dito scava, due ruotano e zoomano), bilanciamento ed eventi sonori completi.
 

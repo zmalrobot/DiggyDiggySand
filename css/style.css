@@ -334,14 +334,56 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
 .btn-buy.glow { box-shadow: inset 0 0 0 1.5px var(--gold-pharaoh), 0 0 12px rgba(245, 186, 35, 0.55); border-color: var(--gold-pharaoh); }
 .buy-cost { font-family: var(--font-data); font-weight: 800; font-size: 0.9rem; color: var(--gold-glow); }
 
+/* ===== Georadar di Profondità ===== */
+.hud-radar-wrap {
+  position: fixed; bottom: 20px; left: 20px; z-index: 15;
+  pointer-events: auto; animation: hudIn 0.5s ease both;
+}
+.hud-radar-card {
+  display: flex; align-items: center; gap: 14px;
+  padding: 10px 16px; min-width: 290px; max-width: 380px;
+  box-shadow: inset 0 0 0 1.5px var(--atlantis-teal), 0 0 16px rgba(15, 227, 193, 0.35);
+}
+.radar-scope {
+  width: 44px; height: 44px; border-radius: 50%; position: relative;
+  background: radial-gradient(circle, rgba(15, 227, 193, 0.15) 20%, rgba(3, 24, 38, 0.95) 85%);
+  border: 1.5px solid var(--atlantis-teal); box-shadow: 0 0 10px rgba(15, 227, 193, 0.5);
+  overflow: hidden; flex-shrink: 0;
+}
+.radar-crosshair {
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(rgba(15, 227, 193, 0.25) 1px, transparent 1px) 0 50% / 100% 1px no-repeat,
+    linear-gradient(90deg, rgba(15, 227, 193, 0.25) 1px, transparent 1px) 50% 0 / 1px 100% no-repeat;
+}
+.radar-sweep {
+  position: absolute; inset: 0; border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0deg, rgba(15, 227, 193, 0.55) 55deg, transparent 60deg);
+  animation: radarSweep 2.2s linear infinite;
+}
+.radar-blip {
+  position: absolute; top: 32%; left: 62%; width: 5px; height: 5px; border-radius: 50%;
+  background: var(--gold-pharaoh); box-shadow: 0 0 6px var(--gold-glow);
+  animation: numPop 1.1s ease-in-out infinite alternate;
+}
+@keyframes radarSweep { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.radar-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.radar-head { display: flex; justify-content: space-between; align-items: baseline; }
+.radar-title { font-family: var(--font-heading); font-size: 0.76rem; font-weight: 700; color: var(--gold-pharaoh); letter-spacing: 0.08em; text-transform: uppercase; }
+.radar-status { font-family: var(--font-data); font-size: 0.68rem; font-weight: 800; }
+.radar-reading { font-family: var(--font-data); font-size: 0.78rem; line-height: 1.35; color: var(--text-main); }
+
 @media (max-width: 640px) {
   #hud { padding: 8px; }
   #hud .hud-top { gap: 10px; padding: 10px 12px; flex-wrap: wrap; }
   .hud-num { font-size: 1.5rem; }
   .hud-sand { min-width: 90px; }
   .hud-btn { padding: 7px 10px; font-size: 0.7rem; }
+  .hud-radar-wrap { bottom: 12px; left: 12px; right: 12px; }
+  .hud-radar-card { max-width: 100%; min-width: 0; }
   .main-menu { padding-left: 20px; }
   .row { flex-direction: column; align-items: stretch; gap: 8px; }
   .ctl { width: 100%; }
 }
+
 

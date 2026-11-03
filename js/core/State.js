@@ -17,12 +17,14 @@ export class State {
   reset(data = {}) {
     this.version = STATE_VERSION;
     this.seed = data.seed ?? 0;
+    this.endingId = data.endingId ?? 'curse';
     this.sand = Number.isFinite(data.sand) ? Math.max(0, data.sand) : 0;
     this.totalSand = Number.isFinite(data.totalSand) ? Math.max(0, data.totalSand) : this.sand;
     this.upgrades = { ...(data.upgrades ?? {}) };
     this.completion = 0; // 0..1, derivato dal terreno
     this.lastSaved = data.lastSaved ?? data.lastSeen ?? Date.now();
   }
+
 
   /** Statistiche correnti derivate dai livelli degli upgrade. */
   get stats() {
@@ -64,6 +66,8 @@ export class State {
     return {
       ...base,
       version: base.version ?? 1,
+      seed: this.seed,
+      endingId: this.endingId,
       sand: this.sand,
       totalSand: this.totalSand,
       upgrades: this.upgrades,
@@ -71,6 +75,7 @@ export class State {
       lastSeen: Date.now(),
     };
   }
+
 }
 
 

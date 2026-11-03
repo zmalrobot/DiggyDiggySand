@@ -8,25 +8,33 @@ import * as THREE from 'three';
 import { PALETTE_3D } from './ProceduralFactory.js';
 
 export const CHUNK = 8;                 // vertici per lato del chunk
-const LAYER1 = new THREE.Color(0xE0C27A); // Art Bible: sabbia layer 1 (superficie)
-const LAYER2 = new THREE.Color(PALETTE_3D.sandMid);
-const STONE = new THREE.Color(PALETTE_3D.ruinsStone);
+const LAYER1 = new THREE.Color(0xE0C27A); // Superficie Y da 12 a 8: Fine sand dorata
+const LAYER2 = new THREE.Color(0xB88A44); // Profondità Y da 8 a 3: Sabbia aranciata compatta
+const LAYER3 = new THREE.Color(0x6E563B); // Fondo roccioso Y da 3 a 0: Pietra sedimentaria e detriti
 const VEIN = new THREE.Color(PALETTE_3D.atlantisCoreTeal);
 
 const fract = (n) => n - Math.floor(n);
 const hash = (i) => fract(Math.sin(i * 12.9898) * 43758.5453);
 
-/** Colore del terreno per altezza: Y>8 sabbia chiara, 3<Y<=8 ocra, Y<=3 pietra con venature teal. */
+/** Ritorna il codice colore esadecimale dello strato per la quota Y (usato per le particelle). */
+export function getLayerColor(y) {
+  if (y > 8) return 0xE0C27A;
+  if (y > 3) return 0xB88A44;
+  return 0x6E563B;
+}
+
+/** Colore del terreno per altezza: Y>8 sabbia dorata, 3<Y<=8 sabbia aranciata, Y<=3 roccia scura con venature teal. */
 export function layerColor(y, i, out = new THREE.Color()) {
   const h = hash(i);
   if (y > 8) out.copy(LAYER1);
   else if (y > 3) out.copy(LAYER2);
   else {
-    out.copy(STONE);
-    if (h < 0.14) out.lerp(VEIN, 0.55);
+    out.copy(LAYER3);
+    if (h < 0.16) out.lerp(VEIN, 0.65); // venature luminescenti cyan
   }
   return out.multiplyScalar(0.92 + h * 0.16);
 }
+
 
 export class Terrain {
   constructor({ size = 200, res = 256, startHeight = 12, floor = 0 } = {}) {

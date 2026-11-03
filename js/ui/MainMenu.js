@@ -26,7 +26,7 @@ export class MainMenu {
           <button type="button" class="btn" data-act="settings">Impostazioni</button>
           <button type="button" class="btn" data-act="credits">Crediti</button>
         </nav>
-        <footer class="menu-foot muted">v2.0 · Fase 2</footer>
+        <footer class="menu-foot muted">v3.0 · Fase 3</footer>
       </div>`;
     this.root.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-act]');

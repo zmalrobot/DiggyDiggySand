@@ -10,7 +10,10 @@ import { Digging } from '../systems/Digging.js';
 import { Economy } from '../systems/Economy.js';
 import { Workers } from '../systems/Workers.js';
 import { calculateSPS } from '../systems/Upgrades.js';
+import { City } from '../world/City.js';
+import { Foreshadowing } from '../systems/Foreshadowing.js';
 import { Hud, formatNumber } from '../ui/Hud.js';
+
 import { Shop } from '../ui/Shop.js';
 import { toast } from '../ui/Modal.js';
 
@@ -36,8 +39,9 @@ export class Game {
 
     this.state = new State();
     this.economy = new Economy(this.state);
-    this.hud = new Hud(hudRoot, { state: this.state, economy: this.economy });
+    this.hud = new Hud(hudRoot, { state: this.state, economy: this.economy, audio: this.audio });
     this.hud.hide();
+
 
     const shopRoot = document.getElementById('shop-root') || document.body;
     this.shop = new Shop(shopRoot, { state: this.state, audio });
@@ -165,6 +169,10 @@ export class Game {
     this.terrain = new Terrain({ size: WORLD_SIZE, res: coarse ? 128 : 256, startHeight: 12, floor: 0 });
     this.group.add(this.terrain.group);
 
+    // Città sepolta procedurale (collocata sotto la sabbia tra Y=0 e Y=8.8)
+    this.city = new City({ endingId: this.state.endingId, floor: this.terrain.floor });
+    this.group.add(this.city.group);
+
     // Sistema lavoratori 3D
     this.workers = new Workers({
       terrain: this.terrain,
@@ -174,16 +182,34 @@ export class Game {
     });
     this.group.add(this.workers.group);
 
+    // Sistema di indizi e foreshadowing del mistero
+    this.foreshadowing = new Foreshadowing({
+      state: this.state,
+      scene: this.sceneMgr,
+      audio: this.audio,
+      particles: this.particles,
+      terrain: this.terrain,
+    });
+
     this.sceneMgr.scene.add(this.group);
     this.digging.setTerrain(this.terrain);
     this.state.setCompletion(0);
   }
 
   _disposeWorld() {
+    if (this.foreshadowing) {
+      this.foreshadowing.dispose();
+      this.foreshadowing = null;
+    }
     if (this.workers) {
       this.group.remove(this.workers.group);
       this.workers.dispose();
       this.workers = null;
+    }
+    if (this.city) {
+      this.group.remove(this.city.group);
+      this.city.dispose();
+      this.city = null;
     }
     if (this.terrain) {
       this.group.remove(this.terrain.group);
@@ -192,6 +218,7 @@ export class Game {
       this.digging.setTerrain(null);
     }
   }
+
 
   _setupCamera() {
     const cam = this.sceneMgr.camera;
@@ -247,11 +274,20 @@ export class Game {
     this.digging.update(dt);
     this.workers?.update(dt);
     this.economy?.update(dt);
+    this.foreshadowing?.update(dt);
     this.particles.update(dt);
     this.terrain?.flush();      // al massimo un upload GPU per frame
     this.hud.update(dt);
     this.shop?.update();
+
+    // Aggiornamento periodico letture Georadar se attivo
+    if ((this.state.upgrades.georadar ?? 0) >= 1 && this.foreshadowing) {
+      const depthY = this.terrain ? this.terrain.heightAt(this.controls?.target.x ?? 0, this.controls?.target.z ?? 0) : 12;
+      this.hud.setRadarReading(this.foreshadowing.getRadarReading(depthY));
+    }
+
     this.sceneMgr.followSun(this.controls.target.x, this.controls.target.z);
+
 
     if (performance.now() - this._lastSave > AUTOSAVE_MS) this.saveNow();
   }
