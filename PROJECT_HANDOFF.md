@@ -103,7 +103,14 @@ Verifiche manuali da fare: valori persistiti dopo il ricaricamento; `localStorag
   - `js/ui/GalleryModal.js`: modale accessibile dal Menu principale tramite il pulsante "Finali Scoperti (X/3)", con barra di avanzamento e schede per ciascuno dei tre finali (stato sbloccato con descrizione e badge, oppure sigillato con lucchetto `🔒`).
   - Persistenza `endingsSeen` indipendente e tracking statistico di click e tempo trascorso in `Save.js` e `State.js`.
   - Verificata con 28 test unitari complessivi e browser QA.
-- [ ] **M5** Polish e mobile: `js/systems/TouchControls.js` (un dito scava, due ruotano e zoomano), bilanciamento ed eventi sonori completi.
+- [x] **M5** Polish Generale, Supporto Mobile/Touch, Onboarding Minimale e Ottimizzazione Performance:
+  - Adattamento Mobile & Controlli Touch: `js/systems/Digging.js` con distinzione tocco singolo (scavo continuo) e pinch/multi-touch (rotazione e zoom camera OrbitControls senza colpi accidentali), blocco pull-to-refresh e gestures indesiderate (`touch-action: none; overscroll-behavior: none; user-select: none;`).
+  - Layout Responsive & Safe Touch: HUD adattivo su schermi verticali (portrait, smartphone), pulsanti con target touch >= 44px, cassetto Officina `#shop` espanso a 100vw su mobile.
+  - Onboarding Contestuale (`js/ui/Tutorial.js`): guida <30s con anello pulsante al centro per il primo scavo, tooltip sulla valuta sabbia, notifica luminosa all'Officina a 10 Sand, persistenza `tutorialDone` in `State.js` e `Save.js`.
+  - Object Pool Particellare e Throttling (`js/world/Particles.js`): budget capped a max 300 particelle attive, struct-of-arrays senza allocazioni Vector3 a runtime, throttling automatico proporzionale alla flotta di lavoratori per garantire 60fps costanti.
+  - Tappeto Sonoro e Audio Dinamico (`js/core/AudioEngine.js`): ambiente vento + drone con modulazione di frequenza in base alla quota scavata (`setDepth(depthY)`), sospensione automatica dell'AudioContext quando la scheda non è visibile (`visibilitychange`).
+  - Menu di Pausa in-game dedicato (`js/ui/PauseMenu.js`): pulsante "⚙️ Pausa" nell'HUD, ripresa spedizione, impostazioni rapide (volume master, mute, qualità grafica), salva ed esci sincronizzato.
+  - Verificata con 34 test unitari complessivi e browser QA headless Chrome (5/5 PASSED).
 
 Piano dettagliato con codice e verifiche: vedi la sezione "Roadmap" sopra e le formule in `Ideas/upgrade_tree_specification.md`.
 

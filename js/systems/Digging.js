@@ -58,9 +58,12 @@ export class Digging {
 
   _bind() {
     const c = this.canvas;
+    if (c) c.style.touchAction = 'none';
+
     this._onDown = (e) => {
       if (!this.enabled) return;
       if (e.pointerType === 'mouse' && e.button !== 0) return; // destro/centrale: camera
+      if (e.pointerType === 'touch') e.preventDefault?.();
       this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
       this.pointer = { x: e.clientX, y: e.clientY, inside: true };
       if (this.pointers.size > 1) { this.multi = true; this._cancel(); return; }
@@ -70,6 +73,7 @@ export class Digging {
       this._hit(); // colpo immediato = tap singolo
     };
     this._onMove = (e) => {
+      if (e.pointerType === 'touch') e.preventDefault?.();
       this.pointer = { x: e.clientX, y: e.clientY, inside: true };
       const p = this.pointers.get(e.pointerId);
       if (p) { p.x = e.clientX; p.y = e.clientY; }
@@ -84,15 +88,22 @@ export class Digging {
     this._onLeave = () => { this.pointer.inside = false; this.reticle.visible = false; };
     this._onBlur = () => { this.pointers.clear(); this.multi = false; this._cancel(); };
     this._onCtx = (e) => e.preventDefault();
+    this._onGesture = (e) => e.preventDefault();
 
-    c.addEventListener('pointerdown', this._onDown);
-    c.addEventListener('pointermove', this._onMove);
-    c.addEventListener('pointerleave', this._onLeave);
-    c.addEventListener('contextmenu', this._onCtx);
-    window.addEventListener('pointerup', this._onUp);
-    window.addEventListener('pointercancel', this._onUp);
-    window.addEventListener('blur', this._onBlur);
-    document.addEventListener('visibilitychange', this._onBlur);
+    c?.addEventListener?.('pointerdown', this._onDown, { passive: false });
+    c?.addEventListener?.('pointermove', this._onMove, { passive: false });
+    c?.addEventListener?.('pointerleave', this._onLeave);
+    c?.addEventListener?.('contextmenu', this._onCtx);
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('pointerup', this._onUp);
+      window.addEventListener('pointercancel', this._onUp);
+      window.addEventListener('blur', this._onBlur);
+      window.addEventListener('gesturestart', this._onGesture, { passive: false });
+    }
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', this._onBlur);
+    }
   }
 
   _cancel() {
@@ -178,14 +189,19 @@ export class Digging {
 
   dispose() {
     const c = this.canvas;
-    c.removeEventListener('pointerdown', this._onDown);
-    c.removeEventListener('pointermove', this._onMove);
-    c.removeEventListener('pointerleave', this._onLeave);
-    c.removeEventListener('contextmenu', this._onCtx);
-    window.removeEventListener('pointerup', this._onUp);
-    window.removeEventListener('pointercancel', this._onUp);
-    window.removeEventListener('blur', this._onBlur);
-    document.removeEventListener('visibilitychange', this._onBlur);
+    c?.removeEventListener?.('pointerdown', this._onDown);
+    c?.removeEventListener?.('pointermove', this._onMove);
+    c?.removeEventListener?.('pointerleave', this._onLeave);
+    c?.removeEventListener?.('contextmenu', this._onCtx);
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('pointerup', this._onUp);
+      window.removeEventListener('pointercancel', this._onUp);
+      window.removeEventListener('blur', this._onBlur);
+      window.removeEventListener('gesturestart', this._onGesture);
+    }
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('visibilitychange', this._onBlur);
+    }
     this.reticle.geometry.dispose();
     this.reticle.material.dispose();
   }

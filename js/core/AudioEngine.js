@@ -6,10 +6,25 @@ export class AudioEngine {
     this.ctx = null;
     this.nodes = null;
     this.ambient = null;
-    this.supported = !!(window.AudioContext || window.webkitAudioContext);
-    settings.subscribe('*', (_v, key) => {
+    this.ambientFilters = null;
+    this.supported = typeof window !== 'undefined' && !!(window.AudioContext || window.webkitAudioContext);
+    settings?.subscribe?.('*', (_v, key) => {
       if (key.startsWith('audio.')) this._applyGains();
     });
+
+    // Risparmio risorse e sospensione AudioContext quando la scheda non è visibile
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', () => {
+        if (!this.ctx) return;
+        if (document.hidden) {
+          if (this.ctx.state === 'running') this.ctx.suspend?.().catch(() => {});
+        } else {
+          if (this.ctx.state === 'suspended' && !this.settings?.get?.('audio.mute')) {
+            this.ctx.resume?.().catch(() => {});
+          }
+        }
+      });
+    }
   }
 
   get ready() { return !!this.ctx && this.ctx.state === 'running'; }
@@ -194,7 +209,28 @@ export class AudioEngine {
     lp.connect(droneGain); droneGain.connect(out);
 
     [wind, lfo, ...oscs].forEach((n) => n.start());
-    this.ambient = { stop: () => [wind, lfo, ...oscs].forEach((n) => { try { n.stop(); } catch { /* già fermo */ } }) };
+    this.ambientFilters = { bp, lp, droneGain, windGain };
+    this.ambient = {
+      stop: () => {
+        [wind, lfo, ...oscs].forEach((n) => { try { n.stop(); } catch { /* già fermo */ } });
+        this.ambientFilters = null;
+      },
+    };
+  }
+
+  /** Modula la timbrica dell'ambiente in base alla quota media raggiunta dallo scavo (Y=12 superficie, Y=0 bedrock). */
+  setDepth(depthY = 12) {
+    if (!this.ambientFilters || !this._ok()) return;
+    const t = this.ctx.currentTime;
+    const ratio = Math.max(0, Math.min(1, (12 - depthY) / 12));
+    // Suolo profondo: lpFreq scende a 130Hz, drone aumenta volume, vento diventa più cupo
+    const lpFreq = 340 - ratio * 190;
+    const droneVol = 0.04 + ratio * 0.08;
+    const bpFreq = 380 - ratio * 140;
+
+    this.ambientFilters.lp.frequency.setTargetAtTime(lpFreq, t, 0.2);
+    this.ambientFilters.droneGain.gain.setTargetAtTime(droneVol, t, 0.2);
+    this.ambientFilters.bp.frequency.setTargetAtTime(bpFreq, t, 0.2);
   }
 
   /** Sussurri oscuri e rombo sismico a bassa frequenza (Indizio Maledizione). */

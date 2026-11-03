@@ -3,15 +3,16 @@
 import * as THREE from 'three';
 import { PALETTE_3D } from './ProceduralFactory.js';
 
-// Budget per qualità: [massimo particelle vive, fattore di emissione per colpo].
-const BUDGET = { low: [80, 0.35], med: [220, 0.7], high: [480, 1] };
+// Budget per qualità: [massimo particelle vive, fattore di emissione per colpo]. Capped a max 300 (Spec Fase 5).
+const BUDGET = { low: [80, 0.35], med: [160, 0.65], high: [300, 1.0] };
 const GRAVITY = 22;
-const BASE_BURST = 16;
+const BASE_BURST = 14;
 
 export class Particles {
   constructor(settings) {
     this.settings = settings;
     this.capacity = BUDGET.high[0];
+    this.activeWorkers = 0;
 
     const geo = new THREE.TetrahedronGeometry(0.11, 0);
     const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, flatShading: true, roughness: 0.7, emissive: 0x3a2a08, emissiveIntensity: 0.35 });
@@ -34,12 +35,16 @@ export class Particles {
     this._dummy = new THREE.Object3D();
     this._color = new THREE.Color();
 
-    this.quality = settings.get('graphics.particles');
-    this._unsub = settings.subscribe('graphics.particles', (q) => { this.quality = q; this._clampAlive(); });
+    this.quality = settings?.get?.('graphics.particles') ?? 'high';
+    this._unsub = settings?.subscribe?.('graphics.particles', (q) => { this.quality = q; this._clampAlive(); });
   }
 
   get maxAlive() { return BUDGET[this.quality]?.[0] ?? BUDGET.med[0]; }
   get emitFactor() { return BUDGET[this.quality]?.[1] ?? BUDGET.med[1]; }
+
+  setWorkerCount(count) {
+    this.activeWorkers = Math.max(0, count);
+  }
 
   _clampAlive() {
     if (this.alive > this.maxAlive) { this.alive = this.maxAlive; this.mesh.count = this.alive; }
@@ -48,19 +53,29 @@ export class Particles {
   /**
    * Burst nel punto d'impatto. `radius` scala quantità e dispersione; `color` è il colore della sabbia (hex);
    * `sparks` aggiunge scintille teal (strato di pietra).
+   * Applica throttling dinamico se sono attivi molti lavoratori per preservare i 60fps.
    */
   burst(x, y, z, { radius = 1.5, color = PALETTE_3D.particleDust, sparks = false, intensity = 1 } = {}) {
     const scale = Math.max(0.6, radius / 1.5);
-    const count = Math.round(BASE_BURST * this.emitFactor * scale * intensity);
+    // Throttling intelligente: riduci l'emissione quando molti lavoratori scavano simultaneamente
+    const workerThrottle = this.activeWorkers > 0 ? 1 / Math.sqrt(1 + this.activeWorkers * 0.4) : 1;
+    const count = Math.max(1, Math.round(BASE_BURST * this.emitFactor * scale * intensity * workerThrottle));
+    let colorUpdated = false;
+
     for (let k = 0; k < count; k++) {
       if (this.alive >= this.maxAlive) {
         // Pool pieno: riusa la particella più vecchia (ring buffer morbido) senza superare il budget.
         this._spawn(Math.floor(Math.random() * this.alive), x, y, z, radius, color, sparks);
+        colorUpdated = true;
         continue;
       }
       this._spawn(this.alive++, x, y, z, radius, color, sparks);
+      colorUpdated = true;
     }
     this.mesh.count = this.alive;
+    if (colorUpdated && this.mesh.instanceColor) {
+      this.mesh.instanceColor.needsUpdate = true;
+    }
   }
 
   _spawn(i, x, y, z, radius, color, sparks) {
@@ -80,7 +95,6 @@ export class Particles {
     this._color.set(isSpark ? PALETTE_3D.particleSpark : color);
     this._color.multiplyScalar(0.85 + Math.random() * 0.3);
     this.mesh.setColorAt(i, this._color);
-    this.mesh.instanceColor.needsUpdate = true;
   }
 
   update(dt) {

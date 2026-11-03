@@ -100,6 +100,7 @@ export class Save {
       sand: 0,
       totalSand: 0,
       upgrades: {},
+      tutorialDone: false,
       endingsSeen: this.getEndingsSeen(),
     };
     this.write(data);

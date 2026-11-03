@@ -66,8 +66,8 @@ export class Hud {
           <div class="obelisk-bar glow" data-el="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="fill"></div></div>
         </div>
         <div class="hud-actions">
-          <button type="button" class="btn hud-btn hud-shop-btn" data-el="shop">Officina</button>
-          <button type="button" class="btn hud-btn hud-menu-btn" data-el="menu">Menu</button>
+          <button type="button" class="btn hud-btn hud-shop-btn" data-act="shop" data-el="shop">Officina</button>
+          <button type="button" class="btn hud-btn hud-menu-btn" data-act="menu" data-el="menu" title="Pausa / Impostazioni" aria-label="Pausa e Impostazioni">⚙️ Pausa</button>
         </div>
       </div>
 

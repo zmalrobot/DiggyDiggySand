@@ -24,6 +24,7 @@ export class State {
     this.completion = 0; // 0..1, derivato dal terreno
     this.clicks = Number.isFinite(data.clicks) ? Math.max(0, data.clicks) : 0;
     this.startTime = data.startTime ?? data.createdAt ?? Date.now();
+    this.tutorialDone = !!data.tutorialDone;
     this.lastSaved = data.lastSaved ?? data.lastSeen ?? Date.now();
   }
 
@@ -83,6 +84,7 @@ export class State {
       upgrades: this.upgrades,
       clicks: this.clicks,
       startTime: this.startTime,
+      tutorialDone: this.tutorialDone,
       lastSaved: Date.now(),
       lastSeen: Date.now(),
     };

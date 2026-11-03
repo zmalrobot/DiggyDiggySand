@@ -14,6 +14,8 @@ import { City } from '../world/City.js';
 import { Foreshadowing } from '../systems/Foreshadowing.js';
 import { EndingManager } from '../endings/EndingManager.js';
 import { Overlay } from '../ui/Overlay.js';
+import { Tutorial } from '../ui/Tutorial.js';
+import { PauseMenu } from '../ui/PauseMenu.js';
 import { Hud, formatNumber } from '../ui/Hud.js';
 
 import { Shop } from '../ui/Shop.js';
@@ -49,6 +51,14 @@ export class Game {
     this.shop = new Shop(shopRoot, { state: this.state, audio });
     this.overlay = new Overlay();
     this.endingManager = null;
+    this.tutorial = new Tutorial(document.body, { state: this.state });
+    this.pauseMenu = new PauseMenu(document.body, {
+      game: this,
+      settings: this.settings,
+      settingsModal: this.settingsModal,
+      audio: this.audio,
+      save: this.save,
+    });
 
     this.running = false;
     this.paused = false;
@@ -287,6 +297,7 @@ export class Game {
         this.controls.update();
         this.controls.enabled = !this.paused;
         this.digging.setEnabled(!this.paused);
+        this.tutorial?.start();
       }
     } else {
       this._keyboardPan(dt);
@@ -300,10 +311,24 @@ export class Game {
     this.foreshadowing?.update(dt);
     this.endingManager?.onProgress(this.state.completion);
     this.endingManager?.update(dt);
+    this.tutorial?.update(dt);
+
+    // Throttling particellare intelligente in base alla flotta di lavoratori
+    if (this.workers && this.particles?.setWorkerCount) {
+      const up = this.state.upgrades;
+      const wCount = (up.scarab ?? 0) + (up.excavator ?? 0) + (up.dredge ?? 0);
+      this.particles.setWorkerCount(wCount);
+    }
     this.particles.update(dt);
     this.terrain?.flush();      // al massimo un upload GPU per frame
     this.hud.update(dt);
     this.shop?.update();
+
+    // Modulazione dinamica dell'audio d'ambiente in base alla quota scavata
+    if (this.terrain && this.audio?.setDepth) {
+      const avgY = this.terrain.heightAt(this.controls?.target.x ?? 0, this.controls?.target.z ?? 0);
+      this.audio.setDepth(avgY);
+    }
 
     // Aggiornamento periodico letture Georadar se attivo
     if ((this.state.upgrades.georadar ?? 0) >= 1 && this.foreshadowing) {
@@ -349,23 +374,7 @@ export class Game {
   openPause() {
     if (!this.running || this.paused || this.phase !== 'play') return;
     this.shop.close(true);
-    this._setPaused(true);
-    const info = document.createElement('div');
-    info.innerHTML = `<p class="muted">Sinistro: scava (tieni premuto per scavare di continuo). Destro: ruota. Shift + destro o WASD: sposta. Rotella: zoom. Touch: un dito scava, due dita ruotano e zoomano.</p>`;
-    this.modal.open({
-      title: 'Pausa',
-      content: info,
-      actions: [
-        { label: 'Impostazioni', keepOpen: true, onClick: () => this.settingsModal.open() },
-        { label: 'Torna al Menu', onClick: () => { this._leaving = true; } },
-        { label: 'Riprendi' },
-      ],
-      onClose: () => {
-        this._pauseClosedAt = performance.now();
-        if (this._leaving) { this._leaving = false; this.returnToMenu(); }
-        else this._setPaused(false);
-      },
-    });
+    this.pauseMenu.open();
   }
 
   _setPaused(p) {
@@ -417,6 +426,8 @@ export class Game {
     this.running = false;
     this.phase = 'idle';
     this.paused = false;
+    this.pauseMenu?.close();
+    this.tutorial?.complete();
     this.overlay?.hide();
     this.digging.setEnabled(false);
     this.shop.close(true);
