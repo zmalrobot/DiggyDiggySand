@@ -194,6 +194,22 @@ export class Save {
 
 
 
+  getStats() {
+    try {
+      const raw = this.storage?.getItem('dds_stats_v1');
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return null;
+  }
+
+  getAchievements() {
+    try {
+      const raw = this.storage?.getItem('dds_achievements_v1');
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return null;
+  }
+
   write(data) {
     try { this.storage?.setItem(SAVE_KEY, JSON.stringify(data)); return true; } catch { return false; }
   }

@@ -201,7 +201,7 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
 
 #modal-root:empty { display: none; }
 #modal-root {
-  position: fixed; inset: 0; z-index: 100;
+  position: fixed; inset: 0; z-index: 2000;
   display: flex; align-items: center; justify-content: center;
   background: rgba(3, 24, 38, 0.55);
 }
@@ -1353,6 +1353,274 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
 
 .webgl-error-actions {
   margin-top: 8px;
+}
+
+/* =====================================================================
+   FASE 10: ACHIEVEMENT TOAST, STATISTICHE & GALLERIA TROFEI
+   ===================================================================== */
+
+/* Host Notifiche Toast Achievement (in alto a destra) */
+.achievement-toast-host {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.achievement-toast {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 300px;
+  max-width: 380px;
+  padding: 14px 20px;
+  background: rgba(3, 24, 38, 0.94);
+  border: 1.5px solid var(--gold-pharaoh);
+  box-shadow: 0 0 25px rgba(245, 186, 35, 0.35), inset 0 0 15px rgba(15, 227, 193, 0.15);
+  pointer-events: auto;
+  opacity: 0;
+  transform: translateX(50px) scale(0.92);
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.achievement-toast.in {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+}
+
+.achievement-toast.out {
+  opacity: 0;
+  transform: translateY(-20px) scale(0.92);
+}
+
+.achievement-toast-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 15% 50%, rgba(15, 227, 193, 0.18), transparent 70%);
+  pointer-events: none;
+}
+
+.achievement-toast-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: rgba(15, 227, 193, 0.12);
+  border: 1px solid var(--atlantis-teal);
+  clip-path: polygon(10px 0%, calc(100% - 10px) 0%, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0% calc(100% - 10px), 0% 10px);
+  flex-shrink: 0;
+}
+
+.achievement-toast-badge .achievement-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.achievement-toast-content {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+}
+
+.achievement-toast-tag {
+  font-family: var(--font-data);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--atlantis-teal);
+}
+
+.achievement-toast-title {
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--gold-glow);
+  text-shadow: 0 0 10px rgba(245, 186, 35, 0.4);
+}
+
+.achievement-toast-desc {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+/* Griglia Statistiche di Carriera */
+.stats-modal .tabs {
+  margin-bottom: 20px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  padding: 6px 0;
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 20px 14px;
+  background: rgba(3, 24, 38, 0.7);
+  border: 1px solid rgba(228, 197, 128, 0.25);
+  clip-path: polygon(12px 0%, calc(100% - 12px) 0%, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0% calc(100% - 12px), 0% 12px);
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.stat-card:hover {
+  border-color: var(--atlantis-teal);
+  transform: translateY(-2px);
+}
+
+.stat-icon {
+  font-size: 1.8rem;
+  margin-bottom: 8px;
+}
+
+.stat-value {
+  font-family: var(--font-data);
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--gold-glow);
+  text-shadow: 0 0 8px rgba(245, 186, 35, 0.3);
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Elenco Trofei & Obiettivi */
+.trophies-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 55vh;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.trophy-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  background: rgba(3, 24, 38, 0.7);
+  border: 1px solid rgba(228, 197, 128, 0.2);
+  clip-path: polygon(10px 0%, calc(100% - 10px) 0%, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0% calc(100% - 10px), 0% 10px);
+  transition: all 0.2s ease;
+}
+
+.trophy-card.unlocked {
+  border-color: rgba(245, 186, 35, 0.6);
+  background: rgba(15, 227, 193, 0.05);
+}
+
+.trophy-card.locked {
+  opacity: 0.65;
+  filter: grayscale(0.5);
+}
+
+.trophy-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  font-size: 1.4rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  clip-path: polygon(8px 0%, calc(100% - 8px) 0%, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0% calc(100% - 8px), 0% 8px);
+  flex-shrink: 0;
+}
+
+.trophy-card.unlocked .trophy-badge {
+  background: rgba(245, 186, 35, 0.15);
+  border-color: var(--gold-pharaoh);
+  box-shadow: 0 0 12px rgba(245, 186, 35, 0.3);
+}
+
+.trophy-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+}
+
+.trophy-title {
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.trophy-card.unlocked .trophy-title {
+  color: var(--gold-glow);
+}
+
+.trophy-desc {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+.trophy-date {
+  font-family: var(--font-data);
+  font-size: 0.7rem;
+  color: var(--atlantis-teal);
+  margin-top: 2px;
+}
+
+.trophy-status {
+  flex-shrink: 0;
+}
+
+.badge-unlocked {
+  font-family: var(--font-data);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--atlantis-teal);
+  background: rgba(15, 227, 193, 0.15);
+  border: 1px solid var(--atlantis-teal);
+  padding: 4px 8px;
+  clip-path: polygon(4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px), 0 4px);
+}
+
+.badge-locked {
+  font-family: var(--font-data);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 4px 8px;
+  clip-path: polygon(4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px), 0 4px);
+}
+
+@media (max-width: 600px) {
+  .achievement-toast-host {
+    top: 12px;
+    right: 12px;
+    left: 12px;
+  }
+  .achievement-toast {
+    max-width: 100%;
+    min-width: unset;
+  }
 }
 
 

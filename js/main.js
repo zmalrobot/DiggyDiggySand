@@ -11,6 +11,9 @@ import { SettingsModal } from './ui/SettingsModal.js';
 import { ModalManager } from './ui/Modal.js';
 import { Game } from './core/Game.js';
 import { DebugTools } from './core/DebugTools.js';
+import { i18n } from './core/I18n.js';
+import { StatsManager } from './core/StatsManager.js';
+import { Achievements } from './systems/Achievements.js';
 
 window.addEventListener('error', (e) => console.error('[DDS] errore non gestito', e.error ?? e.message));
 window.addEventListener('unhandledrejection', (e) => console.error('[DDS] promise rifiutata', e.reason));
@@ -21,6 +24,14 @@ async function boot() {
   const save = new Save();
   const assets = new AssetLoader();
   const modal = new ModalManager(document.getElementById('modal-root'));
+  const statsManager = new StatsManager();
+
+  // Inizializza lingua corrente da impostazioni
+  i18n.settings = settings;
+  i18n.lang = settings.get('game.language') || 'it';
+  settings.subscribe('game.language', (l) => i18n.setLanguage(l));
+
+  const achievements = new Achievements({ statsManager, save, audio });
 
   // Suoni UI procedurali (attivi solo dopo lo sblocco dell'AudioContext).
   document.addEventListener('pointerover', (e) => {
@@ -48,7 +59,7 @@ async function boot() {
   }
 
   const settingsModal = new SettingsModal({ settings, modal, save, audio });
-  const menu = new MainMenu(document.getElementById('menu'), { save, modal, settingsModal, audio, scene });
+  const menu = new MainMenu(document.getElementById('menu'), { save, modal, settingsModal, audio, scene, statsManager, achievements });
   document.addEventListener('dds:save-cleared', () => menu.refresh());
 
   // Fase 1: "Nuova Spedizione" / "Continua" (eventi game:new / game:continue) avviano la partita.
@@ -63,7 +74,7 @@ async function boot() {
   game.debugTools = debugTools;
 
   // Hook di debug per i test.
-  window.__dds = { settings, audio, save, scene, assets, menu, game, debugTools };
+  window.__dds = { settings, audio, save, scene, assets, menu, game, debugTools, statsManager, achievements, i18n };
 
   await startClicked;
   menu.show();

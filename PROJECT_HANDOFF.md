@@ -176,6 +176,28 @@ Verifiche manuali da fare: valori persistiti dopo il ricaricamento; `localStorag
     - `playCurseRumble()`: riproduzione boato tellurico o oscillatore low-frequency.
     - `startAmbient()`: routing del loop vento del deserto campionato attraverso la catena di filtri dinamici a modulazione di profondità (`setDepth`).
   - Verificata con 61 test unitari complessivi (8 specifici M9, 100% superati) e verifica end-to-end in browser.
+- [x] **M10** Sistema Achievement, Statistiche Cumulative e Localizzazione Multilingua (IT/EN):
+  - Motore di Localizzazione Dinamica (`js/core/I18n.js`):
+    - Dizionario completo e strutturato con supporto per Italiano (`it`) e Inglese (`en`).
+    - Traduzione di voci del Menu Principale, Shop, descrizioni Upgrade, finali, eventi e impostazioni.
+    - Metodo `t(key, params)` con interpolazione parametri e `updateDOM(root)` con selettori `data-i18n`.
+    - Selezione lingua reattiva integrata in `SettingsManager` (`game.language`) con cambio immediato senza ricaricamento di pagina.
+  - Statistiche Cumulative di Carriera (`js/core/StatsManager.js`):
+    - Tracciamento indipendente e persistente tra run su `localStorage` (`dds_stats_v1`):
+      - Colpi di pala manuali (`totalClicks`)
+      - Sabbia totale storica estratta (`totalSandLifetime`)
+      - Tempo di gioco cumulativo (`totalPlaytime`)
+      - Rovine sepolte disseppellite (`ruinsUncovered`)
+      - Spedizioni portate a termine (`runsCompleted`)
+      - Tempo record per completamento scavo (`bestRunTime`)
+  - Sistema Obiettivi & Trofei (`js/systems/Achievements.js` & `js/ui/Toast.js`):
+    - 12 trofei tematici collezionabili progressivi e segreti (Primo Colpo d'Oro, Dune Breaker, Signore delle Macchine, Echi del Passato, Trinità della Sabbia, Il Risveglio, Corsa contro il Tempo, Custode dell'Oro, Saggezza Antica, Cavalcatempeste, Affare nel Deserto, Archeologo Supremo).
+    - Persistenza sblocchi su `dds_achievements_v1`.
+    - Notifica Toast elegante con bordo oro, glow ciano, icona araldica SVG e fanfara audio Web Audio dedicata `playAchievementChime()`.
+  - Pannello Statistiche & Trofei (`js/ui/StatsModal.js`):
+    - Modale a due schede (Statistiche e Trofei) accessibile dal Menu Principale e dal Menu di Pausa in-game.
+    - Griglia numeri di carriera con font Syne ed elenco trofei con stato di sblocco in tempo reale.
+  - Verificata con 66 test unitari complessivi (5 specifici M10, 100% superati) e suite end-to-end Puppeteer/Headless Chrome (0 errori console).
 
 Piano dettagliato con codice e verifiche: vedi la sezione "Roadmap" sopra e le formule in `Ideas/upgrade_tree_specification.md`.
 

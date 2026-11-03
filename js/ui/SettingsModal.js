@@ -1,11 +1,12 @@
 // Modale impostazioni: ogni controllo scrive subito su SettingsManager e si risincronizza ai cambi esterni.
 import { SCHEMA } from '../core/SettingsManager.js';
+import { i18n } from '../core/I18n.js';
 
 const TABS = [
   { id: 'audio', label: 'Audio' },
   { id: 'graphics', label: 'Grafica' },
   { id: 'controls', label: 'Controlli' },
-  { id: 'data', label: 'Dati' },
+  { id: 'data', label: 'Dati & Lingua' },
 ];
 
 const OPTION_LABELS = {
@@ -13,6 +14,7 @@ const OPTION_LABELS = {
   'graphics.shadows': { off: 'Disattivate', low: 'Basse', high: 'Alte' },
   'graphics.particles': { low: 'Basse', med: 'Medie', high: 'Alte' },
   'graphics.fpsCap': { 30: '30 FPS', 60: '60 FPS', 0: 'Illimitato' },
+  'game.language': { it: 'Italiano', en: 'English' },
 };
 
 export class SettingsModal {
@@ -162,6 +164,10 @@ export class SettingsModal {
   }
 
   _dataTab(p) {
+    p.append(
+      this._row(i18n.t('settings.language') || 'Lingua', this._select('game.language'), 'Italiano / English')
+    );
+
     const area = document.createElement('textarea');
     area.className = 'json-area';
     area.rows = 6;

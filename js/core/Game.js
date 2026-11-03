@@ -22,6 +22,10 @@ import { Hud, formatNumber } from '../ui/Hud.js';
 
 import { Shop } from '../ui/Shop.js';
 import { toast } from '../ui/Modal.js';
+import { StatsManager } from './StatsManager.js';
+import { Achievements } from '../systems/Achievements.js';
+import { StatsModal } from '../ui/StatsModal.js';
+import { i18n } from './I18n.js';
 
 const WORLD_SIZE = 200;
 const AUTOSAVE_MS = 10000; // Autosave ogni 10 secondi
@@ -45,6 +49,16 @@ export class Game {
     this.assets = assets ?? scene?.assets ?? null;
 
     this.state = new State();
+    this.statsManager = new StatsManager();
+    this.state.careerStats = this.statsManager.stats;
+    this.achievements = new Achievements({
+      state: this.state,
+      statsManager: this.statsManager,
+      save: this.save,
+      audio: this.audio,
+    });
+    this.statsModal = new StatsModal(this.modal, this.statsManager, this.achievements, this.audio);
+
     this.economy = new Economy(this.state);
     this.hud = new Hud(hudRoot, { state: this.state, economy: this.economy, audio: this.audio });
     this.hud.hide();
@@ -94,6 +108,28 @@ export class Game {
     events.on('game:new', (data) => this.start(data));
     events.on('game:continue', (data) => this.start(data));
     events.on('hud:menu', () => this.openPause());
+
+    events.on('dig:hit', ({ amount }) => {
+      this.state.registerClick();
+      this.statsManager?.increment?.('totalClicks', 1);
+      this.statsManager?.increment?.('totalSandLifetime', amount);
+      if (this.worldEvents?.activeEvent === 'sandstorm') {
+        events.emit('storm:dig');
+      }
+    });
+
+    events.on('merchant:deal_bought', () => {
+      events.emit('merchant:traded');
+    });
+
+    let lastCompletionTier = 0;
+    events.on('terrain:completion', ({ completion }) => {
+      const tier = Math.floor(completion * 8);
+      if (tier > lastCompletionTier) {
+        this.statsManager?.increment?.('ruinsUncovered', tier - lastCompletionTier);
+        lastCompletionTier = tier;
+      }
+    });
 
     this._onKeyDown = (e) => {
       if (!this.running) return;
@@ -336,6 +372,11 @@ export class Game {
     this.endingManager?.update(dt);
     this.tutorial?.update(dt);
     this.worldEvents?.update(dt);
+
+    if (this.phase === 'play' && !this.paused) {
+      this.statsManager?.increment?.('totalPlaytime', dt);
+      this.achievements?.check();
+    }
 
     // Throttling particellare intelligente in base alla flotta di lavoratori
     if (this.workers && this.particles?.setWorkerCount) {

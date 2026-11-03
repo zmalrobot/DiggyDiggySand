@@ -450,6 +450,19 @@ export class AudioEngine {
     });
   }
 
+  /** Tintinnio trionfale di sblocco obiettivo / achievement (Fase 10). */
+  playAchievementChime() {
+    if (!this._ok()) return;
+    const chords = [523.25, 659.25, 1046.5]; // C5, E5, C6
+    chords.forEach((f, i) => {
+      setTimeout(() => {
+        if (!this._ok()) return;
+        this._blip({ type: 'triangle', f0: f, f1: f * 1.01, dur: 0.35, vol: 0.22 });
+        this._blip({ type: 'sine', f0: f * 2, f1: f * 2.01, dur: 0.2, vol: 0.12 });
+      }, i * 75);
+    });
+  }
+
   /** Fischio comico e solitario del vento per l'anticlimax di Business. */
   playWindWhistle() {
     if (!this._ok()) return;

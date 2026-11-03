@@ -93,11 +93,14 @@ export class EndingManager {
         this.state.tablets = this.save?.getTablets?.() ?? 0;
       }
 
+      const elapsed = this.state?.elapsedSeconds ?? 0;
+      this.game?.statsManager?.recordRunCompletion?.(elapsed);
+
       // Presenta l'epilogo a tutto schermo con Tavolette Antiche
       this.overlay?.show({
         ...result,
         stats: {
-          timeSeconds: this.state?.elapsedSeconds ?? 0,
+          timeSeconds: elapsed,
           sandTotal: this.state?.totalSand ?? 0,
           clicks: this.state?.clicks ?? 0,
           completion: this.state?.completion ?? 1.0,
@@ -108,7 +111,7 @@ export class EndingManager {
         onSandbox: result.sandboxAvailable ? () => this.enterSandbox() : null,
       });
 
-      events.emit('ending:completed', { ...result, tabletsEarned });
+      events.emit('ending:completed', { ...result, tabletsEarned, timeSeconds: elapsed });
     });
   }
 

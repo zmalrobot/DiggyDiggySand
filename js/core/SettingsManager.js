@@ -17,6 +17,7 @@ export const SCHEMA = {
   'controls.cameraSens': { type: 'range', def: 1, min: 0.25, max: 2, step: 0.05 },
   'controls.invertY':    { type: 'bool',  def: false },
   'controls.screenShake':{ type: 'bool',  def: true },
+  'game.language':       { type: 'enum',  def: 'it', values: ['it', 'en'] },
 };
 
 /** Normalizza un valore secondo lo schema. Ritorna undefined se non valido. */

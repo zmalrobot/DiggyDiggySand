@@ -38,6 +38,8 @@ export class DebugTools {
       unlockAllUpgrades: () => this.unlockAllUpgrades(),
       addTablets: (amount) => this.addTablets(amount),
       unlockAllEndings: () => this.unlockAllEndings(),
+      unlockAchievement: (id) => this.unlockAchievement(id),
+      setLanguage: (lang) => this.setLanguage(lang),
       cleanVRAM: () => this.cleanVRAM(),
       resetAll: (hard) => this.resetAll(hard),
       getMemoryReport: () => this.getMemoryReport(),
@@ -112,6 +114,20 @@ export class DebugTools {
     return this.save?.getEndingsSeen();
   }
 
+  unlockAchievement(id) {
+    if (this.game?.achievements) {
+      this.game.achievements.unlock(id);
+      toast(`[DEBUG] Achievement sbloccato: ${id}`);
+    }
+  }
+
+  setLanguage(lang = 'en') {
+    if (window.__dds?.i18n) {
+      window.__dds.i18n.setLanguage(lang);
+      toast(`[DEBUG] Lingua impostata: ${lang}`);
+    }
+  }
+
   cleanVRAM() {
     this.scene?.renderer?.renderLists?.dispose?.();
     toast('[DEBUG] Render lists WebGL liberate con successo.');
@@ -124,6 +140,8 @@ export class DebugTools {
       localStorage.removeItem('dds_tablets_v1');
       localStorage.removeItem('dds_meta_v1');
       localStorage.removeItem('dds_endings_seen');
+      localStorage.removeItem('dds_stats_v1');
+      localStorage.removeItem('dds_achievements_v1');
       toast('[DEBUG] Salvataggi cancellati. Ricaricamento...');
       if (hard && typeof window !== 'undefined' && window.location?.reload) {
         setTimeout(() => window.location.reload(), 500);

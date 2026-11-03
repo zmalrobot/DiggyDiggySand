@@ -1,5 +1,6 @@
 // Overlay di vittoria / epilogo finale a schermo intero (Stile Atlantean-Kemet, Art Bible §2, §6).
 import { formatNumber } from './Hud.js';
+import { i18n } from '../core/I18n.js';
 
 export class Overlay {
   constructor(root = document.body) {
@@ -76,11 +77,11 @@ export class Overlay {
         <div class="overlay-actions">
           ${
             onSandbox
-              ? `<button type="button" class="btn btn-sandbox" data-action="sandbox">Continua in Sandbox</button>`
+              ? `<button type="button" class="btn btn-sandbox" data-action="sandbox">${i18n.t('endings.buttons.sandbox') || 'Continua in Sandbox'}</button>`
               : ''
           }
-          <button type="button" class="btn" data-action="restart">Nuova Spedizione</button>
-          <button type="button" class="btn btn-secondary" data-action="menu">Torna al Menu</button>
+          <button type="button" class="btn" data-action="restart">${i18n.t('endings.buttons.newGame') || 'Nuova Spedizione'}</button>
+          <button type="button" class="btn btn-secondary" data-action="menu">${i18n.t('endings.buttons.menu') || 'Torna al Menu'}</button>
         </div>
       </div>
     `;

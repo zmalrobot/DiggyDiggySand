@@ -2,6 +2,8 @@
 // Fornisce opzioni rapide (audio, grafica), ripresa e salvataggio/uscita sincronizzato.
 import { formatNumber } from './Hud.js';
 import { PrestigeModal } from './PrestigeModal.js';
+import { StatsModal } from './StatsModal.js';
+import { i18n } from '../core/I18n.js';
 
 export class PauseMenu {
   constructor(root = document.body, { game, settings, settingsModal, audio, save }) {
@@ -29,6 +31,8 @@ export class PauseMenu {
       const act = btn.dataset.act;
       if (act === 'resume') {
         this.close();
+      } else if (act === 'stats') {
+        new StatsModal(this.game?.modal, this.game?.statsManager, this.game?.achievements, this.audio).open();
       } else if (act === 'prestige') {
         new PrestigeModal(this.game?.modal, this.save, this.game?.state, this.audio).open();
       } else if (act === 'settings') {
@@ -118,10 +122,11 @@ export class PauseMenu {
         </div>
 
         <div class="pause-actions">
-          <button type="button" class="btn btn-resume" data-act="resume">Riprendi Spedizione</button>
-          <button type="button" class="btn btn-secondary" data-act="prestige">Santuario dei Predecessori (τ ${this.save?.getTablets?.() ?? 0})</button>
-          <button type="button" class="btn btn-secondary" data-act="settings">Tutte le Impostazioni</button>
-          <button type="button" class="btn btn-danger" data-act="save-exit">Salva ed Esci</button>
+          <button type="button" class="btn btn-resume" data-act="resume">${i18n.t('pause.resume') || 'Riprendi Spedizione'}</button>
+          <button type="button" class="btn btn-secondary" data-act="stats">${i18n.t('pause.stats') || 'Statistiche & Trofei'}</button>
+          <button type="button" class="btn btn-secondary" data-act="prestige">${i18n.t('pause.prestige') || 'Santuario dei Predecessori'} (τ ${this.save?.getTablets?.() ?? 0})</button>
+          <button type="button" class="btn btn-secondary" data-act="settings">${i18n.t('settings.title') || 'Tutte le Impostazioni'}</button>
+          <button type="button" class="btn btn-danger" data-act="save-exit">${i18n.t('pause.saveAndExit') || 'Salva ed Esci'}</button>
         </div>
       </div>
     `;
