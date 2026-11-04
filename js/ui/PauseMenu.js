@@ -1,6 +1,7 @@
 // Menu di Pausa in-game dedicato (Fase 5 Polish & UI).
 // Fornisce opzioni rapide (audio, grafica), ripresa e salvataggio/uscita sincronizzato.
 import { formatNumber } from './Hud.js';
+import { SanctuaryModal } from './SanctuaryModal.js';
 import { PrestigeModal } from './PrestigeModal.js';
 import { StatsModal } from './StatsModal.js';
 import { HelpModal } from './HelpModal.js';
@@ -45,8 +46,8 @@ export class PauseMenu {
         new HelpModal(this.game?.modal).open();
       } else if (act === 'credits') {
         new CreditsModal(this.game?.modal).open();
-      } else if (act === 'prestige') {
-        new PrestigeModal(this.game?.modal, this.save, this.game?.state, this.audio).open();
+      } else if (act === 'prestige' || act === 'sanctuary') {
+        new SanctuaryModal(this.game?.modal, this.save, this.game?.state, this.audio).open();
       } else if (act === 'settings') {
         if (this.settingsModal) this.settingsModal.game = this.game;
         this.settingsModal?.open?.();

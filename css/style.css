@@ -2093,17 +2093,20 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
 }
 
 /* Santuario dei Predecessori (Meta-Progressione) */
+.sanctuary-container,
 .prestige-container {
   display: flex;
   flex-direction: column;
   gap: 18px;
   max-width: 540px;
 }
+.sanctuary-header,
 .prestige-header {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
+.sanctuary-currency,
 .prestige-currency {
   display: flex;
   align-items: baseline;
@@ -2123,15 +2126,18 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
   color: var(--atlantis-teal);
   text-shadow: 0 0 14px rgba(15, 227, 193, 0.5);
 }
+.sanctuary-intro,
 .prestige-intro {
   font-size: 0.82rem;
   line-height: 1.4;
 }
+.sanctuary-list,
 .prestige-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
+.sanctuary-card,
 .prestige-card {
   display: flex;
   align-items: center;
@@ -2141,16 +2147,19 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
   border: 1px solid rgba(15, 227, 193, 0.25);
   transition: transform 0.2s, box-shadow 0.2s;
 }
+.sanctuary-card.card-max,
 .prestige-card.card-max {
   border-color: var(--ui-border-gold);
   background: rgba(15, 45, 65, 0.7);
 }
+.sanctuary-badge,
 .prestige-badge {
   font-size: 2rem;
   flex-shrink: 0;
   width: 44px;
   text-align: center;
 }
+.sanctuary-info,
 .prestige-info {
   display: flex;
   flex-direction: column;
@@ -2158,32 +2167,38 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
   flex: 1;
   min-width: 0;
 }
+.sanctuary-title-row,
 .prestige-title-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
+.sanctuary-title,
 .prestige-title {
   font-family: var(--font-heading);
   font-size: 0.95rem;
   font-weight: 700;
   color: var(--text-main);
 }
+.sanctuary-lvl,
 .prestige-lvl {
   font-family: var(--font-data);
   font-size: 0.75rem;
   font-weight: 700;
 }
+.sanctuary-benefit,
 .prestige-benefit {
   font-family: var(--font-data);
   font-size: 0.82rem;
   font-weight: 700;
   color: var(--atlantis-teal);
 }
+.sanctuary-desc,
 .prestige-desc {
   font-size: 0.78rem;
   line-height: 1.35;
 }
+.sanctuary-action,
 .prestige-action {
   flex-shrink: 0;
 }

@@ -59,16 +59,16 @@ console.log('--- TEST FASE 12: Biomi Alternativi, Fisica Scavo & Rovine Differen
   assert.equal(bm.isUnlocked('desert'), true, 'Deserto sbloccato di default');
   assert.equal(bm.isUnlocked('ocean'), false, 'Oceano bloccato inizialmente con 0 vittorie');
 
-  // Sblocco Oceano con Tavolette (costo 15 τ)
+  // Sblocco Oceano con Tavolette (costo 10 τ da Sezione 8.3)
   const unlockedOcean = bm.unlockWithTablets('ocean', save);
-  assert.equal(unlockedOcean, true, 'Oceano sbloccato spendendo 15 τ');
-  assert.equal(save.getTablets(), 15, 'Tavolette scalate correttamente (30 - 15 = 15)');
+  assert.equal(unlockedOcean, true, 'Oceano sbloccato spendendo 10 τ');
+  assert.equal(save.getTablets(), 20, 'Tavolette scalate correttamente (30 - 10 = 20)');
   assert.equal(bm.isUnlocked('ocean'), true);
 
-  // Sblocco automatico Ghiacciaio tramite vittorie (minWins = 1)
-  const bmWins = new BiomeManager(save, { stats: { runsCompleted: 1 } }, storage);
-  assert.equal(bmWins.isUnlocked('glacier'), true, 'Ghiacciaio sbloccato automaticamente con 1 vittoria');
-  assert.equal(bmWins.isUnlocked('jungle'), false, 'Giungla richiede 2 vittorie');
+  // Sblocco automatico Ghiacciaio tramite vittorie (minWins = 2)
+  const bmWins = new BiomeManager(save, { stats: { runsCompleted: 2 } }, storage);
+  assert.equal(bmWins.isUnlocked('glacier'), true, 'Ghiacciaio sbloccato automaticamente con 2 vittorie');
+  assert.equal(bmWins.isUnlocked('jungle'), false, 'Giungla richiede 3 vittorie');
 
   bmWins.selectBiome('glacier');
   assert.equal(bmWins.currentBiome, 'glacier');

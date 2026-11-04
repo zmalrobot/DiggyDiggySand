@@ -36,11 +36,11 @@ export class WardrobeModal {
     `;
 
     const tabBar = document.createElement('div');
-    tabBar.className = 'tabs';
+    tabBar.className = 'tabs wardrobe-tabs';
     tabBar.innerHTML = `
-      <button type="button" class="tab ${this.currentTab === 'shovel' ? 'active' : ''}" data-tab="shovel">${i18n.t('wardrobe.tabShovel') || 'Pale & Strumenti'}</button>
-      <button type="button" class="tab ${this.currentTab === 'sand' ? 'active' : ''}" data-tab="sand">${i18n.t('wardrobe.tabSand') || 'Biomi Sabbia'}</button>
-      <button type="button" class="tab ${this.currentTab === 'machinery' ? 'active' : ''}" data-tab="machinery">${i18n.t('wardrobe.tabMachinery') || 'Macchinari'}</button>
+      <button type="button" class="tab wardrobe-tab-btn ${this.currentTab === 'shovel' ? 'active' : ''}" data-tab="shovel">${i18n.t('wardrobe.tabShovel') || 'Pale & Strumenti'}</button>
+      <button type="button" class="tab wardrobe-tab-btn ${this.currentTab === 'sand' ? 'active' : ''}" data-tab="sand">${i18n.t('wardrobe.tabSand') || 'Biomi Sabbia'}</button>
+      <button type="button" class="tab wardrobe-tab-btn ${this.currentTab === 'machinery' ? 'active' : ''}" data-tab="machinery">${i18n.t('wardrobe.tabMachinery') || 'Macchinari'}</button>
     `;
 
     const body = document.createElement('div');
@@ -113,11 +113,11 @@ export class WardrobeModal {
           <div class="wardrobe-preview-circle" style="background: radial-gradient(circle, ${item.color} 30%, transparent 75%);"></div>
           <span class="wardrobe-icon">${item.icon}</span>
         </div>
-        <div class="wardrobe-info">
-          <div class="wardrobe-name">${name}</div>
-          <div class="wardrobe-desc">${desc}</div>
+        <div class="wardrobe-info wardrobe-card-info">
+          <div class="wardrobe-name wardrobe-card-name">${name}</div>
+          <div class="wardrobe-desc wardrobe-card-desc">${desc}</div>
         </div>
-        <div class="wardrobe-action"></div>
+        <div class="wardrobe-action wardrobe-card-action"></div>
       `;
 
       const actionSlot = card.querySelector('.wardrobe-action');

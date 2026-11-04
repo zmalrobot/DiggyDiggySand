@@ -515,9 +515,67 @@ export const DICTIONARY = {
     prestige: {
       title: 'Santuario dei Predecessori',
       currency: 'Tavolette Antiche: τ {count}',
+      tabletsLabel: 'Tavolette Antiche:',
       intro: 'La conoscenza dei cicli passati non va perduta. Spendi le Tavolette Antiche per imprimere perk permanenti validi per tutte le spedizioni future.',
       level: 'Lv. {lvl}/{max}',
       max: 'MAX',
+      upgrades: {
+        shovelEcho: {
+          name: 'Eco della Pala',
+          desc: 'L\'esperienza dei cicli passati guida la lama: +15% potenza base di scavo permanente per livello.',
+          benefit: '+{pct}% Potenza di Scavo Permanente',
+        },
+        excavatorBlueprint: {
+          name: 'Progetto dell\'Escavatore',
+          desc: 'Inizia ogni futura spedizione con Automi Scarabei già operativi nel cratere.',
+          benefit: '{count} Scarabei operativi all\'avvio',
+        },
+        tabletMagnetism: {
+          name: 'Magnetismo delle Tavolette',
+          desc: 'Favore antico: sconto del 5% su tutti i costi in sabbia dell\'Officina per livello.',
+          benefit: '-{pct}% Costi di Acquisto (Max -25%)',
+        },
+      },
+      shovelEcho: {
+        name: 'Eco della Pala',
+        desc: 'L\'esperienza dei cicli passati guida la lama: +15% potenza base di scavo permanente per livello.',
+        benefit: '+{pct}% Potenza di Scavo Permanente',
+      },
+      excavatorBlueprint: {
+        name: 'Progetto dell\'Escavatore',
+        desc: 'Inizia ogni futura spedizione con Automi Scarabei già operativi nel cratere.',
+        benefit: '{count} Scarabei operativi all\'avvio',
+      },
+      tabletMagnetism: {
+        name: 'Magnetismo delle Tavolette',
+        desc: 'Favore antico: sconto del 5% su tutti i costi in sabbia dell\'Officina per livello.',
+        benefit: '-{pct}% Costi di Acquisto (Max -25%)',
+      },
+    },
+    sanctuary: {
+      title: 'Santuario dei Predecessori',
+      currency: 'Tavolette Antiche: τ {count}',
+      tabletsLabel: 'Tavolette Antiche:',
+      intro: 'La conoscenza dei cicli passati non va perduta. Spendi le Tavolette Antiche per imprimere perk permanenti validi per tutte le spedizioni future.',
+      level: 'Lv. {lvl}/{max}',
+      max: 'MAX',
+      upgrades: {
+        shovelEcho: {
+          name: 'Eco della Pala',
+          desc: 'L\'esperienza dei cicli passati guida la lama: +15% potenza base di scavo permanente per livello.',
+          benefit: '+{pct}% Potenza di Scavo Permanente',
+        },
+        excavatorBlueprint: {
+          name: 'Progetto dell\'Escavatore',
+          desc: 'Inizia ogni futura spedizione con Automi Scarabei già operativi nel cratere.',
+          benefit: '{count} Scarabei operativi all\'avvio',
+        },
+        tabletMagnetism: {
+          name: 'Magnetismo delle Tavolette',
+          desc: 'Favore antico: sconto del 5% su tutti i costi in sabbia dell\'Officina per livello.',
+          benefit: '-{pct}% Costi di Acquisto (Max -25%)',
+        },
+      },
       shovelEcho: {
         name: 'Eco della Pala',
         desc: 'L\'esperienza dei cicli passati guida la lama: +15% potenza base di scavo permanente per livello.',
@@ -1193,9 +1251,67 @@ export const DICTIONARY = {
     prestige: {
       title: 'Sanctuary of Ancestors',
       currency: 'Ancient Tablets: τ {count}',
+      tabletsLabel: 'Ancient Tablets:',
       intro: 'The lore of past cycles is never lost. Spend Ancient Tablets to imprint permanent perks across all future expeditions.',
       level: 'Lv. {lvl}/{max}',
       max: 'MAX',
+      upgrades: {
+        shovelEcho: {
+          name: 'Echo of the Spade',
+          desc: 'Wisdom of past cycles guides your strike: +15% permanent base dig power per level.',
+          benefit: '+{pct}% Permanent Dig Power',
+        },
+        excavatorBlueprint: {
+          name: 'Excavator Blueprint',
+          desc: 'Begin every future expedition with Clockwork Scarabs already excavating the crater.',
+          benefit: '{count} Scarabs operating at start',
+        },
+        tabletMagnetism: {
+          name: 'Tablet Magnetism',
+          desc: 'Ancestral favor: grants a 5% discount on all Workshop sand costs per level.',
+          benefit: '-{pct}% Purchase Costs (Max -25%)',
+        },
+      },
+      shovelEcho: {
+        name: 'Echo of the Spade',
+        desc: 'Wisdom of past cycles guides your strike: +15% permanent base dig power per level.',
+        benefit: '+{pct}% Permanent Dig Power',
+      },
+      excavatorBlueprint: {
+        name: 'Excavator Blueprint',
+        desc: 'Begin every future expedition with Clockwork Scarabs already excavating the crater.',
+        benefit: '{count} Scarabs operating at start',
+      },
+      tabletMagnetism: {
+        name: 'Tablet Magnetism',
+        desc: 'Ancestral favor: grants a 5% discount on all Workshop sand costs per level.',
+        benefit: '-{pct}% Purchase Costs (Max -25%)',
+      },
+    },
+    sanctuary: {
+      title: 'Sanctuary of Ancestors',
+      currency: 'Ancient Tablets: τ {count}',
+      tabletsLabel: 'Ancient Tablets:',
+      intro: 'The lore of past cycles is never lost. Spend Ancient Tablets to imprint permanent perks across all future expeditions.',
+      level: 'Lv. {lvl}/{max}',
+      max: 'MAX',
+      upgrades: {
+        shovelEcho: {
+          name: 'Echo of the Spade',
+          desc: 'Wisdom of past cycles guides your strike: +15% permanent base dig power per level.',
+          benefit: '+{pct}% Permanent Dig Power',
+        },
+        excavatorBlueprint: {
+          name: 'Excavator Blueprint',
+          desc: 'Begin every future expedition with Clockwork Scarabs already excavating the crater.',
+          benefit: '{count} Scarabs operating at start',
+        },
+        tabletMagnetism: {
+          name: 'Tablet Magnetism',
+          desc: 'Ancestral favor: grants a 5% discount on all Workshop sand costs per level.',
+          benefit: '-{pct}% Purchase Costs (Max -25%)',
+        },
+      },
       shovelEcho: {
         name: 'Echo of the Spade',
         desc: 'Wisdom of past cycles guides your strike: +15% permanent base dig power per level.',

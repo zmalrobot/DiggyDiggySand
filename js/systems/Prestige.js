@@ -72,6 +72,13 @@ export function buyMetaUpgrade(id, save, state = null, audio = null) {
   if (state) {
     state.metaUpgrades[id] = nextLvl;
     state.tablets = save.getTablets();
+    if (id === 'excavatorBlueprint' && state.upgrades) {
+      const currentScarab = state.upgrades.scarab ?? 0;
+      if (currentScarab < nextLvl) {
+        state.upgrades.scarab = nextLvl;
+        events.emit('upgrade:purchased', { id: 'scarab', level: nextLvl });
+      }
+    }
   }
 
   audio?.playPurchaseSound?.();

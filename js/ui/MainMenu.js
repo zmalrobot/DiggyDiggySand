@@ -1,6 +1,7 @@
 // Menu principale: Nuova Spedizione, Continua, Impostazioni, Crediti, Galleria Finali, Santuario Predecessori, Statistiche & Trofei.
 import { events } from '../core/Events.js';
 import { GalleryModal } from './GalleryModal.js';
+import { SanctuaryModal } from './SanctuaryModal.js';
 import { PrestigeModal } from './PrestigeModal.js';
 import { StatsModal } from './StatsModal.js';
 import { WardrobeModal } from './WardrobeModal.js';
@@ -24,7 +25,8 @@ export class MainMenu {
     this.cosmeticsManager = cosmeticsManager ?? new CosmeticsManager(save);
     this.biomeManager = biomeManager ?? new BiomeManager(save, statsManager);
     this.galleryModal = new GalleryModal(modal, save);
-    this.prestigeModal = new PrestigeModal(modal, save, null, audio);
+    this.sanctuaryModal = new SanctuaryModal(modal, save, null, audio);
+    this.prestigeModal = this.sanctuaryModal;
     this.statsModal = new StatsModal(modal, statsManager, achievements, audio);
     this.wardrobeModal = wardrobeModal ?? new WardrobeModal(modal, this.cosmeticsManager, save, audio, null);
     this.biomeSelectModal = biomeSelectModal ?? new BiomeSelectModal(
@@ -114,7 +116,11 @@ export class MainMenu {
   }
 
   _prestige() {
-    this.prestigeModal.open();
+    this.sanctuaryModal.open();
+  }
+
+  _sanctuary() {
+    this.sanctuaryModal.open();
   }
 
   async _new() {

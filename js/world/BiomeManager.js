@@ -96,7 +96,7 @@ export const BIOME_CATALOG = {
     unlock: {
       unlockedByDefault: false,
       minWins: 1,
-      tabletCost: 15,
+      tabletCost: 10,
     },
     audioProfile: 'ocean',
   },
@@ -143,8 +143,8 @@ export const BIOME_CATALOG = {
     },
     unlock: {
       unlockedByDefault: false,
-      minWins: 1,
-      tabletCost: 25,
+      minWins: 2,
+      tabletCost: 20,
     },
     audioProfile: 'glacier',
   },
@@ -191,7 +191,7 @@ export const BIOME_CATALOG = {
     },
     unlock: {
       unlockedByDefault: false,
-      minWins: 2,
+      minWins: 3,
       tabletCost: 35,
     },
     audioProfile: 'jungle',
