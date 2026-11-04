@@ -11,6 +11,7 @@ import { generateSandPbrSet } from './TextureGenerator.js';
 
 export const CHUNK = 8;                 // vertici per lato del chunk
 export const TERRAIN_SIZE = 200;       // dimensione del piano di gioco
+export const BOUNDARY_LIMIT = (TERRAIN_SIZE / 2) - 2.5;
 
 export const BIOME_PALETTES = {
   sand_classic: {

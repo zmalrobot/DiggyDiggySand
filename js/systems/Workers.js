@@ -359,7 +359,7 @@ export class Workers {
     const worker = {
       type,
       mesh: m,
-      get position() { return m.position; },
+      get position() { return this.mesh ? this.mesh.position : m.position; },
       timer: def.cycleTime * 0.85, // scava quasi subito dopo l'acquisto
       cycleTime: def.cycleTime,
       digRadius: def.digRadius,
@@ -373,11 +373,13 @@ export class Workers {
   }
 
   getNewTargetPosition(fromX = 0, fromZ = 0, range = 12) {
+    const margin = 0.5;
+    const safeLimit = BOUNDARY_LIMIT - margin;
     const rawX = fromX + (Math.random() - 0.5) * range;
     const rawZ = fromZ + (Math.random() - 0.5) * range;
     return {
-      x: Math.max(-BOUNDARY_LIMIT, Math.min(BOUNDARY_LIMIT, rawX)),
-      z: Math.max(-BOUNDARY_LIMIT, Math.min(BOUNDARY_LIMIT, rawZ)),
+      x: Math.max(-safeLimit, Math.min(safeLimit, rawX)),
+      z: Math.max(-safeLimit, Math.min(safeLimit, rawZ)),
     };
   }
 
@@ -397,9 +399,11 @@ export class Workers {
       w.animPhase += realDt;
 
       // Clamping immediato su coordinate e mesh del lavoratore / escavatore
-      const worker = w.mesh;
+      const worker = w;
       worker.position.x = Math.max(-BOUNDARY_LIMIT, Math.min(BOUNDARY_LIMIT, worker.position.x));
       worker.position.z = Math.max(-BOUNDARY_LIMIT, Math.min(BOUNDARY_LIMIT, worker.position.z));
+      w.mesh.position.x = worker.position.x;
+      w.mesh.position.z = worker.position.z;
       w.x = worker.position.x;
       w.z = worker.position.z;
 
@@ -409,8 +413,9 @@ export class Workers {
         const toCenterZ = -w.z;
         const len = Math.hypot(toCenterX, toCenterZ) || 1;
         const nudge = 12 + Math.random() * 8;
-        w.targetX = Math.max(-BOUNDARY_LIMIT, Math.min(BOUNDARY_LIMIT, w.x + (toCenterX / len) * nudge));
-        w.targetZ = Math.max(-BOUNDARY_LIMIT, Math.min(BOUNDARY_LIMIT, w.z + (toCenterZ / len) * nudge));
+        const safeLimit = BOUNDARY_LIMIT - 0.5;
+        w.targetX = Math.max(-safeLimit, Math.min(safeLimit, w.x + (toCenterX / len) * nudge));
+        w.targetZ = Math.max(-safeLimit, Math.min(safeLimit, w.z + (toCenterZ / len) * nudge));
       }
 
       // Aggiornamento posizioni e animazioni procedurali

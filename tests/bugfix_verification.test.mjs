@@ -14,8 +14,17 @@ console.log('--- TEST VERIFICA BUGFIX TOTALE DIGGY DIGGY SAND ---');
 
 // 1. Confinamento Mezzi nel Terreno
 console.log('1. Confinamento Mezzi nel Terreno...');
+import { BOUNDARY_LIMIT as TERRAIN_BOUND } from '../js/world/Terrain.js';
+import DefaultWorkers from '../js/world/Workers.js';
+import DefaultTutorial from '../js/systems/Tutorial.js';
+import DefaultEvents, { getEventTranslation } from '../js/systems/Events.js';
+
 assert.equal(TERRAIN_SIZE, 200, 'TERRAIN_SIZE deve essere 200');
 assert.equal(BOUNDARY_LIMIT, (200 / 2) - 2.5, 'BOUNDARY_LIMIT deve essere 97.5');
+assert.equal(TERRAIN_BOUND, 97.5, 'Terrain.js deve esportare BOUNDARY_LIMIT a 97.5');
+assert.equal(typeof DefaultWorkers, 'function', 'js/world/Workers.js deve avere default export');
+assert.equal(typeof DefaultTutorial, 'function', 'js/systems/Tutorial.js deve avere default export');
+assert.equal(typeof DefaultEvents, 'function', 'js/systems/Events.js deve avere default export');
 
 const terrain = new Terrain({ size: 200, res: 16, startHeight: 12, flat: true });
 const state = new State();
@@ -25,11 +34,11 @@ state.upgrades.excavator = 1;
 const workers = new Workers({ terrain, state, particles: { burst: () => {} }, scene: null });
 assert.equal(workers.workers.length, 3, 'Devono essere istanziati 3 lavoratori visivi');
 
-// Test picking casuale getNewTargetPosition
+// Test picking casuale getNewTargetPosition - strettamente interno all'intervallo
 for (let i = 0; i < 50; i++) {
-  const target = workers.getNewTargetPosition(95, 95, 20);
-  assert.ok(target.x <= BOUNDARY_LIMIT && target.x >= -BOUNDARY_LIMIT, `Target X fuori confine: ${target.x}`);
-  assert.ok(target.z <= BOUNDARY_LIMIT && target.z >= -BOUNDARY_LIMIT, `Target Z fuori confine: ${target.z}`);
+  const target = workers.getNewTargetPosition(97.5, 97.5, 20);
+  assert.ok(target.x < BOUNDARY_LIMIT && target.x > -BOUNDARY_LIMIT, `Target X non strettamente interno: ${target.x}`);
+  assert.ok(target.z < BOUNDARY_LIMIT && target.z > -BOUNDARY_LIMIT, `Target Z non strettamente interno: ${target.z}`);
 }
 
 // Forza un lavoratore fuori confine e verifica il clamping e l'inversione
@@ -41,9 +50,17 @@ workers.update(0.1);
 
 assert.ok(w.mesh.position.x <= BOUNDARY_LIMIT && w.mesh.position.x >= -BOUNDARY_LIMIT, `Worker X non clampato: ${w.mesh.position.x}`);
 assert.ok(w.mesh.position.z <= BOUNDARY_LIMIT && w.mesh.position.z >= -BOUNDARY_LIMIT, `Worker Z non clampato: ${w.mesh.position.z}`);
-assert.ok(w.targetX <= BOUNDARY_LIMIT && w.targetX >= -BOUNDARY_LIMIT, 'Target X deve essere interno al terreno');
-assert.ok(w.targetZ <= BOUNDARY_LIMIT && w.targetZ >= -BOUNDARY_LIMIT, 'Target Z deve essere interno al terreno');
-console.log('✓ Confinamento mezzi e clamping limite 97.5 verificati con successo');
+assert.ok(w.position.x <= BOUNDARY_LIMIT && w.position.x >= -BOUNDARY_LIMIT, `Worker getter position.x non clampato: ${w.position.x}`);
+assert.ok(w.targetX < BOUNDARY_LIMIT && w.targetX > -BOUNDARY_LIMIT, 'Target X deve essere strettamente interno al terreno');
+assert.ok(w.targetZ < BOUNDARY_LIMIT && w.targetZ > -BOUNDARY_LIMIT, 'Target Z deve essere strettamente interno al terreno');
+
+// Verifica integrità di w.position dopo rebuildVisualMeshes()
+const oldMesh = w.mesh;
+workers.rebuildVisualMeshes();
+assert.notEqual(w.mesh, oldMesh, 'La mesh deve essere stata ricreata');
+assert.equal(w.position, w.mesh.position, 'w.position deve puntare alla nuova mesh attiva');
+
+console.log('✓ Confinamento mezzi, clamping limite 97.5 e getter position dinamico verificati con successo');
 
 // 2. Traduzione Notifiche Eventi Dinamici
 console.log('2. Traduzione Notifiche Eventi Dinamici...');
@@ -55,6 +72,8 @@ assert.equal(i18n.t('events.solar_flare.ended'), "L'eruzione solare è terminata
 assert.equal(i18n.t('events.earthquake.started'), 'Scossa Tettonica: Crolli di sabbia nel cratere!');
 assert.equal(i18n.t('events.earthquake.ended'), 'I movimenti tettonici sono cessati.');
 assert.equal(i18n.t('events.active_banner'), 'EVENTO ATTIVO');
+assert.equal(getEventTranslation('events.sandstorm.ended'), 'La tempesta di sabbia si è placata.');
+assert.equal(getEventTranslation('events.non_existent', 'Fallback Leggibile'), 'Fallback Leggibile');
 
 i18n.currentLang = 'en';
 assert.equal(i18n.t('events.sandstorm.started'), 'Sandstorm: Low visibility, digging speed decreased!');
@@ -64,6 +83,7 @@ assert.equal(i18n.t('events.solar_flare.ended'), 'The solar flare has subsided.'
 assert.equal(i18n.t('events.earthquake.started'), 'Seismic Tremor: Sand collapse detected!');
 assert.equal(i18n.t('events.earthquake.ended'), 'The seismic activity has stopped.');
 assert.equal(i18n.t('events.active_banner'), 'ACTIVE EVENT');
+assert.equal(getEventTranslation('events.sandstorm.ended'), 'The sandstorm has cleared.');
 console.log('✓ Traduzioni eventi sandstorm, solar_flare, earthquake e active_banner verificate');
 
 // 3. Centratura Griglia Guardaroba & CSS

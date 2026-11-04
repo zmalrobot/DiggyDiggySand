@@ -4,7 +4,7 @@ import { events } from '../core/Events.js';
 import { toast } from '../ui/Modal.js';
 import { i18n } from '../core/I18n.js';
 
-function getEventTranslation(key, fallback = '') {
+export function getEventTranslation(key, fallback = '') {
   const text = i18n.t(key);
   if (!text || text === key) {
     return fallback || key;
@@ -309,4 +309,6 @@ export class WorldEvents {
     this.boostTimer = 0;
   }
 }
+
+export default WorldEvents;
 

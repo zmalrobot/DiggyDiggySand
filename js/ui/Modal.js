@@ -124,7 +124,10 @@ export function toast(message, ms = 4200) {
   }
   const el = document.createElement('div');
   el.className = 'panel toast';
-  el.textContent = message;
+  const text = (typeof message === 'string' && (message.startsWith('events.') || message.startsWith('toast.')))
+    ? (i18n.t(message) !== message ? i18n.t(message) : message)
+    : message;
+  el.textContent = text;
   host.append(el);
   setTimeout(() => { el.classList.add('leaving'); setTimeout(() => el.remove(), 500); }, ms);
 }

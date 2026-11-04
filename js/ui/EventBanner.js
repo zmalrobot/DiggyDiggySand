@@ -1,4 +1,6 @@
 // Banner animato di notifica per gli Eventi Spontanei (Tempesta, Mercante).
+import { i18n } from '../core/I18n.js';
+
 export class EventBanner {
   constructor(root = document.body) {
     this.root = root;
@@ -25,12 +27,19 @@ export class EventBanner {
     if (this.timeout) clearTimeout(this.timeout);
     this.onAction = onAction;
 
+    const resolvedTitle = (title && typeof title === 'string' && (title.startsWith('events.') || title.includes('.')))
+      ? (i18n.t(title) !== title ? i18n.t(title) : title)
+      : title;
+    const resolvedMsg = (message && typeof message === 'string' && (message.startsWith('events.') || message.includes('.')))
+      ? (i18n.t(message) !== message ? i18n.t(message) : message)
+      : message;
+
     this.el.innerHTML = `
       <div class="event-banner-card panel">
         <div class="event-banner-icon">${icon}</div>
         <div class="event-banner-body">
-          <div class="event-banner-title">${title}</div>
-          <div class="event-banner-msg">${message}</div>
+          <div class="event-banner-title">${resolvedTitle}</div>
+          <div class="event-banner-msg">${resolvedMsg}</div>
         </div>
         ${actionLabel ? `<button type="button" class="btn event-banner-btn" data-event-action="merchant">${actionLabel}</button>` : ''}
       </div>
