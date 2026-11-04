@@ -380,6 +380,28 @@ Verifiche manuali da fare: valori persistiti dopo il ricaricamento; `localStorag
     - Configurazione tassativa di `castShadow = true` e `receiveShadow = true` su tutti i mesh generati (126 mesh nella città sepolta).
   - Verificata con test unitari dedicati (`tests/phase15_pbr.test.mjs`, 6 suite 100% passate, oltre 107 test totali nel repository) e Browser QA automation headless Chrome (`tests/phase15_pbr_browser_qa.mjs`, 0 errori console, 0 eccezioni runtime, screenshot `dds_qa_pbr_terrain.png` e `dds_qa_pbr_ruins.png`).
 
+- [x] **M20** Suite Diagnostica Hardware, Monitor FPS/Frame Time e Profiler WebGL (Fase 16):
+  - Raccoglitore di Metriche Hardware (`js/systems/Profiler.js`):
+    - Calcolo framerate istantaneo e media mobile ponderata su finestra di 500ms (`fps`, `avgFps`).
+    - Misurazione del Frame Time effettivo in millisecondi tramite `performance.now()`.
+    - Istogramma circolare a buffer fisso (`Float32Array(60)`) per lo storico degli ultimi 60 frame.
+    - Interrogazione metriche Three.js tramite `renderer.info`: `render.calls`, `render.triangles`, `memory.geometries` e `memory.textures`.
+    - Monitoraggio memoria heap JavaScript (`performance.memory.usedJSHeapSize` convertito in MB, con fallback pulito `"N/A"` se non supportato).
+    - Impatto prestazionale rigorosamente nullo quando disattivato (`enabled === false`).
+  - Overlay Grafico HUD con Sparkline Canvas (`js/ui/ProfilerOverlay.js`):
+    - Pannello fisso in alto a destra (`.dds-profiler-overlay`) con glassmorphism scuro (`rgba(3, 24, 38, 0.88)`), bordo dorato e accento ciano atlantideo.
+    - Tipografia Syne, numeri tabulari (`tabular-nums`) e `pointer-events: none` per non intercettare click o gesture sul canvas di gioco.
+    - Mini-grafico Canvas 2D integrato ($120 \times 30$ pixel) con 60 barre temporali codificate per colore:
+      - Verde/Ciano per frame $\le 16.6\text{ms}$ ($\ge 60\text{ FPS}$).
+      - Ambra dorata per frame tra $16.7\text{ms}$ e $33.3\text{ms}$ ($30 - 59\text{ FPS}$).
+      - Rosso di avviso per frame $> 33.3\text{ms}$ ($< 30\text{ FPS}$ / hitching).
+      - Linee guida orizzontali di riferimento per $16.6\text{ms}$ e $33.3\text{ms}$.
+  - Integrazione Impostazioni, Scorciatoia da Tastiera e i18n:
+    - Preferenza `graphics.showProfiler` (con alias `showProfiler`) registrata in `SettingsManager` e persistita in `localStorage`.
+    - Toggle nella scheda Grafica delle Impostazioni localizzato in IT ed EN.
+    - Scorciatoia da tastiera `F3` per attivazione/disattivazione immediata in qualsiasi momento con sincronizzazione bidirezionale.
+  - Verificata con test unitari completi (`tests/phase16_profiler.test.mjs`, 5 suite superate al 100%) e Browser QA automation headless Chrome (`tests/phase16_profiler_browser_qa.mjs`, 0 errori console, 0 eccezioni, screenshot `dds_qa_profiler_overlay_hud.png` e `dds_qa_profiler_settings_toggle.png`).
+
 Piano dettagliato con codice e verifiche: vedi la sezione "Roadmap" sopra e le formule in `Ideas/upgrade_tree_specification.md`.
 
 ## 6. Convenzioni

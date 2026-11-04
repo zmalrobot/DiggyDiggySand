@@ -221,6 +221,11 @@ export class SettingsModal {
       this._row(i18n.t('settings.dustMotes') || 'Particelle Atmosferiche', this._toggle('graphics.dustMotes', 'Particelle Atmosferiche'), i18n.t('settings.dustMotesHint') || 'Pulviscolo fluttuante nel cratere'),
       this._row(i18n.t('settings.dayNight') || 'Ciclo Giorno/Notte', this._select('graphics.dayNightCycle'), i18n.t('settings.dayNightHint') || 'Auto / Giorno / Notte'),
       this._row(i18n.t('settings.fpsCap') || 'Limite FPS', this._select('graphics.fpsCap')),
+      this._row(
+        i18n.t('settings.showProfiler') || 'Mostra Diagnostica & FPS',
+        this._toggle('graphics.showProfiler', i18n.t('settings.showProfiler') || 'Mostra Diagnostica & FPS'),
+        i18n.t('settings.showProfilerHint') || 'Visualizza framerate, chiamate GPU e utilizzo memoria (F3)'
+      ),
     );
   }
 

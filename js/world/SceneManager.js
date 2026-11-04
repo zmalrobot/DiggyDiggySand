@@ -44,6 +44,7 @@ export class SceneManager {
     this.mode = 'menu';        // 'menu' (camera orbitale) | 'game' (camera pilotata da Game/OrbitControls)
     this.updaters = new Set(); // callback(dt) eseguite ogni frame in modalità game
     this._shakeApplied = null;
+    this.profiler = null;
 
     try {
       this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
@@ -320,6 +321,13 @@ export class SceneManager {
     this.shakeT = intensity;
   }
 
+  setProfiler(profiler) {
+    this.profiler = profiler;
+    if (this.profiler && this.renderer) {
+      this.profiler.setRenderer(this.renderer);
+    }
+  }
+
   start() {
     if (!this.ok || this.running) return;
     this.running = true;
@@ -331,12 +339,14 @@ export class SceneManager {
       const elapsed = now - this.lastFrame;
       if (cap > 0 && elapsed < 1000 / cap - 0.5) return;
       this.lastFrame = now;
+      this.profiler?.beginFrame?.(now);
       this.update(Math.min(elapsed / 1000, 0.1));
       if (this.postProcessing) {
         this.postProcessing.render();
       } else {
         this.renderer.render(this.scene, this.camera);
       }
+      this.profiler?.endFrame?.(now);
       if (this._shakeApplied) { this.camera.position.sub(this._shakeApplied); this._shakeApplied = null; }
     };
     this.raf = requestAnimationFrame(frame);

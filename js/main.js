@@ -18,6 +18,8 @@ import { CosmeticsManager } from './systems/CosmeticsManager.js';
 import { WardrobeModal } from './ui/WardrobeModal.js';
 import { BiomeManager } from './world/BiomeManager.js';
 import { BiomeSelectModal } from './ui/BiomeSelectModal.js';
+import { Profiler } from './systems/Profiler.js';
+import { ProfilerOverlay } from './ui/ProfilerOverlay.js';
 
 window.addEventListener('error', (e) => console.error('[DDS] errore non gestito', e.error ?? e.message));
 window.addEventListener('unhandledrejection', (e) => console.error('[DDS] promise rifiutata', e.reason));
@@ -89,8 +91,22 @@ async function boot() {
   const debugTools = new DebugTools({ game, scene, state: game.state, save, audio });
   game.debugTools = debugTools;
 
+  // Suite Diagnostica Hardware & Profiler WebGL (Fase 16)
+  const profiler = new Profiler({ renderer: scene?.renderer, settings });
+  const profilerOverlay = new ProfilerOverlay({ profiler });
+  if (scene) scene.setProfiler(profiler);
+
+  // Scorciatoia da tastiera F3 per attivazione/disattivazione rapida
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'F3' || e.code === 'F3') {
+      e.preventDefault();
+      const next = !settings.get('graphics.showProfiler');
+      settings.set('graphics.showProfiler', next);
+    }
+  });
+
   // Hook di debug per i test.
-  window.__dds = { settings, settingsModal, audio, save, scene, assets, menu, game, debugTools, statsManager, achievements, cosmeticsManager, wardrobeModal, biomeManager, biomeSelectModal, i18n };
+  window.__dds = { settings, settingsModal, audio, save, scene, assets, menu, game, debugTools, statsManager, achievements, cosmeticsManager, wardrobeModal, biomeManager, biomeSelectModal, i18n, profiler, profilerOverlay };
 
   await startClicked;
   menu.show();

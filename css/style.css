@@ -2177,6 +2177,99 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
   flex-shrink: 0;
 }
 
+/* ========================================================
+   Overlay Diagnostico WebGL & Hardware Profiler (Fase 16)
+   ======================================================== */
+.dds-profiler-overlay {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 9999;
+  pointer-events: none !important;
+  user-select: none;
+  width: 154px;
+  padding: 8px 10px;
+  background: rgba(3, 24, 38, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(212, 175, 55, 0.45);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.55), inset 0 0 12px rgba(15, 227, 193, 0.08);
+  border-radius: 4px;
+  font-family: var(--font-data, 'Syne', sans-serif);
+  color: var(--text-main, #FBF7EE);
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+.dds-profiler-overlay.hidden {
+  display: none !important;
+}
+
+.dds-profiler-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  border-bottom: 1px solid rgba(15, 227, 193, 0.25);
+  padding-bottom: 3px;
+}
+
+.dds-profiler-title {
+  font-family: var(--font-heading, 'Cinzel', serif);
+  font-size: 8.5px;
+  letter-spacing: 0.08em;
+  color: var(--atlantis-teal, #0FE3C1);
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.dds-profiler-fps {
+  font-weight: 700;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: #2ECC71;
+}
+
+.dds-profiler-fps.good { color: #2ECC71; }
+.dds-profiler-fps.warn { color: #F5BA23; }
+.dds-profiler-fps.bad  { color: #E74C3C; }
+
+.dds-profiler-sparkline {
+  display: block;
+  width: 120px;
+  height: 30px;
+  margin: 0 auto 6px auto;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+}
+
+.dds-profiler-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 9.5px;
+}
+
+.dds-profiler-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.dds-profiler-stat .lbl {
+  color: var(--text-muted, #94A8B3);
+  font-size: 9px;
+}
+
+.dds-profiler-stat .val {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #FBF7EE;
+}
+
+
 
 
 

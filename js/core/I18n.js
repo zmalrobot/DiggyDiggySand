@@ -239,6 +239,8 @@ export const DICTIONARY = {
       postProcessingDesc: 'Bagliori emissivi oricalco e gradiente caldo cinematografico',
       dustMotes: 'Particelle Atmosferiche (Dust Motes)',
       dustMotesDesc: 'Pulviscolo minerale dorato fluttuante nel cratere',
+      showProfiler: 'Mostra Diagnostica & FPS',
+      showProfilerHint: 'Visualizza framerate, chiamate GPU e utilizzo memoria (F3)',
       graphicsLow: 'Bassa (Prestazioni)',
       graphicsMed: 'Media (Bilanciata)',
       graphicsHigh: 'Alta (Dettagliata)',
@@ -812,6 +814,8 @@ export const DICTIONARY = {
       graphicsQuality: 'Particle quality',
       postProcessingHint: 'Emissive glow and color grading',
       dustMotesHint: 'Floating dust motes in the crater',
+      showProfiler: 'Show Hardware Profiler & FPS',
+      showProfilerHint: 'Display framerate, GPU draw calls and memory footprint (F3)',
       dayNightHint: 'Auto / Day / Night',
       graphicsOptions: {
         low: 'Low (Mobile)',

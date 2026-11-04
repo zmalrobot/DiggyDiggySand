@@ -17,6 +17,7 @@ export const SCHEMA = {
   'graphics.dustMotes':  { type: 'bool',  def: true },
   'graphics.dayNightCycle': { type: 'enum', def: 'auto', values: ['auto', 'day', 'night'] },
   'graphics.fpsCap':     { type: 'enum',  def: 60, values: [30, 60, 0] }, // 0 = senza limite
+  'graphics.showProfiler': { type: 'bool', def: false },
   'controls.cameraSens': { type: 'range', def: 1, min: 0.25, max: 2, step: 0.05 },
   'controls.invertY':    { type: 'bool',  def: false },
   'controls.screenShake':{ type: 'bool',  def: true },
@@ -106,6 +107,7 @@ export class SettingsManager {
   }
 
   get(key) {
+    if (key === 'showProfiler') key = 'graphics.showProfiler';
     if (!(key in SCHEMA)) throw new Error(`Impostazione sconosciuta: ${key}`);
     return this.values[key];
   }
@@ -114,6 +116,7 @@ export class SettingsManager {
 
   /** Imposta un valore, salva subito e notifica. Ritorna true se il valore è cambiato. */
   set(key, val) {
+    if (key === 'showProfiler') key = 'graphics.showProfiler';
     const def = SCHEMA[key];
     if (!def) return false;
     const v = coerce(def, val);
@@ -121,11 +124,15 @@ export class SettingsManager {
     this.values[key] = v;
     this._save();
     this._notify(key, v);
+    if (key === 'graphics.showProfiler') {
+      this._notify('showProfiler', v);
+    }
     return true;
   }
 
   /** Observer: fn(value, key). key = chiave esatta oppure '*' per tutte. Ritorna la funzione di unsubscribe. */
   subscribe(key, fn, { immediate = false } = {}) {
+    if (key === 'showProfiler') key = 'graphics.showProfiler';
     if (!this.listeners.has(key)) this.listeners.set(key, new Set());
     this.listeners.get(key).add(fn);
     if (immediate) {
