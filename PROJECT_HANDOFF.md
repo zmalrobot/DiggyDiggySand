@@ -402,6 +402,24 @@ Verifiche manuali da fare: valori persistiti dopo il ricaricamento; `localStorag
     - Scorciatoia da tastiera `F3` per attivazione/disattivazione immediata in qualsiasi momento con sincronizzazione bidirezionale.
   - Verificata con test unitari completi (`tests/phase16_profiler.test.mjs`, 5 suite superate al 100%) e Browser QA automation headless Chrome (`tests/phase16_profiler_browser_qa.mjs`, 0 errori console, 0 eccezioni, screenshot `dds_qa_profiler_overlay_hud.png` e `dds_qa_profiler_settings_toggle.png`).
 
+- [x] **M21** Simulazione Raytracing: Screen-Space Reflections (SSR) & Screen-Space Ambient Occlusion (SSAO) (Fase 17):
+  - Pass Post-Processing e Buffer di Profondità Nativo (`js/world/PostProcessing.js`):
+    - Allocazione dinamica su richiesta della `depthTexture` (`THREE.DepthTexture`, `type: THREE.UnsignedShortType`) sul render target primario solo se SSR è attivo.
+    - Gestione fallback a costo zero: se SSR è disattivato (`uRaytracingSSR: 0.0`), la texture di profondità viene completamente deallocata/distrutta con `.dispose()`, azzerando l'impatto VRAM e il costo dei campionamenti; `tDepth` punta a una texture dummy 1x1 sicura.
+    - Accesso continuo nello shader a `tDiffuse`, `tDepth`, `cameraNear`, `cameraFar`, `cameraProjectionMatrix` e `cameraInverseProjectionMatrix`.
+  - Shader GLSL Screen-Space Raymarching Avanzato:
+    - Ricostruzione geometrica view-space 3D completa partendo da coordinate UV a schermo e campionamento non-lineare di `tDepth`.
+    - Derivazione analitica delle normali di vista mediante gradienti d'inclinazione parziale `dFdx(viewPos)` e `dFdy(viewPos)`, perfettamente coerenti con le sfaccettature low-poly (`flatShading: true`).
+    - Algoritmo di raymarching a 16 passi con raffinamento a ricerca binaria a 3 iterazioni (`binarySearchSSR`) per individuare con precisione sub-texel le intersezioni dei raggi riflessi.
+    - Calcolo selettivo della riflettività basato su luminanza e saturazione per accentuare oricalco, oro lucido, tavolette e acque sommerse.
+    - Dissolvenza morbida ai bordi dello schermo (`edgeFade`) per eliminare artefatti di troncamento visivo periferico.
+    - Pass di Screen-Space Ambient Occlusion (SSAO) morbido integrato con campioni radiali pseudo-casuali per accentuare la profondità nei recessi scavati della sabbia e alle basi delle colonne sommerse.
+  - Impostazioni, Observer e Dizionario Bilingue:
+    - Preferenza `graphics.raytracingSSR` (con alias `raytracingSSR`) in `SettingsManager` disattivata di default (`def: false`).
+    - Toggle dedicato nel pannello Impostazioni Grafiche con etichette chiare e avviso di GPU dedicata.
+    - Traduzioni complete in IT ed EN in `js/core/I18n.js` (`settings.raytracingSSR`, `settings.raytracingSSRHint`, `graphics.ssr_title`, `graphics.ssr_desc`).
+  - Verificata con suite di test unitari completa (`tests/phase17_ssr.test.mjs`, 4 suite 100% superate) e Browser QA automation con Chrome headless CDP (`tests/phase17_ssr_browser_qa.mjs`, 0 errori console, 0 eccezioni runtime, screenshot `dds_qa_ssr_settings_toggle.png` e `dds_qa_ssr_reflections_hud.png`).
+
 Piano dettagliato con codice e verifiche: vedi la sezione "Roadmap" sopra e le formule in `Ideas/upgrade_tree_specification.md`.
 
 ## 6. Convenzioni

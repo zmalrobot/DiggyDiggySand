@@ -241,6 +241,8 @@ export const DICTIONARY = {
       dustMotesDesc: 'Pulviscolo minerale dorato fluttuante nel cratere',
       showProfiler: 'Mostra Diagnostica & FPS',
       showProfilerHint: 'Visualizza framerate, chiamate GPU e utilizzo memoria (F3)',
+      raytracingSSR: 'Raytracing & Riflessi SSR (Sperimentale)',
+      raytracingSSRHint: 'Simula riflessi fotorealistici nello spazio dello schermo. Richiede GPU dedicata (Disattivato di default).',
       graphicsLow: 'Bassa (Prestazioni)',
       graphicsMed: 'Media (Bilanciata)',
       graphicsHigh: 'Alta (Dettagliata)',
@@ -531,6 +533,10 @@ export const DICTIONARY = {
       elapsed: 'Tempo trascorso: {mins} min (Efficienza flotta 50%).',
       claim: 'Raccogli',
     },
+    graphics: {
+      ssr_title: 'Raytracing & Riflessi SSR',
+      ssr_desc: 'Simula riflessi fotorealistici nello spazio dello schermo e occlusione ambientale (SSAO).',
+    },
   },
 
   en: {
@@ -816,6 +822,8 @@ export const DICTIONARY = {
       dustMotesHint: 'Floating dust motes in the crater',
       showProfiler: 'Show Hardware Profiler & FPS',
       showProfilerHint: 'Display framerate, GPU draw calls and memory footprint (F3)',
+      raytracingSSR: 'Raytracing & SSR Reflections (Experimental)',
+      raytracingSSRHint: 'Simulates screen-space photorealistic reflections. Requires a dedicated GPU (Off by default).',
       dayNightHint: 'Auto / Day / Night',
       graphicsOptions: {
         low: 'Low (Mobile)',
@@ -1059,6 +1067,10 @@ export const DICTIONARY = {
       content: 'While you were away, your autonomous diggers gathered <span class="num accent">+{amount}</span> Sand.',
       elapsed: 'Elapsed time: {mins} min (Fleet efficiency 50%).',
       claim: 'Claim',
+    },
+    graphics: {
+      ssr_title: 'Raytracing & SSR Reflections',
+      ssr_desc: 'Simulates photorealistic screen-space reflections and ambient occlusion (SSAO).',
     },
   },
 };

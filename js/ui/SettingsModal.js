@@ -162,6 +162,8 @@ export class SettingsModal {
     label.className = 'toggle';
     const input = document.createElement('input');
     input.type = 'checkbox';
+    input.name = key;
+    input.dataset.key = key;
     const track = document.createElement('span');
     track.className = 'track';
     const span = document.createElement('span');
@@ -225,6 +227,11 @@ export class SettingsModal {
         i18n.t('settings.showProfiler') || 'Mostra Diagnostica & FPS',
         this._toggle('graphics.showProfiler', i18n.t('settings.showProfiler') || 'Mostra Diagnostica & FPS'),
         i18n.t('settings.showProfilerHint') || 'Visualizza framerate, chiamate GPU e utilizzo memoria (F3)'
+      ),
+      this._row(
+        i18n.t('settings.raytracingSSR') || 'Raytracing & Riflessi SSR (Sperimentale)',
+        this._toggle('graphics.raytracingSSR', i18n.t('settings.raytracingSSR') || 'Raytracing & Riflessi SSR'),
+        i18n.t('settings.raytracingSSRHint') || 'Simula riflessi fotorealistici nello spazio dello schermo. Richiede GPU dedicata (Disattivato di default).'
       ),
     );
   }
