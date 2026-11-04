@@ -1,10 +1,10 @@
 # Diggy Diggy Sand: The Sunken City
 
-[![Licenza: MIT](https://img.shields.io/badge/Licenza-MIT-F5BA23.svg)](LICENSE)
-[![Three.js](https://img.shields.io/badge/Three.js-r160%20(Locale)-0FE3C1.svg)](https://threejs.org/)
-[![PWA](https://img.shields.io/badge/PWA-Standalone%20Ready-00B4D8.svg)](manifest.json)
-[![Tests](https://img.shields.io/badge/Test%20Suite-92%2F92%20Passing-brightgreen.svg)](tests/)
-[![Build Status](https://img.shields.io/badge/Deploy-GitHub%20Pages-blue.svg)](https://pages.github.com/)
+[![Versione: v1.0.0](https://img.shields.io/badge/Versione-v1.0.0%20(Gold%20Master)-F5BA23.svg)](manifest.json)
+[![Licenza: MIT](https://img.shields.io/badge/Licenza-MIT-0FE3C1.svg)](LICENSE)
+[![Three.js](https://img.shields.io/badge/Three.js-r160%20(Locale)-00B4D8.svg)](https://threejs.org/)
+[![PWA](https://img.shields.io/badge/PWA-Offline%20Cache%20v1.0.0-brightgreen.svg)](sw.js)
+[![Tests](https://img.shields.io/badge/Test%20Suite-100%25%20Passing-brightgreen.svg)](tests/)
 
 > *"Svuota il deserto. Scopri cosa dorme sotto le sabbie d'Egitto."*
 

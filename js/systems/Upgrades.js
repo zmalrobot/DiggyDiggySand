@@ -13,6 +13,11 @@ export const BRANCHES = {
     get name() { return i18n.t('shop.tabs.fleet') || 'Flotta Autonoma'; },
     get desc() { return i18n.t('shop.subtitle') || 'Costrutti e macchine che scavano automaticamente il deserto.'; },
   },
+  relics: {
+    id: 'relics',
+    get name() { return i18n.t('shop.tabs.relics') || 'Reliquie'; },
+    get desc() { return i18n.t('shop.subtitleRelics') || 'Potenti sinergie e moltiplicatori delle rovine atlantidee.'; },
+  },
 };
 
 export function getUpgradeName(def) {
@@ -128,13 +133,95 @@ export const UPGRADE_CATALOG = {
       return i18n.t('upgrades.dredge.benefit', { total }) || `+200.0 Sabbia/s per livello (Totale: ${total}/s)`;
     },
   },
+
+  // Ramo C: Atlantean Relics (Reliquie di Risonanza)
+  relic_cartel: {
+    id: 'relic_cartel',
+    branch: 'relics',
+    name: 'Cartello del Papiro',
+    baseCost: 8000,
+    multiplier: 1.0,
+    maxLevel: 1,
+    minCompletion: 0.15,
+    desc: 'Accordi mercantili che incrementano del 25% la produzione di tutta la flotta autonoma.',
+    getBenefit(lvl) {
+      return lvl > 0
+        ? (i18n.t('upgrades.relic_cartel.benefitActive') || '+25% Produzione Flotta (Attivo)')
+        : (i18n.t('upgrades.relic_cartel.benefitInactive') || '+25% Produzione Flotta (Richiede 15% Scavato)');
+    },
+  },
+  relic_leyline: {
+    id: 'relic_leyline',
+    branch: 'relics',
+    name: 'Sintonia Tellurica',
+    baseCost: 15000,
+    multiplier: 1.0,
+    maxLevel: 1,
+    minCompletion: 0.25,
+    desc: 'Canalizza l\'energia del terreno: ogni click manuale infligge un bonus pari al 4% del DPS totale della flotta.',
+    getBenefit(lvl) {
+      return lvl > 0
+        ? (i18n.t('upgrades.relic_leyline.benefitActive') || '+4% DPS Flotta su ogni click (Attivo)')
+        : (i18n.t('upgrades.relic_leyline.benefitInactive') || '+4% DPS Flotta su ogni click (Richiede 25% Scavato)');
+    },
+  },
+  relic_gears: {
+    id: 'relic_gears',
+    branch: 'relics',
+    name: 'Ingranaggi d\'Oricalco',
+    baseCost: 75000,
+    multiplier: 1.0,
+    maxLevel: 1,
+    minCompletion: 0.50,
+    desc: 'Raddoppia (+100%) la potenza e la velocità di scavo di Escavatori a Vapore e Draghe.',
+    getBenefit(lvl) {
+      return lvl > 0
+        ? (i18n.t('upgrades.relic_gears.benefitActive') || '2x Potenza Escavatori e Draghe (Attivo)')
+        : (i18n.t('upgrades.relic_gears.benefitInactive') || '2x Potenza Escavatori e Draghe (Richiede 50% Scavato)');
+    },
+  },
+  relic_anomaly: {
+    id: 'relic_anomaly',
+    branch: 'relics',
+    name: 'Armonizzatore di Anomalie',
+    baseCost: 250000,
+    multiplier: 1.0,
+    maxLevel: 1,
+    minCompletion: 0.65,
+    desc: 'Stabilizzatore quantico che aumenta del 50% il valore economico di tutta la sabbia estratta.',
+    getBenefit(lvl) {
+      return lvl > 0
+        ? (i18n.t('upgrades.relic_anomaly.benefitActive') || '+50% Valore della Sabbia (Attivo)')
+        : (i18n.t('upgrades.relic_anomaly.benefitInactive') || '+50% Valore della Sabbia (Richiede 65% Scavato)');
+    },
+  },
+  relic_abyss: {
+    id: 'relic_abyss',
+    branch: 'relics',
+    name: 'Occhio dell\'Abisso',
+    baseCost: 1200000,
+    multiplier: 1.0,
+    maxLevel: 1,
+    minCompletion: 0.80,
+    desc: 'Manufatto supremo delle profondità: triplica (3.0x) l\'intera produzione di sabbia sia manuale che passiva.',
+    getBenefit(lvl) {
+      return lvl > 0
+        ? (i18n.t('upgrades.relic_abyss.benefitActive') || 'Moltiplicatore Globale 3.0x (Attivo)')
+        : (i18n.t('upgrades.relic_abyss.benefitInactive') || 'Moltiplicatore Globale 3.0x (Richiede 80% Scavato)');
+    },
+  },
 };
 
-/** Formula costi: Math.floor(baseCost * Math.pow(multiplier, level)) con sconto opzionale. */
+/** Formula costi: Math.floor(baseCost * Math.pow(multiplier, level)) con sconto opzionale e protezione overflow. */
 export function getUpgradeCost(def, level = 0, discount = 0) {
   if (level >= def.maxLevel) return Infinity;
-  const raw = Math.floor(def.baseCost * Math.pow(def.multiplier, level));
-  return Math.max(1, Math.floor(raw * (1 - Math.min(0.25, Math.max(0, discount)))));
+  const multPow = Math.pow(def.multiplier, level);
+  if (!Number.isFinite(multPow) || def.baseCost * multPow >= Number.MAX_SAFE_INTEGER) {
+    return Number.MAX_SAFE_INTEGER;
+  }
+  const raw = Math.floor(def.baseCost * multPow);
+  const safeRaw = Math.min(Number.MAX_SAFE_INTEGER, raw);
+  return Math.max(1, Math.floor(safeRaw * (1 - Math.min(0.25, Math.max(0, discount)))));
 }
 
 /**
@@ -199,21 +286,35 @@ export function getMaxAffordableLevels(def, currentLvl = 0, availableSand = 0, d
   return { count: k, cost };
 }
 
-/** Calcola la produzione passiva totale al secondo (Sand Per Second - SPS). */
+/** Calcola la produzione passiva totale al secondo (Sand Per Second - SPS) considerando sinergie e reliquie. */
 export function calculateSPS(upgrades = {}) {
-  let total = 0;
+  let fleetTotal = 0;
+  const gearsMult = (upgrades.relic_gears ?? 0) > 0 ? 2.0 : 1.0;
+
   for (const [id, def] of Object.entries(UPGRADE_CATALOG)) {
     if (def.dpsPerLevel) {
-      total += (upgrades[id] ?? 0) * def.dpsPerLevel;
+      const lvl = upgrades[id] ?? 0;
+      let unitDPS = def.dpsPerLevel;
+      if (id === 'excavator' || id === 'dredge') {
+        unitDPS *= gearsMult;
+      }
+      fleetTotal += lvl * unitDPS;
     }
   }
-  return total;
+
+  const cartelMult = (upgrades.relic_cartel ?? 0) > 0 ? 1.25 : 1.0;
+  const abyssMult = (upgrades.relic_abyss ?? 0) > 0 ? 3.0 : 1.0;
+
+  return fleetTotal * cartelMult * abyssMult;
 }
 
-/** Verifica se il giocatore può acquistare l'upgrade. */
+/** Verifica se il giocatore può acquistare l'upgrade rispettando requisiti di scavo e saldo. */
 export function canAffordUpgrade(id, state) {
   const def = UPGRADE_CATALOG[id];
   if (!def) return false;
+  if (def.minCompletion && (state?.completion ?? 0) < def.minCompletion) {
+    return false;
+  }
   const currentLvl = state.upgrades[id] ?? 0;
   if (currentLvl >= def.maxLevel) return false;
   const discount = state?.costDiscount ?? 0;
@@ -233,6 +334,9 @@ export function buyUpgrade(id, state, audio = null) {
 export function buyMultiUpgrade(id, countOrMax = 1, state, audio = null) {
   const def = UPGRADE_CATALOG[id];
   if (!def) return { ok: false, boughtLevels: 0, totalCost: 0 };
+  if (def.minCompletion && (state?.completion ?? 0) < def.minCompletion) {
+    return { ok: false, boughtLevels: 0, totalCost: 0 };
+  }
   const currentLvl = state.upgrades[id] ?? 0;
   if (currentLvl >= def.maxLevel) return { ok: false, boughtLevels: 0, totalCost: 0 };
 

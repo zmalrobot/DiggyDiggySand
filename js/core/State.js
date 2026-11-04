@@ -1,5 +1,6 @@
 // Stato di gioco (fonte unica di verità per economia e progresso). Il rendering lo legge soltanto.
 import { events } from './Events.js';
+import { calculateSPS } from '../systems/Upgrades.js';
 
 export const STATE_VERSION = 1;
 
@@ -62,7 +63,18 @@ export class State {
     // Formula U1.2: TickInterval = max(0.06s, 0.35s * 0.93^n)
     const interval = freqLvl === 0 ? 0.5 : Math.max(MIN_TICK, 0.35 * Math.pow(0.93, freqLvl));
     const echoBonus = 1 + (this.metaUpgrades.shovelEcho ?? 0) * 0.15;
-    const basePower = (BASE_STATS.power + (n.shovel ?? 0)) * echoBonus;
+    let basePower = (BASE_STATS.power + (n.shovel ?? 0)) * echoBonus;
+
+    // Reliquia Leyline: aggiunge il 4% del DPS della flotta al click
+    if ((n.relic_leyline ?? 0) > 0) {
+      const fleetSPS = calculateSPS(n);
+      basePower += 0.04 * fleetSPS;
+    }
+    // Reliquia Abisso: moltiplica x3.0 la potenza di scavo
+    if ((n.relic_abyss ?? 0) > 0) {
+      basePower *= 3.0;
+    }
+
     const baseRadius = BASE_STATS.radius + 0.45 * (n.radius ?? 0);
     const baseRate = freqLvl === 0 ? BASE_STATS.digRate : Math.min(1 / MIN_TICK, 1 / interval);
 
@@ -75,7 +87,11 @@ export class State {
 
   addSand(amount) {
     if (!(amount > 0)) return;
-    const actual = amount * (this.sandMultiplier || 1.0);
+    let actual = amount * (this.sandMultiplier || 1.0);
+    // Reliquia Anomalia: moltiplica la sabbia estratta per 1.5 (+50%)
+    if ((this.upgrades.relic_anomaly ?? 0) > 0) {
+      actual *= 1.5;
+    }
     this.sand += actual;
     this.totalSand += actual;
     events.emit('sand:changed', { sand: this.sand, delta: actual });

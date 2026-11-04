@@ -55,6 +55,7 @@ export class Shop {
         <div class="shop-tabs tabs" role="tablist">
           <button type="button" class="tab active" data-tab="manual" data-i18n="shop.tabs.manual">${i18n.t('shop.tabs.manual') || 'Attrezzi Manuali'}</button>
           <button type="button" class="tab" data-tab="fleet" data-i18n="shop.tabs.fleet">${i18n.t('shop.tabs.fleet') || 'Flotta Autonoma'}</button>
+          <button type="button" class="tab" data-tab="relics" data-i18n="shop.tabs.relics">${i18n.t('shop.tabs.relics') || 'Reliquie'}</button>
         </div>
 
         <div class="shop-multibuy-bar" role="group" aria-label="Quantità acquisto">
@@ -177,9 +178,17 @@ export class Shop {
     const lvl = this.state.upgrades[def.id] ?? 0;
     const isMax = lvl >= def.maxLevel;
     const discount = this.state?.costDiscount ?? 0;
+    const completion = this.state?.completion ?? 0;
+    const isLocked = !!(def.minCompletion && completion < def.minCompletion);
+    const lockReq = def.minCompletion ? Math.round(def.minCompletion * 100) : 0;
+
+    if (isLocked) {
+      const singleCost = getUpgradeCost(def, lvl, discount);
+      return { lvl, isMax: false, isLocked: true, lockReq, count: 0, cost: singleCost, canAfford: false };
+    }
 
     if (isMax) {
-      return { lvl, isMax: true, count: 0, cost: Infinity, canAfford: false };
+      return { lvl, isMax: true, isLocked: false, lockReq, count: 0, cost: Infinity, canAfford: false };
     }
 
     if (this.multiBuy === 'MAX') {
@@ -188,6 +197,8 @@ export class Shop {
         return {
           lvl,
           isMax: false,
+          isLocked: false,
+          lockReq,
           count: maxInfo.count,
           cost: maxInfo.cost,
           canAfford: true,
@@ -198,6 +209,8 @@ export class Shop {
       return {
         lvl,
         isMax: false,
+        isLocked: false,
+        lockReq,
         count: 1,
         cost: singleCost,
         canAfford: false,
@@ -209,7 +222,7 @@ export class Shop {
     const cost = getMultiUpgradeCost(def, lvl, count, discount);
     const canAfford = this.state.sand >= cost && count > 0;
 
-    return { lvl, isMax: false, count, cost, canAfford };
+    return { lvl, isMax: false, isLocked: false, lockReq, count, cost, canAfford };
   }
 
   _renderCard(def) {
@@ -221,7 +234,9 @@ export class Shop {
     const completedText = i18n.t('shop.maxedAction') || 'Completato';
 
     let actionLabel = '';
-    if (info.isMax) {
+    if (info.isLocked) {
+      actionLabel = `🔒 ${info.lockReq}%`;
+    } else if (info.isMax) {
       actionLabel = completedText;
     } else if (this.multiBuy === 'MAX') {
       actionLabel = info.canAfford ? `+${info.count} MAX` : `+1 MAX`;
@@ -232,12 +247,13 @@ export class Shop {
     }
 
     return `
-      <div class="panel surface upgrade-card ${info.isMax ? 'maxed' : ''}" data-card="${def.id}">
+      <div class="panel surface upgrade-card ${info.isMax ? 'maxed' : ''} ${info.isLocked ? 'locked' : ''}" data-card="${def.id}">
         <div class="upgrade-card-head">
           <span class="upgrade-name">${name}</span>
           <span class="upgrade-level num">Lv. ${info.lvl}${info.isMax ? ` (${maxText})` : ` / ${def.maxLevel}`}</span>
         </div>
         <p class="upgrade-desc muted">${desc}</p>
+        ${info.isLocked ? `<div class="upgrade-lock-note muted" style="color: var(--color-gold-deep); font-size: 0.78rem; margin: 4px 0;">🔒 Richiede ${info.lockReq}% di completamento scavo</div>` : ''}
         <div class="upgrade-benefit accent">${benefit}</div>
         <div class="upgrade-card-foot">
           <button type="button" class="btn btn-buy ${info.canAfford ? 'glow' : ''}" data-buy="${def.id}" ${info.canAfford ? '' : 'disabled'}>

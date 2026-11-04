@@ -56,7 +56,7 @@ export class MainMenu {
           <button type="button" class="btn" data-act="settings" data-i18n="menu.settings">Impostazioni</button>
           <button type="button" class="btn" data-act="credits" data-i18n="menu.credits">Crediti</button>
         </nav>
-        <footer class="menu-foot muted">v12.0 · Fase 12</footer>
+        <footer class="menu-foot muted">v1.0.0 · Gold Master</footer>
       </div>`;
     this.root.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-act]');

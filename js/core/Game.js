@@ -34,6 +34,7 @@ import { Haptics } from './Haptics.js';
 import { DirectivesManager } from '../systems/Directives.js';
 import { DirectivesWidget } from '../ui/DirectivesWidget.js';
 import { HelpModal } from '../ui/HelpModal.js';
+import { deepDispose } from '../world/DisposeUtils.js';
 import { i18n } from './I18n.js';
 
 const WORLD_SIZE = 200;
@@ -366,16 +367,19 @@ export class Game {
     }
     if (this.workers) {
       this.group.remove(this.workers.group);
+      deepDispose(this.workers.group);
       this.workers.dispose();
       this.workers = null;
     }
     if (this.city) {
       this.group.remove(this.city.group);
+      deepDispose(this.city.group);
       this.city.dispose();
       this.city = null;
     }
     if (this.terrain) {
       this.group.remove(this.terrain.group);
+      deepDispose(this.terrain.group);
       this.terrain.dispose();
       this.terrain = null;
       this.digging.setTerrain(null);

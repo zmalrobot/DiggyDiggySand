@@ -27,7 +27,7 @@ export class CreditsModal {
       <div class="credits-header-banner">
         <span class="credits-badge">⚖️ ${i18n.t('credits.badge') || 'ATLANTIS HERITAGE'}</span>
         <h3 class="credits-game-title">Diggy Diggy Sand: The Sunken City</h3>
-        <div class="credits-version muted">${i18n.t('credits.versionLabel') || 'Versione Client'}: <span class="accent">v1.0.0</span> · Milestone 24</div>
+        <div class="credits-version muted">${i18n.t('credits.versionLabel') || 'Versione Client'}: <span class="accent">v1.0.0</span> · Gold Master</div>
       </div>
 
       <div class="credits-section">

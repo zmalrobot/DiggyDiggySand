@@ -79,7 +79,9 @@ export const DICTIONARY = {
       tabs: {
         manual: 'Attrezzi Manuali',
         fleet: 'Flotta Autonoma',
+        relics: 'Reliquie',
       },
+      tabRelics: 'Reliquie',
       tabTools: 'Strumenti',
       tabRadar: 'Georadar',
       level: 'Livello',
@@ -133,6 +135,31 @@ export const DICTIONARY = {
         name: 'Draga Sabbiosa Atlantea',
         desc: 'Imponente struttura a tamburo rotante che polverizza interi banchi di sabbia compressa.',
         benefit: '+200.0 Sabbia/s per livello (Totale: {total}/s)',
+      },
+      relic_cartel: {
+        name: 'Sigillo dei Mercanti',
+        desc: 'Patto commerciale con la gilda di scavo: incrementa la produzione della flotta del +25%.',
+        benefit: '+25% Rendimento Flotta',
+      },
+      relic_leyline: {
+        name: 'Condotti Tellurici',
+        desc: 'Canalizza il 4% del DPS totale della flotta direttamente nella forza del colpo manuale.',
+        benefit: '+4% Flotta a Click',
+      },
+      relic_gears: {
+        name: 'Ingranaggi Arcaici',
+        desc: 'Lega d\'oricalco temprata che raddoppia l\'efficacia di Escavatori e Draghe.',
+        benefit: 'x2 Potenza Macchinari Pesanti',
+      },
+      relic_anomaly: {
+        name: 'Cuore dell\'Anomalia',
+        desc: 'Matrice cristallina che amplifica la sabbia estratta da ogni fonte del +50%.',
+        benefit: '+50% Rendita Totale Sabbia',
+      },
+      relic_abyss: {
+        name: 'Corona dell\'Abisso',
+        desc: 'Risonanza primordiale atlantidea: triplica l\'intera potenza ed efficacia di scavo.',
+        benefit: 'x3 Efficacia Globale',
       },
     },
     biomes: {
@@ -690,7 +717,9 @@ export const DICTIONARY = {
       tabs: {
         manual: 'Manual Tools',
         fleet: 'Autonomous Fleet',
+        relics: 'Relics',
       },
+      tabRelics: 'Relics',
       tabTools: 'Tools',
       tabRadar: 'Georadar',
       level: 'Level',
@@ -744,6 +773,31 @@ export const DICTIONARY = {
         name: 'Atlantean Sand Dredge',
         desc: 'Colossal rotating drum excavator that pulverizes entire shelves of compressed bedrock sand.',
         benefit: '+200.0 Sand/s per level (Total: {total}/s)',
+      },
+      relic_cartel: {
+        name: 'Merchants Cartel Seal',
+        desc: 'Commercial covenant with the excavation syndicate: boosts passive fleet production by +25%.',
+        benefit: '+25% Fleet Yield',
+      },
+      relic_leyline: {
+        name: 'Telluric Leylines',
+        desc: 'Channels 4% of passive fleet DPS directly into manual strike power.',
+        benefit: '+4% Fleet to Click',
+      },
+      relic_gears: {
+        name: 'Archaic Gears',
+        desc: 'Tempered orichalcum gearboxes doubling the power and speed of Steam Excavators and Dredges.',
+        benefit: '2x Heavy Machinery Output',
+      },
+      relic_anomaly: {
+        name: 'Anomaly Core',
+        desc: 'Resonant crystalline matrix amplifying all excavated sand by +50%.',
+        benefit: '+50% Total Sand Gain',
+      },
+      relic_abyss: {
+        name: 'Crown of the Abyss',
+        desc: 'Primordial Atlantean artifact: triples all manual and fleet digging effectiveness.',
+        benefit: '3x Global Output',
       },
     },
     biomes: {
