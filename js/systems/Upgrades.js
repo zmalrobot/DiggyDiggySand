@@ -18,6 +18,11 @@ export const BRANCHES = {
     get name() { return i18n.t('shop.tabs.relics') || 'Reliquie'; },
     get desc() { return i18n.t('shop.subtitleRelics') || 'Potenti sinergie e moltiplicatori delle rovine atlantidee.'; },
   },
+  artifacts: {
+    id: 'artifacts',
+    get name() { return i18n.t('shop.tabs.artifacts') || 'Manufatti Attivi'; },
+    get desc() { return i18n.t('shop.subtitleArtifacts') || 'Abilità cerimoniali a ricarica rapida con impatto devastante sul terreno.'; },
+  },
 };
 
 export function getUpgradeName(def) {
@@ -208,6 +213,51 @@ export const UPGRADE_CATALOG = {
       return lvl > 0
         ? (i18n.t('upgrades.relic_abyss.benefitActive') || 'Moltiplicatore Globale 3.0x (Attivo)')
         : (i18n.t('upgrades.relic_abyss.benefitInactive') || 'Moltiplicatore Globale 3.0x (Richiede 80% Scavato)');
+    },
+  },
+
+  // Ramo D: Active Artifacts (Abilità Attive a Cooldown)
+  dynamite: {
+    id: 'dynamite',
+    branch: 'artifacts',
+    name: 'Carica di Dinamite',
+    baseCost: 1500,
+    multiplier: 1.0,
+    maxLevel: 1,
+    cooldown: 45,
+    desc: 'Innesca una detonazione concentrata che scava istantaneamente un cratere 3x più ampio.',
+    getBenefit(lvl) {
+      return i18n.t('upgrades.dynamite.benefit') || 'Detonazione istantanea (Raggio 3x) — Cooldown: 45s';
+    },
+  },
+  vortex: {
+    id: 'vortex',
+    branch: 'artifacts',
+    name: 'Vortice Khamsin',
+    baseCost: 25000,
+    multiplier: 1.0,
+    maxLevel: 1,
+    minCompletion: 0.35,
+    cooldown: 90,
+    duration: 10,
+    desc: 'Evoca un tornado dorato per 10s: ogni colpo o hold scava a velocità 3x con raccolta istantanea.',
+    getBenefit(lvl) {
+      return i18n.t('upgrades.vortex.benefit') || 'Scavo 3x rapido per 10s — Cooldown: 90s';
+    },
+  },
+  prism: {
+    id: 'prism',
+    branch: 'artifacts',
+    name: 'Prisma di Atlantide',
+    baseCost: 180000,
+    multiplier: 1.0,
+    maxLevel: 1,
+    minCompletion: 0.60,
+    cooldown: 150,
+    duration: 6,
+    desc: 'Focalizza un raggio orbitale ciano che vaporizza il suolo ed estrae una massiccia scorta di sabbia.',
+    getBenefit(lvl) {
+      return i18n.t('upgrades.prism.benefit') || 'Raggio orbitale perforante — Cooldown: 150s';
     },
   },
 };

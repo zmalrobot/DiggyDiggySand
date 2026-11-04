@@ -33,6 +33,7 @@ import { FloatingTextManager } from '../ui/FloatingText.js';
 import { Haptics } from './Haptics.js';
 import { DirectivesManager } from '../systems/Directives.js';
 import { DirectivesWidget } from '../ui/DirectivesWidget.js';
+import { Abilities } from '../systems/Abilities.js';
 import { HelpModal } from '../ui/HelpModal.js';
 import { deepDispose } from '../world/DisposeUtils.js';
 import { i18n } from './I18n.js';
@@ -126,6 +127,18 @@ export class Game {
     this.directivesWidget = dirRoot ? new DirectivesWidget(dirRoot, this.directives) : null;
     this.directivesWidget?.hide();
 
+    this.abilities = new Abilities({
+      game: this,
+      state: this.state,
+      scene: this.sceneMgr,
+      audio: this.audio,
+      digging: this.digging,
+      terrain: null,
+      particles: this.particles,
+      haptics: this.haptics,
+    });
+    this.hud.abilities = this.abilities;
+
     this._tick = (dt) => this.update(dt);
     this._bindGlobal();
   }
@@ -177,6 +190,10 @@ export class Game {
         return;
       }
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (this.abilities?.handleKeyDown(e.code)) {
+        e.preventDefault();
+        return;
+      }
       this.keys.add(e.code);
     };
     this._onKeyUp = (e) => this.keys.delete(e.code);
@@ -278,6 +295,7 @@ export class Game {
       maxAnisotropy: this.sceneMgr?.maxAnisotropy ?? 16,
     });
     this.group.add(this.terrain.group);
+    this.abilities?.setTerrain(this.terrain);
 
     // Città sepolta procedurale differenziata per bioma (Y=0..8.8)
     this.city = new City({ endingId: this.state.endingId, floor: this.terrain.floor, assets: this.assets, biome });
@@ -385,6 +403,7 @@ export class Game {
       this.terrain.dispose();
       this.terrain = null;
       this.digging.setTerrain(null);
+      this.abilities?.setTerrain(null);
     }
     // Rilascia riferimenti e liste di rendering WebGL per prevenire memory leak
     this.sceneMgr?.renderer?.renderLists?.dispose?.();
@@ -450,6 +469,7 @@ export class Game {
     }
 
     this.digging.update(dt);
+    this.abilities?.update(dt);
     this.directives?.update(dt);
     this.directivesWidget?.update();
     this.workers?.update(dt);

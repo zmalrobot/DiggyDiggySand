@@ -75,6 +75,11 @@ export const DICTIONARY = {
       radarStatus: 'ATTIVO',
       radarActive: 'ATTIVO',
       radarScanning: 'Scansione in corso...',
+      abilities: {
+        dynamite: 'Dinamite (Spazio)',
+        vortex: 'Vortice Khamsin (1)',
+        prism: 'Prisma di Atlantide (2)',
+      },
     },
     shop: {
       title: 'Officina delle Dune',
@@ -85,8 +90,10 @@ export const DICTIONARY = {
         manual: 'Attrezzi Manuali',
         fleet: 'Flotta Autonoma',
         relics: 'Reliquie',
+        artifacts: 'Manufatti Attivi',
       },
       tabRelics: 'Reliquie',
+      tabArtifacts: 'Manufatti',
       tabTools: 'Strumenti',
       tabRadar: 'Georadar',
       level: 'Livello',
@@ -165,6 +172,21 @@ export const DICTIONARY = {
         name: 'Corona dell\'Abisso',
         desc: 'Risonanza primordiale atlantidea: triplica l\'intera potenza ed efficacia di scavo.',
         benefit: 'x3 Efficacia Globale',
+      },
+      dynamite: {
+        name: 'Carica di Dinamite',
+        desc: 'Innesca una detonazione concentrata che scava istantaneamente un cratere 3x più ampio.',
+        benefit: 'Detonazione istantanea (Raggio 3x) — Cooldown: 45s',
+      },
+      vortex: {
+        name: 'Vortice Khamsin',
+        desc: 'Evoca un tornado dorato per 10s: ogni colpo o hold scava a velocità 3x con raccolta istantanea.',
+        benefit: 'Scavo 3x rapido per 10s — Cooldown: 90s',
+      },
+      prism: {
+        name: 'Prisma di Atlantide',
+        desc: 'Focalizza un raggio orbitale ciano che vaporizza il suolo ed estrae una massiccia scorta di sabbia.',
+        benefit: 'Raggio orbitale perforante — Cooldown: 150s',
       },
     },
     biomes: {
@@ -727,6 +749,11 @@ export const DICTIONARY = {
       radarStatus: 'ACTIVE',
       radarActive: 'ACTIVE',
       radarScanning: 'Scanning in progress...',
+      abilities: {
+        dynamite: 'Dynamite (Space)',
+        vortex: 'Khamsin Vortex (1)',
+        prism: 'Prism of Atlantis (2)',
+      },
     },
     shop: {
       title: 'Dune Workshop',
@@ -737,8 +764,10 @@ export const DICTIONARY = {
         manual: 'Manual Tools',
         fleet: 'Autonomous Fleet',
         relics: 'Relics',
+        artifacts: 'Active Artifacts',
       },
       tabRelics: 'Relics',
+      tabArtifacts: 'Artifacts',
       tabTools: 'Tools',
       tabRadar: 'Georadar',
       level: 'Level',
@@ -817,6 +846,21 @@ export const DICTIONARY = {
         name: 'Crown of the Abyss',
         desc: 'Primordial Atlantean artifact: triples all manual and fleet digging effectiveness.',
         benefit: '3x Global Output',
+      },
+      dynamite: {
+        name: 'Dynamite Charge',
+        desc: 'Detonates a concentrated blast that instantly excavates a crater 3x normal size.',
+        benefit: 'Instant blast (3x Radius) — Cooldown: 45s',
+      },
+      vortex: {
+        name: 'Khamsin Vortex',
+        desc: 'Summons a golden tornado for 10s: every dig or hold strikes at 3x speed with instant debris recovery.',
+        benefit: 'Rapid 3x dig for 10s — Cooldown: 90s',
+      },
+      prism: {
+        name: 'Prism of Atlantis',
+        desc: 'Focuses an orbital cyan beam from the sky, vaporizing topsoil and extracting a huge sand bounty.',
+        benefit: 'Piercing orbital beam — Cooldown: 150s',
       },
     },
     biomes: {

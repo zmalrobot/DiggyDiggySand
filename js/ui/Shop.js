@@ -56,6 +56,7 @@ export class Shop {
           <button type="button" class="tab active" data-tab="manual" data-i18n="shop.tabs.manual">${i18n.t('shop.tabs.manual') || 'Attrezzi Manuali'}</button>
           <button type="button" class="tab" data-tab="fleet" data-i18n="shop.tabs.fleet">${i18n.t('shop.tabs.fleet') || 'Flotta Autonoma'}</button>
           <button type="button" class="tab" data-tab="relics" data-i18n="shop.tabs.relics">${i18n.t('shop.tabs.relics') || 'Reliquie'}</button>
+          <button type="button" class="tab" data-tab="artifacts" data-i18n="shop.tabs.artifacts">${i18n.t('shop.tabs.artifacts') || 'Manufatti Attivi'}</button>
         </div>
 
         <div class="shop-multibuy-bar" role="group" aria-label="Quantità acquisto">

@@ -213,7 +213,8 @@ export class Digging {
   /** Esegue un colpo alla posizione corrente del puntatore. Ritorna la sabbia guadagnata (0 se niente). */
   _hit() {
     const now = performance.now();
-    const minInterval = this.state?.godMode ? 0 : MIN_TICK * 1000;
+    const intervalMultiplier = this.state?.vortexActive ? 0.33 : 1.0;
+    const minInterval = this.state?.godMode ? 0 : MIN_TICK * 1000 * intervalMultiplier;
     if (now - this.lastHit < minInterval) return 0;
     const p = this.pick(this.pointer.x, this.pointer.y);
     if (!p) return 0;
@@ -226,13 +227,15 @@ export class Digging {
   /** Scavo in un punto world già calcolato (usato anche dai test e da futuri worker). */
   dig(p) {
     const { power, radius } = this.state.stats;
-    const depth = power * DEPTH_PER_POWER;
+    const powerMultiplier = this.state?.vortexActive ? 1.5 : 1.0;
+    const effPower = power * powerMultiplier;
+    const depth = effPower * DEPTH_PER_POWER;
     const removed = this.terrain.dig(p.x, p.z, radius, depth);
     if (removed <= 0) return 0; // bedrock raggiunto
 
     // Sabbia = power * quota del volume "ideale" (cono pieno) effettivamente rimossa.
     const cone = (depth * Math.PI * radius * radius) / 3;
-    let amount = power * Math.min(1, removed / cone);
+    let amount = effPower * Math.min(1, removed / cone);
 
     // Sistema Colpo Critico: 12% di probabilità base con bonus 3x sabbia, scintille e camera shake
     const isCrit = Math.random() < 0.12;

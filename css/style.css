@@ -664,6 +664,149 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
   display: inline;
 }
 
+/* --- Zona 2.5: Medaglioni Abilità Attive (Branch 4) --- */
+.hud-abilities-dock, #hud-abilities-dock {
+  position: fixed;
+  bottom: calc(max(16px, env(safe-area-inset-bottom, 0px)) + 64px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  pointer-events: none;
+  transition: opacity 1.5s ease-out, transform 0.3s ease;
+}
+
+.hud-abilities-dock.hidden {
+  display: none !important;
+}
+
+.ability-medallion {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  border-radius: 50%;
+  background: var(--ui-bg, rgba(3, 24, 38, 0.9));
+  border: 1.5px solid var(--ui-border-gold, #C89849);
+  color: var(--sand-light, #E4C580);
+  box-shadow:
+    inset 0 0 0 2px rgba(3, 24, 38, 0.8),
+    0 4px 14px rgba(0, 0, 0, 0.6),
+    0 0 8px rgba(15, 227, 193, 0.2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  pointer-events: auto;
+  overflow: hidden;
+  transition: transform 0.15s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+.ability-medallion:hover {
+  transform: scale(1.06);
+  border-color: var(--atlantis-teal, #0FE3C1);
+  box-shadow: 0 0 16px rgba(15, 227, 193, 0.5);
+}
+
+.ability-medallion:active {
+  transform: scale(0.95);
+}
+
+/* Indicatore di Cooldown a Sweep Conico Circolare */
+.ability-cooldown-sweep {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 1;
+  background: conic-gradient(rgba(3, 24, 38, 0.82) calc(var(--cd-pct, 0) * 1%), transparent 0);
+  transition: background 0.05s linear;
+}
+
+/* Icona Vettoriale Cerimoniale */
+.ability-icon {
+  position: relative;
+  z-index: 2;
+  width: 22px;
+  height: 22px;
+  stroke: var(--sand-light, #E4C580);
+  transition: stroke 0.2s ease, transform 0.2s ease;
+}
+
+/* Badge Scorciatoia Tasto (Space / 1 / 2) */
+.ability-hotkey {
+  position: absolute;
+  bottom: 2px;
+  right: 4px;
+  z-index: 3;
+  font-family: var(--font-data, 'Syne', sans-serif);
+  font-size: 8px;
+  font-weight: 800;
+  color: var(--gold-bright, #F5BA23);
+  background: rgba(3, 24, 38, 0.85);
+  padding: 1px 3px;
+  border-radius: 2px;
+  border: 0.5px solid rgba(200, 152, 73, 0.5);
+  line-height: 1;
+}
+
+/* Stato Pronto all'Uso (.is-ready) */
+.ability-medallion.is-ready {
+  border-color: var(--gold-pharaoh, #F5BA23);
+  box-shadow:
+    inset 0 0 0 2px rgba(3, 24, 38, 0.8),
+    0 0 14px rgba(245, 186, 35, 0.65),
+    0 4px 14px rgba(0, 0, 0, 0.6);
+  animation: abilityGlowPulse 2.2s infinite ease-in-out;
+}
+
+.ability-medallion.is-ready .ability-icon {
+  stroke: var(--gold-bright, #FFDF00);
+}
+
+/* Stato Attivo in Corso (.is-active) */
+.ability-medallion.is-active {
+  border-color: var(--atlantis-teal, #0FE3C1);
+  box-shadow:
+    inset 0 0 0 2px rgba(3, 24, 38, 0.8),
+    0 0 20px rgba(15, 227, 193, 0.85);
+  animation: abilityActivePulse 0.8s infinite alternate;
+}
+
+@keyframes abilityGlowPulse {
+  0%, 100% {
+    box-shadow: inset 0 0 0 2px rgba(3, 24, 38, 0.8), 0 0 10px rgba(245, 186, 35, 0.45);
+    border-color: var(--gold-pharaoh, #F5BA23);
+  }
+  50% {
+    box-shadow: inset 0 0 0 2px rgba(3, 24, 38, 0.8), 0 0 18px rgba(245, 186, 35, 0.85), 0 0 8px rgba(15, 227, 193, 0.5);
+    border-color: var(--gold-bright, #FFDF00);
+  }
+}
+
+@keyframes abilityActivePulse {
+  0% { transform: scale(1.0); }
+  100% { transform: scale(1.08); }
+}
+
+/* Dissolvenza HUD durante la regia del Climax dei Finali */
+.hud-fade-out {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 1.5s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+}
+
 /* --- Zona 3: Bottom-Right Simbolo/Sigillo Trucchi --- */
 .hud-bottom-right {
   position: fixed;
@@ -1633,6 +1776,18 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
   }
   .currency-label, .hud-label {
     display: none; /* Iconografia e numeri parlanti, elimina testo esteso per densità */
+  }
+
+  /* Medaglioni Abilità Attive su Smartphone */
+  .hud-abilities-dock, #hud-abilities-dock {
+    bottom: calc(var(--safe-bottom) + 56px);
+    gap: 8px;
+  }
+  .ability-medallion {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
   }
 
   /* Dock Comandi in Basso al Centro su Smartphone */

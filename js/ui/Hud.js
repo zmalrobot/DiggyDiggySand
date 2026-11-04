@@ -2,6 +2,7 @@
 // e modulo Georadar di profondità con visualizzazione a scansione sonar e letture criptiche.
 import { events } from '../core/Events.js';
 import { i18n } from '../core/I18n.js';
+import { ABILITY_DEFS } from '../systems/Abilities.js';
 
 const SUFFIXES = ['', 'k', 'M', 'B', 'T', 'Qa', 'Qi'];
 let activeNotation = 'standard';
@@ -66,7 +67,9 @@ export class Hud {
       events.on('sps:changed', ({ sps }) => this.setSps(sps)),
       events.on('upgrade:bought', ({ id }) => {
         if (id === 'georadar') this.refreshRadar(true);
+        this.refreshAbilities();
       }),
+      events.on('abilities:update', (status) => this.renderAbilities(status)),
       events.on('settings:changed', ({ key, value }) => {
         if (key === 'game.notation' || key === 'notation') {
           setGlobalNotation(value);
@@ -117,6 +120,9 @@ export class Hud {
           </div>
         </div>
       </header>
+
+      <!-- 2.5 Bottom-Center (Above Dock): Medaglioni Abilità Attive (Branch 4) -->
+      <div id="hud-abilities-dock" class="hud-abilities-dock hidden" aria-label="Abilità di Scavo"></div>
 
       <!-- 3. Bottom-Center: Dock Comandi Principale -->
       <nav id="hud-bottom-dock" class="hud-zone hud-bottom-center" aria-label="Comandi di Spedizione">
@@ -182,12 +188,103 @@ export class Hud {
       boost: this.root.querySelector('[data-el="boost"]'),
       cheatsBadge: this.root.querySelector('[data-el="cheatsBadge"]'),
       cheatsToggle: this.root.querySelector('[data-el="cheatsToggle"]'),
+      abilitiesDock: this.root.querySelector('#hud-abilities-dock'),
     };
 
     this.el.help?.addEventListener('click', () => events.emit('hud:help'));
     this.el.shop?.addEventListener('click', () => events.emit('hud:shop'));
     this.el.menu?.addEventListener('click', () => events.emit('hud:menu'));
     this.el.cheatsToggle?.addEventListener('click', () => events.emit('hud:cheats'));
+    this.el.abilitiesDock?.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-ability]');
+      if (!btn) return;
+      const id = btn.dataset.ability;
+      events.emit('ability:trigger', { id });
+    });
+  }
+
+  refreshAbilities() {
+    this.renderAbilities();
+  }
+
+  renderAbilities(status = null) {
+    if (!this.el?.abilitiesDock) return;
+    const up = this.state.upgrades || {};
+    const abilitiesStatus = status || {
+      dynamite: {
+        id: 'dynamite',
+        unlocked: !!((up.dynamite ?? 0) >= 1 || this.state.godMode),
+        cooldown: 0,
+        maxCd: ABILITY_DEFS.dynamite.maxCd,
+        cdPct: 0,
+        isReady: !!((up.dynamite ?? 0) >= 1 || this.state.godMode),
+        active: false,
+        hotkey: ABILITY_DEFS.dynamite.hotkey,
+      },
+      vortex: {
+        id: 'vortex',
+        unlocked: !!((up.vortex ?? 0) >= 1 || this.state.godMode),
+        cooldown: 0,
+        maxCd: ABILITY_DEFS.vortex.maxCd,
+        cdPct: 0,
+        isReady: !!((up.vortex ?? 0) >= 1 || this.state.godMode),
+        active: !!this.state.vortexActive,
+        hotkey: ABILITY_DEFS.vortex.hotkey,
+      },
+      prism: {
+        id: 'prism',
+        unlocked: !!((up.prism ?? 0) >= 1 || this.state.godMode),
+        cooldown: 0,
+        maxCd: ABILITY_DEFS.prism.maxCd,
+        cdPct: 0,
+        isReady: !!((up.prism ?? 0) >= 1 || this.state.godMode),
+        active: false,
+        hotkey: ABILITY_DEFS.prism.hotkey,
+      },
+    };
+
+    const unlockedList = Object.values(abilitiesStatus).filter((a) => a.unlocked);
+    if (unlockedList.length === 0) {
+      this.el.abilitiesDock.innerHTML = '';
+      this.el.abilitiesDock.classList.add('hidden');
+      return;
+    }
+
+    this.el.abilitiesDock.classList.remove('hidden');
+
+    // Se i medaglioni sono già presenti nel DOM, aggiorna velocemente classi e percentuale sweep
+    const existingBtns = Array.from(this.el.abilitiesDock.querySelectorAll('.ability-medallion'));
+    const existingIds = existingBtns.map((b) => b.dataset.ability).join(',');
+    const newIds = unlockedList.map((a) => a.id).join(',');
+
+    if (existingIds === newIds && existingBtns.length === unlockedList.length) {
+      unlockedList.forEach((a) => {
+        const btn = this.el.abilitiesDock.querySelector(`[data-ability="${a.id}"]`);
+        if (!btn) return;
+        btn.classList.toggle('is-ready', !!a.isReady);
+        btn.classList.toggle('is-active', !!a.active);
+        const sweep = btn.querySelector('.ability-cooldown-sweep');
+        if (sweep) {
+          sweep.style.setProperty('--cd-pct', a.cdPct);
+        }
+      });
+      return;
+    }
+
+    // Altrimenti genera il markup dei medaglioni cerimoniali
+    this.el.abilitiesDock.innerHTML = unlockedList.map((a) => {
+      const def = ABILITY_DEFS[a.id];
+      const title = i18n.t(`hud.abilities.${a.id}`) || `${def.id.toUpperCase()} (${a.hotkey})`;
+      const readyClass = a.isReady ? 'is-ready' : '';
+      const activeClass = a.active ? 'is-active' : '';
+      return `
+        <button id="ability-${a.id}" class="ability-medallion ${readyClass} ${activeClass}" data-ability="${a.id}" title="${title}" aria-label="${title}">
+          <span class="ability-cooldown-sweep" style="--cd-pct: ${a.cdPct}"></span>
+          ${def.icon}
+          <span class="ability-hotkey">${a.hotkey}</span>
+        </button>
+      `;
+    }).join('');
   }
 
   show() { this.root.classList.remove('hidden'); this.refresh(); }
@@ -225,6 +322,7 @@ export class Hud {
     this._setCompletion(this.state.completion);
     if (this.economy) this.setSps(this.economy.sps);
     this.refreshRadar();
+    this.refreshAbilities();
     const cheatsActive = !!this.state.cheatsEnabled;
     if (this.el.cheatsToggle) {
       this.el.cheatsToggle.classList.toggle('cheats-active', cheatsActive);

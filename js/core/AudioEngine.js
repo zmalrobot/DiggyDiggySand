@@ -340,6 +340,29 @@ export class AudioEngine {
     }
   }
 
+  /** Dissolvenza e attenuazione volume (ducking) della musica di sottofondo attiva. */
+  fadeBgm(targetRatio = 0.15, duration = 1.5) {
+    if (!this.currentBgm?.el) return;
+    const startVolume = this.currentBgm.el.volume;
+    const targetVolume = startVolume * Math.max(0, Math.min(1, targetRatio));
+    const startTime = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+    const durationMs = Math.max(50, duration * 1000);
+    const step = () => {
+      const now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+      const elapsed = now - startTime;
+      const progress = Math.min(1, elapsed / durationMs);
+      if (this.currentBgm?.el) {
+        this.currentBgm.el.volume = Math.max(0, startVolume + (targetVolume - startVolume) * progress);
+      }
+      if (progress < 1) {
+        if (typeof requestAnimationFrame !== 'undefined') requestAnimationFrame(step);
+        else setTimeout(step, 30);
+      }
+    };
+    if (typeof requestAnimationFrame !== 'undefined') requestAnimationFrame(step);
+    else setTimeout(step, 30);
+  }
+
   /** Sfuma e arresta la musica corrente. */
   stopMusic(fadeDuration = 1.0) {
     if (!this.currentBgm) return;
@@ -855,6 +878,73 @@ export class AudioEngine {
     gain.connect(this.nodes.sfx);
     osc.start(t);
     osc.stop(t + 1.95);
+  }
+
+  /** Detonazione fragorosa per la Carica di Dinamite. */
+  playDynamite() {
+    if (!this._ok()) return;
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(120, t);
+    osc.frequency.exponentialRampToValueAtTime(24, t + 0.8);
+
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(400, t);
+    filter.frequency.exponentialRampToValueAtTime(60, t + 0.8);
+
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0.6, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.85);
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.nodes.sfx);
+    osc.start(t);
+    osc.stop(t + 0.9);
+  }
+
+  /** Vortice d'aria e turbine di sabbia dorata per il Khamsin. */
+  playVortex() {
+    if (!this._ok()) return;
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(140, t);
+    osc.frequency.linearRampToValueAtTime(320, t + 0.4);
+    osc.frequency.exponentialRampToValueAtTime(90, t + 1.2);
+
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0.01, t);
+    gain.gain.linearRampToValueAtTime(0.35, t + 0.3);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 1.25);
+
+    osc.connect(gain);
+    gain.connect(this.nodes.sfx);
+    osc.start(t);
+    osc.stop(t + 1.3);
+  }
+
+  /** Risonanza laser e raggio orbitale ciano del Prisma di Atlantide. */
+  playPrismBeam() {
+    if (!this._ok()) return;
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, t);
+    osc.frequency.exponentialRampToValueAtTime(1760, t + 0.5);
+    osc.frequency.linearRampToValueAtTime(440, t + 1.5);
+
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0.01, t);
+    gain.gain.linearRampToValueAtTime(0.4, t + 0.2);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 1.6);
+
+    osc.connect(gain);
+    gain.connect(this.nodes.sfx);
+    osc.start(t);
+    osc.stop(t + 1.65);
   }
 
   stopAmbient() {
