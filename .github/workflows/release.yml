@@ -2,8 +2,6 @@ name: Publish Official GitHub Release v1.0.0
 
 on:
   push:
-    branches:
-      - 'release/v1.0.0'
     tags:
       - 'v*'
   workflow_dispatch:
@@ -40,3 +38,4 @@ jobs:
             - **Stabilità:** PWA con Service Worker per giocabilità offline al 100%, Profiler F3 e anticheat.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
