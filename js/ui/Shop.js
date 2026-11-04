@@ -1,7 +1,16 @@
 // Interfaccia Negozio Upgrade / Officina: cassetto scorrevole a tema Atlantean-Kemet,
-// schede per rami Manuale / Flotta, costi dinamici e pulsanti con bagliore dorato.
+// schede per rami Manuale / Flotta, selettore Multi-Buy (1x/10x/100x/MAX), costi cumulativi geometrici e pulsanti glow.
 import { events } from '../core/Events.js';
-import { UPGRADE_CATALOG, BRANCHES, getUpgradeCost, buyUpgrade, getUpgradeName, getUpgradeDesc } from '../systems/Upgrades.js';
+import {
+  UPGRADE_CATALOG,
+  BRANCHES,
+  getUpgradeCost,
+  getMultiUpgradeCost,
+  getMaxAffordableLevels,
+  buyMultiUpgrade,
+  getUpgradeName,
+  getUpgradeDesc,
+} from '../systems/Upgrades.js';
 import { formatNumber } from './Hud.js';
 import { i18n } from '../core/I18n.js';
 
@@ -11,6 +20,7 @@ export class Shop {
     this.state = state;
     this.audio = audio;
     this.activeTab = 'manual';
+    this.multiBuy = 1; // 1 | 10 | 100 | 'MAX'
     this.isOpen = false;
 
     this._build();
@@ -44,6 +54,16 @@ export class Shop {
           <button type="button" class="tab" data-tab="fleet" data-i18n="shop.tabs.fleet">${i18n.t('shop.tabs.fleet') || 'Flotta Autonoma'}</button>
         </div>
 
+        <div class="shop-multibuy-bar" role="group" aria-label="Quantità acquisto">
+          <span class="multibuy-label muted">Acquisto:</span>
+          <div class="multibuy-group">
+            <button type="button" class="btn btn-pill multibuy-btn active" data-multibuy="1">1×</button>
+            <button type="button" class="btn btn-pill multibuy-btn" data-multibuy="10">10×</button>
+            <button type="button" class="btn btn-pill multibuy-btn" data-multibuy="100">100×</button>
+            <button type="button" class="btn btn-pill multibuy-btn" data-multibuy="MAX">MAX</button>
+          </div>
+        </div>
+
         <div class="shop-content" data-el="content">
           <!-- Carte degli upgrade -->
         </div>
@@ -53,6 +73,7 @@ export class Shop {
     this.drawer = this.root.querySelector('.shop-drawer');
     this.content = this.root.querySelector('[data-el="content"]');
     this.tabs = this.root.querySelectorAll('.tab');
+    this.multibuyBtns = this.root.querySelectorAll('[data-multibuy]');
 
     this.backdrop.addEventListener('click', () => this.close());
     this.root.querySelector('[data-act="close"]').addEventListener('click', () => this.close());
@@ -65,11 +86,20 @@ export class Shop {
       });
     });
 
+    this.multibuyBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const val = btn.dataset.multibuy;
+        this.multiBuy = val === 'MAX' ? 'MAX' : Number(val);
+        this.multibuyBtns.forEach((b) => b.classList.toggle('active', b === btn));
+        this.render();
+      });
+    });
+
     this.content.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-buy]');
       if (!btn || btn.disabled) return;
       const id = btn.dataset.buy;
-      buyUpgrade(id, this.state, this.audio);
+      buyMultiUpgrade(id, this.multiBuy, this.state, this.audio);
     });
 
     this.render();
@@ -111,31 +141,76 @@ export class Shop {
     this.render();
   }
 
-  _renderCard(def) {
+  _calculateBuyInfo(def) {
     const lvl = this.state.upgrades[def.id] ?? 0;
     const isMax = lvl >= def.maxLevel;
-    const cost = getUpgradeCost(def, lvl);
-    const canAfford = this.state.sand >= cost && !isMax;
+    const discount = this.state?.costDiscount ?? 0;
 
+    if (isMax) {
+      return { lvl, isMax: true, count: 0, cost: Infinity, canAfford: false };
+    }
+
+    if (this.multiBuy === 'MAX') {
+      const maxInfo = getMaxAffordableLevels(def, lvl, this.state.sand, discount);
+      if (maxInfo.count > 0) {
+        return {
+          lvl,
+          isMax: false,
+          count: maxInfo.count,
+          cost: maxInfo.cost,
+          canAfford: true,
+        };
+      }
+      // Non può comprarne nessuno: mostra il costo di 1 per riferimento
+      const singleCost = getUpgradeCost(def, lvl, discount);
+      return {
+        lvl,
+        isMax: false,
+        count: 1,
+        cost: singleCost,
+        canAfford: false,
+      };
+    }
+
+    const requested = Number(this.multiBuy) || 1;
+    const count = Math.min(requested, def.maxLevel - lvl);
+    const cost = getMultiUpgradeCost(def, lvl, count, discount);
+    const canAfford = this.state.sand >= cost && count > 0;
+
+    return { lvl, isMax: false, count, cost, canAfford };
+  }
+
+  _renderCard(def) {
+    const info = this._calculateBuyInfo(def);
     const name = getUpgradeName(def);
     const desc = getUpgradeDesc(def);
-    const benefit = def.getBenefit(lvl);
+    const benefit = def.getBenefit(info.lvl);
     const maxText = i18n.t('shop.maxLevel') || 'MAX';
-    const buyText = i18n.t('shop.buyAction') || 'Acquista';
     const completedText = i18n.t('shop.maxedAction') || 'Completato';
 
+    let actionLabel = '';
+    if (info.isMax) {
+      actionLabel = completedText;
+    } else if (this.multiBuy === 'MAX') {
+      actionLabel = info.canAfford ? `+${info.count} MAX` : `+1 MAX`;
+    } else if (info.count > 1) {
+      actionLabel = `+${info.count}`;
+    } else {
+      actionLabel = `+1`;
+    }
+
     return `
-      <div class="panel surface upgrade-card ${isMax ? 'maxed' : ''}" data-card="${def.id}">
+      <div class="panel surface upgrade-card ${info.isMax ? 'maxed' : ''}" data-card="${def.id}">
         <div class="upgrade-card-head">
           <span class="upgrade-name">${name}</span>
-          <span class="upgrade-level num">Lv. ${lvl}${isMax ? ` (${maxText})` : ` / ${def.maxLevel}`}</span>
+          <span class="upgrade-level num">Lv. ${info.lvl}${info.isMax ? ` (${maxText})` : ` / ${def.maxLevel}`}</span>
         </div>
         <p class="upgrade-desc muted">${desc}</p>
         <div class="upgrade-benefit accent">${benefit}</div>
         <div class="upgrade-card-foot">
-          <button type="button" class="btn btn-buy ${canAfford ? 'glow' : ''}" data-buy="${def.id}" ${canAfford ? '' : 'disabled'}>
-            <span class="buy-action">${isMax ? completedText : buyText}</span>
-            ${isMax ? '' : `<span class="buy-cost num">${formatNumber(cost)} ⟡</span>`}
+          <button type="button" class="btn btn-buy ${info.canAfford ? 'glow' : ''}" data-buy="${def.id}" ${info.canAfford ? '' : 'disabled'}>
+            <span class="buy-action">${actionLabel}</span>
+            ${info.isMax ? '' : `<span class="buy-cost num">${formatNumber(info.cost)} ⟡</span>`}
           </button>
         </div>
       </div>`;
@@ -148,15 +223,20 @@ export class Shop {
       const id = card.dataset.card;
       const def = UPGRADE_CATALOG[id];
       if (!def) return;
-      const lvl = this.state.upgrades[id] ?? 0;
-      const isMax = lvl >= def.maxLevel;
-      const cost = getUpgradeCost(def, lvl);
-      const canAfford = this.state.sand >= cost && !isMax;
+      const info = this._calculateBuyInfo(def);
 
       const btn = card.querySelector('[data-buy]');
       if (btn) {
-        btn.disabled = !canAfford;
-        btn.classList.toggle('glow', canAfford);
+        btn.disabled = !info.canAfford;
+        btn.classList.toggle('glow', info.canAfford);
+
+        // Se siamo in modalità MAX, aggiorna dinamicamente anche la label del conteggio e costo
+        if (this.multiBuy === 'MAX' && !info.isMax) {
+          const actionSpan = btn.querySelector('.buy-action');
+          const costSpan = btn.querySelector('.buy-cost');
+          if (actionSpan) actionSpan.textContent = info.canAfford ? `+${info.count} MAX` : `+1 MAX`;
+          if (costSpan) costSpan.textContent = `${formatNumber(info.cost)} ⟡`;
+        }
       }
     });
   }

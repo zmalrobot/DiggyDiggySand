@@ -4,12 +4,34 @@ import { events } from '../core/Events.js';
 import { i18n } from '../core/I18n.js';
 
 const SUFFIXES = ['', 'k', 'M', 'B', 'T', 'Qa', 'Qi'];
+let activeNotation = 'standard';
 
-/** Formattazione compatta: 950 -> "950", 1234 -> "1.2k", 1.5e6 -> "1.5M". */
-export function formatNumber(n) {
+export function setGlobalNotation(notation) {
+  if (['standard', 'scientific', 'engineering'].includes(notation)) {
+    activeNotation = notation;
+  }
+}
+
+/** Formattazione compatta o scientifica/ingegneristica: 950 -> "950", 1234 -> "1.2k" o "1.23e+3". */
+export function formatNumber(n, notation = null) {
   if (!Number.isFinite(n)) return '0';
   n = Math.max(0, n);
   if (n < 1000) return String(Math.floor(n));
+
+  const mode = notation || activeNotation;
+
+  if (mode === 'scientific') {
+    return n.toExponential(2);
+  }
+
+  if (mode === 'engineering') {
+    const exp = Math.floor(Math.log10(n));
+    const engExp = Math.floor(exp / 3) * 3;
+    const mantissa = n / 10 ** engExp;
+    return `${mantissa.toFixed(2)}e${engExp}`;
+  }
+
+  // Standard compatto
   let idx = Math.min(SUFFIXES.length - 1, Math.floor(Math.log10(n) / 3));
   let scaled = n / 1000 ** idx;
   if (Math.round(scaled * 10) / 10 >= 1000 && idx < SUFFIXES.length - 1) { idx++; scaled = n / 1000 ** idx; }
@@ -44,6 +66,12 @@ export class Hud {
       events.on('sps:changed', ({ sps }) => this.setSps(sps)),
       events.on('upgrade:bought', ({ id }) => {
         if (id === 'georadar') this.refreshRadar(true);
+      }),
+      events.on('settings:changed', ({ key, value }) => {
+        if (key === 'game.notation' || key === 'notation') {
+          setGlobalNotation(value);
+          this.refresh();
+        }
       }),
       events.on('cheats:enabled', () => this.refresh()),
       events.on('language:changed', () => {

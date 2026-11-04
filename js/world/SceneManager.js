@@ -317,8 +317,9 @@ export class SceneManager {
 
   /** Scossone di camera. Rispetta il toggle "Screen shake". */
   shake(intensity = 0.4) {
-    if (!this.settings.get('controls.screenShake')) return;
+    if (!this.settings?.get?.('controls.screenShake')) return;
     this.shakeT = intensity;
+    this.cameraController?.addTrauma?.(intensity);
   }
 
   setProfiler(profiler) {

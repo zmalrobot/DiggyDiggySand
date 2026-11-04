@@ -22,7 +22,9 @@ export const SCHEMA = {
   'controls.cameraSens': { type: 'range', def: 1, min: 0.25, max: 2, step: 0.05 },
   'controls.invertY':    { type: 'bool',  def: false },
   'controls.screenShake':{ type: 'bool',  def: true },
+  'controls.haptics':    { type: 'bool',  def: true },
   'game.language':       { type: 'enum',  def: 'it', values: ['it', 'en'] },
+  'game.notation':       { type: 'enum',  def: 'standard', values: ['standard', 'scientific', 'engineering'] },
 };
 
 /** Normalizza un valore secondo lo schema. Ritorna undefined se non valido. */
@@ -110,6 +112,8 @@ export class SettingsManager {
   get(key) {
     if (key === 'showProfiler') key = 'graphics.showProfiler';
     if (key === 'raytracingSSR') key = 'graphics.raytracingSSR';
+    if (key === 'haptics') key = 'controls.haptics';
+    if (key === 'notation') key = 'game.notation';
     if (!(key in SCHEMA)) throw new Error(`Impostazione sconosciuta: ${key}`);
     return this.values[key];
   }
@@ -120,6 +124,8 @@ export class SettingsManager {
   set(key, val) {
     if (key === 'showProfiler') key = 'graphics.showProfiler';
     if (key === 'raytracingSSR') key = 'graphics.raytracingSSR';
+    if (key === 'haptics') key = 'controls.haptics';
+    if (key === 'notation') key = 'game.notation';
     const def = SCHEMA[key];
     if (!def) return false;
     const v = coerce(def, val);
@@ -133,6 +139,12 @@ export class SettingsManager {
     if (key === 'graphics.raytracingSSR') {
       this._notify('raytracingSSR', v);
     }
+    if (key === 'controls.haptics') {
+      this._notify('haptics', v);
+    }
+    if (key === 'game.notation') {
+      this._notify('notation', v);
+    }
     return true;
   }
 
@@ -140,6 +152,8 @@ export class SettingsManager {
   subscribe(key, fn, { immediate = false } = {}) {
     if (key === 'showProfiler') key = 'graphics.showProfiler';
     if (key === 'raytracingSSR') key = 'graphics.raytracingSSR';
+    if (key === 'haptics') key = 'controls.haptics';
+    if (key === 'notation') key = 'game.notation';
     if (!this.listeners.has(key)) this.listeners.set(key, new Set());
     this.listeners.get(key).add(fn);
     if (immediate) {

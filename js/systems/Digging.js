@@ -166,19 +166,26 @@ export class Digging {
 
     // Sabbia = power * quota del volume "ideale" (cono pieno) effettivamente rimossa.
     const cone = (depth * Math.PI * radius * radius) / 3;
-    const amount = power * Math.min(1, removed / cone);
+    let amount = power * Math.min(1, removed / cone);
+
+    // Sistema Colpo Critico: 12% di probabilità base con bonus 3x sabbia, scintille e camera shake
+    const isCrit = Math.random() < 0.12;
+    if (isCrit) {
+      amount *= 3;
+    }
+
     this.state.addSand(amount);
     this.state.setCompletion(this.terrain.completion);
 
     const activePalette = this.terrain?.activeBiome;
     const col = getLayerColor(p.y, activePalette);
     const biomeId = this.terrain?.expeditionBiome || 'desert';
-    const hasSparks = p.y <= 3.2 || biomeId === 'glacier' || biomeId === 'ocean';
-    this.particles.burst(p.x, p.y, p.z, { radius, color: col, sparks: hasSparks });
+    const hasSparks = isCrit || p.y <= 3.2 || biomeId === 'glacier' || biomeId === 'ocean';
+    this.particles.burst(p.x, p.y, p.z, { radius, color: isCrit ? 0x0FE3C1 : col, sparks: hasSparks });
 
-    this.audio.playDigSound(Math.min(1.5, 0.6 + power * 0.2));
-    this.scene.shake(0.05);
-    events.emit('dig:hit', { x: p.x, y: p.y, z: p.z, amount, removed, radius, rootBlocked: !!this.terrain?.lastRootBlocked });
+    this.audio.playDigSound(Math.min(1.5, 0.6 + power * 0.2) * (isCrit ? 1.25 : 1.0));
+    this.scene.shake(isCrit ? 0.15 : 0.04);
+    events.emit('dig:hit', { x: p.x, y: p.y, z: p.z, amount, removed, radius, isCrit, rootBlocked: !!this.terrain?.lastRootBlocked });
     return amount;
   }
 

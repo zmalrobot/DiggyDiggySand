@@ -4,6 +4,7 @@ import { i18n } from '../core/I18n.js';
 import { events } from '../core/Events.js';
 import { UPGRADE_CATALOG } from '../systems/Upgrades.js';
 import { toast } from './Modal.js';
+import { SaveSerializer } from '../core/SaveSerializer.js';
 
 function getOptionLabel(key, val) {
   const v = String(val);
@@ -22,6 +23,9 @@ function getOptionLabel(key, val) {
   }
   if (key === 'game.language') {
     return i18n.t(`settings.languageOptions.${v}`) || (v === 'it' ? 'Italiano' : 'English');
+  }
+  if (key === 'game.notation') {
+    return i18n.t(`settings.notationOptions.${v}`) || (v === 'standard' ? 'Standard (1.2k)' : v === 'scientific' ? 'Scientifica (1.2e3)' : 'Ingegneristica (1.20e3)');
   }
   return v;
 }
@@ -55,7 +59,8 @@ export class SettingsModal {
     return this.activeGame?.state ?? null;
   }
 
-  open() {
+  open(tab = null) {
+    if (tab) this.currentTab = tab;
     this.modalRoot = document.createElement('div');
     this.modalRoot.className = 'settings settings-modal';
     this._renderModalBody(this.modalRoot, this.currentTab || 'audio');
@@ -241,22 +246,15 @@ export class SettingsModal {
       this._row(i18n.t('settings.cameraSens') || 'Sensibilità camera', this._slider('controls.cameraSens', { format: (v) => `${Number(v).toFixed(2)}×` })),
       this._row(i18n.t('settings.invertY') || 'Inverti asse Y', this._toggle('controls.invertY', i18n.t('settings.invertY') || 'Inverti asse Y')),
       this._row(i18n.t('settings.screenShake') || 'Screen shake', this._toggle('controls.screenShake', i18n.t('settings.screenShake') || 'Screen shake')),
+      this._row(
+        i18n.t('settings.haptics') || 'Feedback aptico (Vibrazione)',
+        this._toggle('controls.haptics', i18n.t('settings.haptics') || 'Feedback aptico'),
+        i18n.t('settings.hapticsHint') || 'Vibrazioni tattili su scavi, critici ed esplosioni'
+      ),
     );
   }
 
   _dataTab(p) {
-    p.append(
-      this._row(i18n.t('settings.language') || 'Lingua', this._select('game.language'), 'Italiano / English')
-    );
-
-    const area = document.createElement('textarea');
-    area.className = 'json-area';
-    area.rows = 6;
-    area.spellcheck = false;
-    area.placeholder = i18n.t('settings.jsonPlaceholder') || 'Incolla qui un JSON di impostazioni da importare…';
-    const status = document.createElement('div');
-    status.className = 'muted data-status';
-
     const mkBtn = (label, fn, danger = false) => {
       const b = document.createElement('button');
       b.type = 'button';
@@ -265,6 +263,92 @@ export class SettingsModal {
       b.addEventListener('click', fn);
       return b;
     };
+
+    p.append(
+      this._row(i18n.t('settings.language') || 'Lingua', this._select('game.language'), 'Italiano / English'),
+      this._row(
+        i18n.t('settings.notation') || 'Notazione Numerica',
+        this._select('game.notation'),
+        i18n.t('settings.notationHint') || 'Formato numeri: Standard (1.2k), Scientifica (1.2e3) o Ingegneristica'
+      ),
+    );
+
+    const saveSectionTitle = document.createElement('h4');
+    saveSectionTitle.className = 'settings-subhead';
+    saveSectionTitle.textContent = i18n.t('settings.saveSectionTitle') || 'Salvataggio Spedizione (Portabile Base64)';
+    p.append(saveSectionTitle);
+
+    const saveArea = document.createElement('textarea');
+    saveArea.className = 'json-area';
+    saveArea.dataset.saveArea = 'true';
+    saveArea.rows = 3;
+    saveArea.spellcheck = false;
+    saveArea.placeholder = i18n.t('settings.savePlaceholder') || 'Incolla qui la stringa del salvataggio Base64 (DDS1_…) per importarla…';
+    const saveStatus = document.createElement('div');
+    saveStatus.className = 'muted data-status';
+
+    const saveBtns = document.createElement('div');
+    saveBtns.className = 'btn-row';
+    const exportSaveBtn = mkBtn(i18n.t('settings.exportSave') || 'Esporta Salvataggio', async () => {
+      const game = this.activeGame;
+      if (game?.saveNow) {
+        game.saveNow();
+      }
+      const res = await SaveSerializer.exportToClipboard(this.save?.storage);
+      if (res.ok) {
+        saveArea.value = res.code;
+        saveStatus.textContent = i18n.t('settings.saveExportedStatus') || 'Salvataggio copiato negli appunti e mostrato nel riquadro.';
+        toast(i18n.t('settings.saveExportedToast') || 'Salvataggio copiato negli appunti!');
+      } else {
+        saveStatus.textContent = `${i18n.t('settings.errorStatus') || 'Errore'}: ${res.error}`;
+      }
+    });
+    exportSaveBtn.dataset.act = 'export-save';
+
+    const importSaveBtn = mkBtn(i18n.t('settings.importSave') || 'Importa Salvataggio', async () => {
+      const code = saveArea.value.trim();
+      if (!code) {
+        saveStatus.textContent = i18n.t('settings.saveEmptyError') || 'Incolla prima una stringa di salvataggio valida.';
+        return;
+      }
+      const ok = await this.modal.confirm({
+        title: i18n.t('settings.confirmImportSaveTitle') || 'Sovrascrivere la spedizione?',
+        message: i18n.t('settings.confirmImportSaveMsg') || 'L\'importazione sostituirà i progressi attuali della spedizione con quelli del codice incollato. Continuare?',
+        confirmLabel: i18n.t('common.confirm') || 'Conferma',
+        cancelLabel: i18n.t('common.cancel') || 'Annulla',
+      });
+      if (ok) {
+        const res = SaveSerializer.importFromCode(code, this.save?.storage);
+        if (res.ok) {
+          saveStatus.textContent = i18n.t('settings.saveImportedSuccess') || 'Salvataggio importato con successo! Ricarico la sessione...';
+          toast(i18n.t('settings.saveImportedToast') || 'Salvataggio importato!');
+          setTimeout(() => {
+            if (typeof window !== 'undefined' && window.location) {
+              window.location.reload();
+            }
+          }, 650);
+        } else {
+          saveStatus.textContent = `${i18n.t('settings.errorStatus') || 'Errore'}: ${res.error}`;
+        }
+      }
+    });
+    importSaveBtn.dataset.act = 'import-save';
+
+    saveBtns.append(exportSaveBtn, importSaveBtn);
+    p.append(saveArea, saveBtns, saveStatus);
+
+    const configSectionTitle = document.createElement('h4');
+    configSectionTitle.className = 'settings-subhead';
+    configSectionTitle.textContent = i18n.t('settings.settingsBackup') || 'Backup Preferenze (JSON)';
+    p.append(configSectionTitle);
+
+    const area = document.createElement('textarea');
+    area.className = 'json-area';
+    area.rows = 4;
+    area.spellcheck = false;
+    area.placeholder = i18n.t('settings.jsonPlaceholder') || 'Incolla qui un JSON di impostazioni da importare…';
+    const status = document.createElement('div');
+    status.className = 'muted data-status';
 
     const io = document.createElement('div');
     io.className = 'btn-row';

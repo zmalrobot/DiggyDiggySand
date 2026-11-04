@@ -34,6 +34,12 @@ export class CameraController {
     this.targetDistance = 45;
     this.currentDistance = 45;
 
+    // Modello Trauma & Shake Procedurale Non Lineare (trauma^2)
+    this.trauma = 0;
+    this.shakeDamping = options.shakeDamping ?? 1.5;
+    this.maxShakeOffset = options.maxShakeOffset ?? 0.85; // metri max offset
+    this._shakeOffset = new THREE.Vector3();
+
     this._enabled = true;
     this._spherical = new THREE.Spherical();
     this._offset = new THREE.Vector3();
@@ -82,6 +88,24 @@ export class CameraController {
       this.minDistance,
       this.maxDistance
     );
+  }
+
+  /**
+   * Applica un impulso di trauma alla camera (0..1).
+   * Lo shake effettivo percepito è non lineare: shake = trauma^2.
+   * @param {number} amount Incremento di trauma
+   */
+  addTrauma(amount) {
+    if (typeof amount !== 'number' || Number.isNaN(amount)) return;
+    this.trauma = Math.min(1.0, this.trauma + Math.max(0, amount));
+  }
+
+  /**
+   * Alias compatibile per lo scossone di camera.
+   * @param {number} intensity Intensità
+   */
+  shake(intensity = 0.15) {
+    this.addTrauma(intensity);
   }
 
   /**
@@ -174,14 +198,28 @@ export class CameraController {
     this._spherical.radius = this.currentDistance;
     this._spherical.phi = THREE.MathUtils.clamp(this._spherical.phi, this.minPolarAngle, this.maxPolarAngle);
 
-    // 5. Riposiziona camera e aggiorna vista
+    // 5. Calcolo shake procedurale non-lineare da trauma (shake = trauma^2)
+    if (this.trauma > 0) {
+      const shakePower = this.trauma * this.trauma;
+      const mag = shakePower * this.maxShakeOffset;
+      this._shakeOffset.set(
+        (Math.random() - 0.5) * 2 * mag,
+        (Math.random() - 0.5) * 2 * mag,
+        (Math.random() - 0.5) * 2 * mag
+      );
+      this.trauma = Math.max(0, this.trauma - dt * this.shakeDamping);
+    } else {
+      this._shakeOffset.set(0, 0, 0);
+    }
+
+    // 6. Riposiziona camera e aggiorna vista
     this._applyToCamera();
   }
 
   _applyToCamera() {
     const target = this.controls.target;
     this._offset.setFromSpherical(this._spherical);
-    this.camera.position.copy(target).add(this._offset);
+    this.camera.position.copy(target).add(this._offset).add(this._shakeOffset);
     this.camera.lookAt(target);
     this.controls.update();
   }

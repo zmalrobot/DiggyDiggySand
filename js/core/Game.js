@@ -29,6 +29,8 @@ import { CosmeticsManager } from '../systems/CosmeticsManager.js';
 import { WardrobeModal } from '../ui/WardrobeModal.js';
 import { BiomeManager, BIOME_CATALOG } from '../world/BiomeManager.js';
 import { CameraController } from '../world/Camera.js';
+import { FloatingTextManager } from '../ui/FloatingText.js';
+import { Haptics } from './Haptics.js';
 import { i18n } from './I18n.js';
 
 const WORLD_SIZE = 200;
@@ -72,6 +74,12 @@ export class Game {
     this.hud = new Hud(hudRoot, { state: this.state, economy: this.economy, audio: this.audio });
     this.hud.hide();
 
+
+    this.haptics = new Haptics(this.settings);
+    this.floatingText = new FloatingTextManager({
+      camera: this.sceneMgr?.camera,
+      canvas: this.canvas,
+    });
 
     const shopRoot = document.getElementById('shop-root') || document.body;
     this.shop = new Shop(shopRoot, { state: this.state, audio });
@@ -392,6 +400,8 @@ export class Game {
     c.touches = { ONE: -1, TWO: THREE.TOUCH.DOLLY_ROTATE };
     this.controls = c;
     this.cameraController = new CameraController(cam, this.controls, this.canvas);
+    if (this.sceneMgr) this.sceneMgr.cameraController = this.cameraController;
+    if (this.floatingText) this.floatingText.setCamera(cam);
     if (this.endingManager) this.endingManager.controls = c;
     this._unsubSens = this.settings.subscribe('controls.cameraSens', (v) => { c.rotateSpeed = v; }, { immediate: true });
   }

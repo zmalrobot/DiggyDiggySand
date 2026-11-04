@@ -420,6 +420,33 @@ Verifiche manuali da fare: valori persistiti dopo il ricaricamento; `localStorag
     - Traduzioni complete in IT ed EN in `js/core/I18n.js` (`settings.raytracingSSR`, `settings.raytracingSSRHint`, `graphics.ssr_title`, `graphics.ssr_desc`).
   - Verificata con suite di test unitari completa (`tests/phase17_ssr.test.mjs`, 4 suite 100% superate) e Browser QA automation con Chrome headless CDP (`tests/phase17_ssr_browser_qa.mjs`, 0 errori console, 0 eccezioni runtime, screenshot `dds_qa_ssr_settings_toggle.png` e `dds_qa_ssr_reflections_hud.png`).
 
+- [x] **M22** Quality of Life (Multi-Buy, Notazione Numerica, Save Import/Export) e Game Juice (Floating Text, Camera Shake, Haptic Feedback) (Fase 18):
+  - Selettore Multi-Buy nell'Officina (`js/ui/Shop.js` & `js/systems/Upgrades.js`):
+    - Pulsantiera a 4 stati in cima al cassetto dell'Officina: `1×`, `10×`, `100×` e `MAX`.
+    - Formule di costo cumulativo per serie geometrica: calcolo esatto della spesa per $k$ livelli e formula analitica per la modalità `MAX` ($k_{\text{max}} = \lfloor \ln(1 + \text{sand}(r-1)/(B \cdot r^n)) / \ln(r) \rfloor$) con raffinamento iterativo.
+    - Aggiornamento dinamico delle card degli upgrade con etichette esplicative (es. `+10 Livelli: 1.45K ⟡` o `+MAX (24): 3.2M ⟡`).
+    - Metodo `buyMultiUpgrade(id, countOrMax, state, audio)` per acquisti atomici in blocco.
+  - Numeri Fluttuanti a Schermo / Floating Text (`js/ui/FloatingText.js`):
+    - Modulo gestore a pool circolare (40 elementi pre-allocati nel DOM) per eliminare allocazioni continue e garbage collection.
+    - Proiezione analitica 3D World $\to$ 2D Schermo mediante `vector.project(camera)` e calcolo viewport/canvas.
+    - Cifre con font Syne, micro-dispersione orizzontale casuale anti-sovrapposizione ed animazione di ascesa/dissolvenza in 0.8s:
+      - Colpo Normale: cifre in oro solare `#F5BA23` compatte (`+1`, `+25`).
+      - Colpo Critico: cifre ingrandite con bagliore ciano `#0FE3C1`, rimbalzo amplificato e suffisso (`+250 CRIT!`).
+  - Camera Shake Procedurale con Modello a Trauma Non Lineare (`js/world/Camera.js`):
+    - Modello trauma esponenziale (`trauma \in [0, 1]`, `shake = trauma^2`).
+    - Decadimento naturale continuo con smorzamento fluido (`trauma = Math.max(0, trauma - dt * 1.5)`).
+    - Offset posizionali ad alta frequenza e rotazionali applicati prima del rendering.
+    - Micro-shake su colpi critici (`amount = 0.15`) e shake marcato su dinamite/eventi (`amount = 0.5`).
+  - Feedback Aptico per Dispositivi Mobile (`js/core/Haptics.js`):
+    - Wrapper sicuro per `navigator.vibrate`: scavo manuale (12ms), colpo critico (28ms), acquisto upgrade ([15, 30, 15]ms) ed esplosioni telluriche ([40, 25, 60]ms).
+    - Rispetto rigoroso dell'impostazione `controls.haptics` (con toggle nelle Impostazioni).
+  - Esportazione ed Importazione Salvataggio Portabile (`js/core/SaveSerializer.js` & `js/ui/SettingsModal.js`):
+    - Serializzazione Base64 protetta con prefisso `DDS1_`, codifica UTF-8 sicura per Unicode e convalida rigorosa dello schema save prima del ripristino.
+    - Pulsanti "Esporta Salvataggio" (copia negli appunti con toast) e "Importa Salvataggio" (sovrascrittura con backup di sicurezza preventivo `dds_save_backup`).
+  - Notazione Numerica Configurabile (`js/ui/Hud.js` & `SettingsManager.js`):
+    - Supporto per formattazione `standard` (1.2k, 1.5M), `scientific` (1.20e3) ed `engineering` (multipli di 3 esponenti).
+  - Verificata con suite di test unitari completa (`tests/phase18_qol.test.mjs`, 6 verifiche superate al 100%, oltre 125 test totali del progetto) e Browser QA automation headless Chrome CDP (`tests/phase18_qol_browser_qa.mjs`, 0 errori console, 0 eccezioni runtime, screenshot `dds_qa_qol_multibuy_shop.png`, `dds_qa_qol_floating_text.png` e `dds_qa_qol_save_export_import.png`).
+
 Piano dettagliato con codice e verifiche: vedi la sezione "Roadmap" sopra e le formule in `Ideas/upgrade_tree_specification.md`.
 
 ## 6. Convenzioni
