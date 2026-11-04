@@ -286,6 +286,7 @@ export class Game {
     // Particelle, Audio e Atmosfera adattati al bioma attivo
     this.particles.setBiome(biome);
     this.audio?.setBiome?.(biome);
+    this.audio?.playMusic?.(biome);
     this.sceneMgr?.dayNight?.setBiome?.(biome);
     this.sceneMgr?.atmosphere?.setBiome?.(biome);
 

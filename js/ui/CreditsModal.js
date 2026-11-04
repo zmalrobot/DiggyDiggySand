@@ -58,6 +58,16 @@ export class CreditsModal {
       </div>
 
       <div class="credits-section">
+        <h4 class="credits-sec-title">🎵 ${i18n.t('credits.musicTitle') || 'Musica di Sottofondo'}</h4>
+        <p class="credits-item">
+          Composta da <strong>Kevin MacLeod</strong> (<a href="https://incompetech.com" target="_blank" rel="noopener noreferrer" class="credits-link">incompetech.com</a>)<br>
+          Tracce: <em>Desert City, Mirage, Water Prelude, Frozen Star, Echoes of Time</em><br>
+          Licenza: Creative Commons Attribution 4.0 International (CC-BY 4.0)<br>
+          <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer" class="credits-link">http://creativecommons.org/licenses/by/4.0/ ↗</a>
+        </p>
+      </div>
+
+      <div class="credits-section">
         <h4 class="credits-sec-title">📜 ${i18n.t('credits.legalTitle') || 'Note Legali e Trasparenza'}</h4>
         <p class="credits-text muted">
           ${i18n.t('credits.legalText') || 'Tutti i marchi, loghi e risorse appartengono ai rispettivi autori. Il gioco rispetta la totale sovranità dei dati dell\'utente: nessun cookie di terze parti, nessun tracciamento analitico e archiviazione esclusivamente locale (localStorage).'}

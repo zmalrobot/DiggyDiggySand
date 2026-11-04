@@ -93,6 +93,13 @@ const CORE_ASSETS = [
   './js/endings/EndingManager.js',
   './js/endings/SecretEnding.js',
   './js/endings/TreasureEnding.js',
+
+  // Colonna Sonora Adattiva BGM (Kevin MacLeod CC-BY 4.0)
+  './assets/audio/music/bgm_menu.mp3',
+  './assets/audio/music/bgm_desert.mp3',
+  './assets/audio/music/bgm_ocean.mp3',
+  './assets/audio/music/bgm_glacier.mp3',
+  './assets/audio/music/bgm_jungle.mp3',
 ];
 
 // 1. Installazione e precaching degli asset core

@@ -77,6 +77,7 @@ export class MainMenu {
 
   show() {
     this.refresh();
+    this.audio?.playMusic?.('menu');
     this.root.classList.remove('hidden', 'fade-out');
     this.root.classList.add('fade-in');
   }

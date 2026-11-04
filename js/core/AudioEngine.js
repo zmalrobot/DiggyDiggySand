@@ -1,5 +1,15 @@
-// Audio procedurale (Web Audio API). Nessun file esterno richiesto.
-// Catena: music/sfx -> master -> destination. AudioContext creato solo dopo un gesto utente.
+// Audio procedurale (Web Audio API) & Colonna Sonora Adattiva (BGM Kevin MacLeod CC-BY 4.0).
+// Catena: music/sfx -> master -> destination. AudioContext creato e sbloccato dopo un gesto utente.
+import { events } from './Events.js';
+
+export const BGM_TRACKS = {
+  menu: './assets/audio/music/bgm_menu.mp3',
+  desert: './assets/audio/music/bgm_desert.mp3',
+  ocean: './assets/audio/music/bgm_ocean.mp3',
+  glacier: './assets/audio/music/bgm_glacier.mp3',
+  jungle: './assets/audio/music/bgm_jungle.mp3',
+};
+
 export class AudioEngine {
   constructor(settings) {
     this.settings = settings;
@@ -11,19 +21,56 @@ export class AudioEngine {
     this.samplesLoading = false;
     this.currentBiome = 'desert';
     this.supported = typeof window !== 'undefined' && !!(window.AudioContext || window.webkitAudioContext);
+
+    // Canali BGM per crossfade fluido e gestione streaming
+    this.currentBgm = null;
+    this.prevBgm = null;
+    this.pendingMusic = null;
+    this.unlockedByUser = false;
+    this.proceduralBgmActive = false;
+
     settings?.subscribe?.('*', (_v, key) => {
       if (key.startsWith('audio.')) this._applyGains();
     });
 
-    // Risparmio risorse e sospensione AudioContext quando la scheda non è visibile
     if (typeof document !== 'undefined') {
+      // Sblocco automatico trasparente al primo gesto utente (policy autoplay browser)
+      const userInteractionHandler = async () => {
+        this.unlockedByUser = true;
+        document.removeEventListener('pointerdown', userInteractionHandler);
+        document.removeEventListener('click', userInteractionHandler);
+        document.removeEventListener('keydown', userInteractionHandler);
+        document.removeEventListener('touchstart', userInteractionHandler);
+        await this.unlock();
+        if (this.pendingMusic) {
+          const { trackKey, options } = this.pendingMusic;
+          this.pendingMusic = null;
+          this.playMusic(trackKey, options);
+        }
+      };
+      document.addEventListener('pointerdown', userInteractionHandler, { once: true, passive: true });
+      document.addEventListener('click', userInteractionHandler, { once: true, passive: true });
+      document.addEventListener('keydown', userInteractionHandler, { once: true, passive: true });
+      document.addEventListener('touchstart', userInteractionHandler, { once: true, passive: true });
+
+      // Crossfade automatico al cambio bioma
+      events.on('biome:selected', ({ id }) => {
+        this.setBiome(id);
+        this.playMusic(id);
+      });
+
+      // Risparmio risorse e sospensione AudioContext quando la scheda non è visibile
       document.addEventListener('visibilitychange', () => {
-        if (!this.ctx) return;
         if (document.hidden) {
-          if (this.ctx.state === 'running') this.ctx.suspend?.().catch(() => {});
+          if (this.ctx && this.ctx.state === 'running') this.ctx.suspend?.().catch(() => {});
+          this.currentBgm?.el?.pause?.();
+          this.nextBgm?.el?.pause?.();
         } else {
-          if (this.ctx.state === 'suspended' && !this.settings?.get?.('audio.mute')) {
+          if (this.ctx && this.ctx.state === 'suspended' && !this.settings?.get?.('audio.mute')) {
             this.ctx.resume?.().catch(() => {});
+          }
+          if (this.currentBgm?.el && !this.settings?.get?.('audio.mute')) {
+            this.currentBgm.el.play().catch(() => {});
           }
         }
       });
@@ -95,22 +142,250 @@ export class AudioEngine {
     await Promise.allSettled(samples.map((s) => this.loadSample(s.id, s.url)));
   }
 
-  _applyGains(instant = false) {
-    if (!this.nodes) return;
+  _getMusicEffectiveGain() {
     const s = this.settings;
-    const t = this.ctx.currentTime;
-    const curve = (p) => (p / 100) ** 2; // risposta percettiva
-    const target = {
-      master: s.get('audio.mute') ? 0 : curve(s.get('audio.master')),
-      music: curve(s.get('audio.music')),
-      sfx: curve(s.get('audio.sfx')),
-    };
-    for (const [name, v] of Object.entries(target)) {
-      const p = this.nodes[name].gain;
-      p.cancelScheduledValues(t);
-      if (instant) p.setValueAtTime(v, t);
-      else p.setTargetAtTime(v, t, 0.02);
+    if (!s) return 0.6;
+    if (s.get('audio.mute')) return 0;
+    const master = ((s.get('audio.master') ?? 80) / 100) ** 2;
+    const music = ((s.get('audio.music') ?? 60) / 100) ** 2;
+    return master * music;
+  }
+
+  _applyGains(instant = false) {
+    if (this.nodes && this.ctx) {
+      const s = this.settings;
+      const t = this.ctx.currentTime;
+      const curve = (p) => (p / 100) ** 2; // risposta percettiva
+      const target = {
+        master: s.get('audio.mute') ? 0 : curve(s.get('audio.master')),
+        music: curve(s.get('audio.music')),
+        sfx: curve(s.get('audio.sfx')),
+      };
+      for (const [name, v] of Object.entries(target)) {
+        const p = this.nodes[name].gain;
+        p.cancelScheduledValues(t);
+        if (instant) p.setValueAtTime(v, t);
+        else p.setTargetAtTime(v, t, 0.02);
+      }
     }
+
+    // Aggiorna istantaneamente il volume degli elementi BGM attivi
+    const effectiveMusicGain = this._getMusicEffectiveGain();
+    if (this.currentBgm?.el) {
+      const alpha = this.currentBgm.fadeAlpha ?? 1;
+      this.currentBgm.el.volume = Math.max(0, Math.min(1, alpha * effectiveMusicGain));
+    }
+    if (this.prevBgm?.el) {
+      const alpha = this.prevBgm.fadeAlpha ?? 0;
+      this.prevBgm.el.volume = Math.max(0, Math.min(1, alpha * effectiveMusicGain));
+    }
+  }
+
+  /**
+   * Riproduce una traccia musicale di sottofondo (menu, desert, ocean, glacier, jungle)
+   * eseguendo una dissolvenza incrociata (crossfade) morbida con la traccia precedente.
+   *
+   * @param {string} trackKey - Chiave della traccia ('menu' | 'desert' | 'ocean' | 'glacier' | 'jungle')
+   * @param {object} [options]
+   * @param {number} [options.fadeDuration=1.8] - Durata della dissolvenza incrociata in secondi
+   * @param {boolean} [options.loop=true] - Se mandare la traccia in loop continuo
+   */
+  playMusic(trackKey, { fadeDuration = 1.8, loop = true } = {}) {
+    if (!trackKey) return;
+    const src = BGM_TRACKS[trackKey];
+    if (!src) {
+      console.warn(`[Audio] Traccia BGM sconosciuta: "${trackKey}"`);
+      return;
+    }
+
+    // Se la traccia richiesta è già quella corrente attiva, non riavviare
+    if (this.currentBgm && this.currentBgm.trackKey === trackKey) {
+      return;
+    }
+
+    // Se l'utente non ha ancora interagito con la pagina, memorizza per sblocco autoplay
+    if (!this.unlockedByUser) {
+      this.pendingMusic = { trackKey, options: { fadeDuration, loop } };
+    }
+
+    if (typeof Audio === 'undefined') {
+      // Ambiente Node.js o test headless senza Audio API
+      this._startProceduralBgmFallback(trackKey);
+      return;
+    }
+
+    let newAudioEl = null;
+    try {
+      newAudioEl = new Audio(src);
+      newAudioEl.loop = loop;
+      newAudioEl.volume = 0;
+      newAudioEl.preload = 'auto';
+    } catch (e) {
+      console.warn(`[Audio] Impossibile creare AudioElement per "${trackKey}":`, e);
+      this._startProceduralBgmFallback(trackKey);
+      return;
+    }
+
+    const nextChannel = {
+      el: newAudioEl,
+      trackKey,
+      isPlaying: false,
+      fadeAlpha: 0,
+      fadeTimer: null,
+    };
+
+    // Fallback procedurale trasparente se la risorsa .mp3 fallisce il download o non è decodificabile
+    newAudioEl.addEventListener('error', (err) => {
+      console.warn(`[Audio] Errore caricamento file "${src}", attivo fallback procedurale:`, err);
+      this._stopBgmChannel(nextChannel);
+      if (this.currentBgm === nextChannel) this.currentBgm = null;
+      this._startProceduralBgmFallback(trackKey);
+    }, { once: true });
+
+    // Avvio riproduzione
+    try {
+      const playPromise = newAudioEl.play();
+      if (playPromise !== undefined) {
+        playPromise.then(() => {
+          nextChannel.isPlaying = true;
+        }).catch((err) => {
+          if (err.name === 'NotAllowedError') {
+            // Autoplay bloccato: sarà sbloccato al primo tocco
+            this.pendingMusic = { trackKey, options: { fadeDuration, loop } };
+          } else {
+            console.warn(`[Audio] Errore play() per "${trackKey}":`, err.message);
+            this._startProceduralBgmFallback(trackKey);
+          }
+        });
+      } else {
+        nextChannel.isPlaying = true;
+      }
+    } catch (e) {
+      console.warn(`[Audio] Eccezione play() BGM "${trackKey}":`, e);
+      this._startProceduralBgmFallback(trackKey);
+    }
+
+    // Se c'era già un canale in dissolvenza di uscita, fermalo definitivamente
+    if (this.prevBgm) {
+      this._stopBgmChannel(this.prevBgm);
+      this.prevBgm = null;
+    }
+
+    const prevChannel = this.currentBgm;
+    this.prevBgm = prevChannel;
+    this.currentBgm = nextChannel;
+
+    const startTime = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+    const durationMs = Math.max(100, fadeDuration * 1000);
+    const prevStartAlpha = prevChannel?.fadeAlpha ?? 1;
+
+    const fadeStep = () => {
+      const now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+      const elapsed = now - startTime;
+      const progress = Math.min(1, elapsed / durationMs);
+
+      const curEffectiveGain = this._getMusicEffectiveGain();
+
+      // Dissolvenza in ingresso (fade-in) per la nuova traccia
+      nextChannel.fadeAlpha = progress;
+      if (nextChannel.el) {
+        nextChannel.el.volume = Math.max(0, Math.min(1, progress * curEffectiveGain));
+      }
+
+      // Dissolvenza in uscita (fade-out) per la traccia precedente
+      if (prevChannel && prevChannel.el) {
+        prevChannel.fadeAlpha = Math.max(0, prevStartAlpha * (1 - progress));
+        prevChannel.el.volume = Math.max(0, Math.min(1, prevChannel.fadeAlpha * curEffectiveGain));
+      }
+
+      if (progress < 1) {
+        if (typeof requestAnimationFrame !== 'undefined') {
+          nextChannel.fadeTimer = requestAnimationFrame(fadeStep);
+        } else {
+          nextChannel.fadeTimer = setTimeout(fadeStep, 25);
+        }
+      } else {
+        nextChannel.fadeTimer = null;
+        if (this.prevBgm === prevChannel) {
+          this._stopBgmChannel(prevChannel);
+          this.prevBgm = null;
+        }
+      }
+    };
+
+    if (typeof requestAnimationFrame !== 'undefined') {
+      nextChannel.fadeTimer = requestAnimationFrame(fadeStep);
+    } else {
+      nextChannel.fadeTimer = setTimeout(fadeStep, 25);
+    }
+  }
+
+  /** Interrompe e rilascia le risorse di un canale BGM. */
+  _stopBgmChannel(channel) {
+    if (!channel) return;
+    if (channel.fadeTimer) {
+      if (typeof cancelAnimationFrame !== 'undefined') cancelAnimationFrame(channel.fadeTimer);
+      clearTimeout(channel.fadeTimer);
+      channel.fadeTimer = null;
+    }
+    channel.isPlaying = false;
+    if (channel.el) {
+      try {
+        channel.el.pause();
+        channel.el.currentTime = 0;
+        channel.el.removeAttribute('src');
+        channel.el.load();
+      } catch {}
+      channel.el = null;
+    }
+  }
+
+  /** Sfuma e arresta la musica corrente. */
+  stopMusic(fadeDuration = 1.0) {
+    if (!this.currentBgm) return;
+    const channel = this.currentBgm;
+    this.currentBgm = null;
+    this.pendingMusic = null;
+    if (!channel.el) return;
+
+    const startTime = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+    const durationMs = Math.max(50, fadeDuration * 1000);
+    const startAlpha = channel.fadeAlpha ?? 1;
+
+    const fadeOutStep = () => {
+      const now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+      const elapsed = now - startTime;
+      const progress = Math.min(1, elapsed / durationMs);
+      const alpha = Math.max(0, startAlpha * (1 - progress));
+      const curGain = this._getMusicEffectiveGain();
+      if (channel.el) {
+        channel.el.volume = Math.max(0, Math.min(1, alpha * curGain));
+      }
+      if (progress < 1) {
+        if (typeof requestAnimationFrame !== 'undefined') {
+          channel.fadeTimer = requestAnimationFrame(fadeOutStep);
+        } else {
+          channel.fadeTimer = setTimeout(fadeOutStep, 25);
+        }
+      } else {
+        this._stopBgmChannel(channel);
+      }
+    };
+
+    if (typeof requestAnimationFrame !== 'undefined') {
+      channel.fadeTimer = requestAnimationFrame(fadeOutStep);
+    } else {
+      channel.fadeTimer = setTimeout(fadeOutStep, 25);
+    }
+  }
+
+  /** Attiva il loop procedurale armonico sintetico leggero se la musica esterna non è disponibile. */
+  _startProceduralBgmFallback(biomeId = 'desert') {
+    if (this.proceduralBgmActive) return;
+    this.proceduralBgmActive = true;
+    console.info(`[Audio] Fallback sonoro procedurale attivato per bioma "${biomeId}".`);
+    this.setBiome(biomeId);
+    this.startAmbient();
   }
 
   _ok() { return this.ctx && this.ctx.state === 'running'; }
@@ -591,6 +866,15 @@ export class AudioEngine {
 
   dispose() {
     this.stopAmbient();
+    if (this.currentBgm) {
+      this._stopBgmChannel(this.currentBgm);
+      this.currentBgm = null;
+    }
+    if (this.nextBgm) {
+      this._stopBgmChannel(this.nextBgm);
+      this.nextBgm = null;
+    }
+    this.pendingMusic = null;
     this.buffers.clear();
     if (this.ctx && this.ctx.state !== 'closed') {
       try { this.ctx.close(); } catch {}
