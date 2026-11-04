@@ -45,6 +45,8 @@ export class SceneManager {
     this.updaters = new Set(); // callback(dt) eseguite ogni frame in modalità game
     this._shakeApplied = null;
     this.profiler = null;
+    this.reducedMotion = false;
+    this._pausedByVisibility = false;
 
     try {
       this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
@@ -317,11 +319,21 @@ export class SceneManager {
     this.postProcessing?.setSize?.(w, h);
   }
 
-  /** Scossone di camera. Rispetta il toggle "Screen shake". */
+  /** Scossone di camera. Rispetta "Reduced Motion" e il toggle "Screen shake". */
   shake(intensity = 0.4) {
+    if (this.reducedMotion) return;
     if (!this.settings?.get?.('controls.screenShake')) return;
     this.shakeT = intensity;
     this.cameraController?.addTrauma?.(intensity);
+  }
+
+  pauseRendering() {
+    this._pausedByVisibility = true;
+  }
+
+  resumeRendering() {
+    this._pausedByVisibility = false;
+    this.lastFrame = performance.now();
   }
 
   setProfiler(profiler) {
@@ -338,6 +350,7 @@ export class SceneManager {
     const frame = (now) => {
       if (!this.running) return;
       this.raf = requestAnimationFrame(frame);
+      if (this._pausedByVisibility) return;
       const cap = this.settings.get('graphics.fpsCap');
       const elapsed = now - this.lastFrame;
       if (cap > 0 && elapsed < 1000 / cap - 0.5) return;

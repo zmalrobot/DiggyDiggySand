@@ -464,6 +464,28 @@ Verifiche manuali da fare: valori persistiti dopo il ricaricamento; `localStorag
     - Calibrazione dinamica protettiva del `devicePixelRatio`: capping a `1.75` su smartphone e tablet per prevenire surriscaldamento della GPU su schermi OLED/Retina ad alta densità (3x o 3.5x), e a `2.0` su desktop.
   - Verificata con suite di test unitari (`tests/phase18_1_responsive_touch.test.mjs`, 5/5 verifiche passate con successo, 20 test suite totali del progetto) e Browser QA automatizzato CDP (`tests/phase18_1_browser_qa.mjs`, 0 errori console, 0 eccezioni runtime, screenshot `dds_qa_responsive_tier1_desktop.png`, `dds_qa_responsive_tier2_tablet_landscape.png`, `dds_qa_responsive_tier2_tablet_portrait.png`, `dds_qa_responsive_tier3_smartphone_hud.png`, `dds_qa_responsive_tier3_smartphone_bottom_sheet.png`, `dds_qa_responsive_tier3_smartphone_modal.png`).
 
+- **Milestone 24 (Fase 19: Direttive di Spedizione Dinamiche, Accessibilità Reduced Motion/Smart Pause, Modale Aiuto e Schermata Crediti): COMPLETATA E VERIFICATA.**
+  - Sistema Direttive di Spedizione / Contratti Dinamici (`js/systems/Directives.js` & `js/ui/DirectivesWidget.js`):
+    - Generatore procedurale di micro-obiettivi effimeri parametrati al saldo e alla potenza attuale:
+      - *Estrazione Locale*: quota sabbia nei 4 quadranti della duna (NE, NW, SE, SW).
+      - *Cadenza Continua*: scavo ininterrotto per $N$ secondi.
+      - *Scavo di Profondità*: estrazione sabbia negli strati rocciosi e d'oricalco ($Y \le 4.8$).
+      - *Investimento Cantiere*: acquisto di livelli nell'Officina entro 60 secondi.
+    - Ricompense immediate in sabbia o buff temporanei: sconto 15% in bottega per 45s (`state.temporaryDiscount`) o picco d'estrazione 2x per 30s.
+    - Widget HUD compatto retrattile sul lato sinistro (`#directives-root` / `.directives-card`) con pulsante toggle di minimizzazione, countdown animato, progress bar e badge ricompense.
+  - Accessibilità e Comfort Visivo (`js/core/Accessibility.js`):
+    - Modalità "Riduzione Movimento" (Reduced Motion) sincronizzata con OS `(prefers-reduced-motion: reduce)` e con toggle nelle Impostazioni Grafiche (`accessibility.reducedMotion`).
+    - Disattivazione automatica del camera shake tellurico, neutralizzazione delle particelle atmosferiche rapide (dust motes) e dampening delle animazioni infinite via classe `.reduced-motion`.
+    - Smart Pause su `visibilitychange`: sospensione automatica dell'AudioContext e pausa del rendering Three.js quando la scheda è in background; ripristino istantaneo con clamping di `dt` al ritorno per prevenire salti fisici o memory leak.
+  - Modale Aiuto & Legenda Comandi (`js/ui/HelpModal.js`):
+    - Pulsante rotondo con icona `?` integrato nell'HUD (`.hud-help-btn`) e nel Menu Principale.
+    - Ripartizione chiara dei controlli tra Desktop (Mouse/Tastiera, F2/F3) e Touch (1 dito scavo, 2 dita pinch/orbit, swipe down chiusura cassetto) con regole di gioco sintetiche.
+  - Schermata Crediti & Riconoscimenti Open Source (`js/ui/CreditsModal.js`):
+    - Attribuzioni legali complete: Three.js r160 (MIT), Google Fonts (Cinzel, Cinzel Decorative, Syne under SIL OFL), asset 3D e audio (Kenney, Quaternius, OpenGameArt CC0/CC-BY), sintesi procedurale Web Audio e garanzia di privacy locale a zero cookie.
+  - Rigore i18n Bilingue (`js/core/I18n.js`):
+    - Dizionari completi e simmetrici per IT ed EN per tutti i namespace `directives.*`, `help.*`, `credits.*`, `settings.reducedMotion*` e `hud.help*`.
+  - Verificata con suite di test unitari (`tests/phase19_directives_accessibility.test.mjs`, 4/4 verifiche passate con successo, tutte le 21 test suite del progetto 100% green) e Browser QA automatizzato CDP (`tests/phase19_browser_qa.mjs`, 0 errori console, 0 eccezioni runtime, screenshot `dds_qa_phase19_help_modal.png`, `dds_qa_phase19_credits_modal.png`, `dds_qa_phase19_directives_widget.png`, `dds_qa_phase19_reduced_motion.png`).
+
 Piano dettagliato con codice e verifiche: vedi la sezione "Roadmap" sopra e le formule in `Ideas/upgrade_tree_specification.md`.
 
 ## 6. Convenzioni

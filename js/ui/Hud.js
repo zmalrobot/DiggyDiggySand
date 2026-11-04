@@ -115,6 +115,10 @@ export class Hud {
           <div class="obelisk-bar glow" data-el="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="fill"></div></div>
         </div>
         <div class="hud-actions">
+          <button type="button" class="btn hud-btn hud-help-btn" data-act="help" data-el="help" data-i18n-title="hud.helpTitle" data-i18n-aria-label="hud.helpTitle" title="${i18n.t('hud.helpTitle')}" aria-label="${i18n.t('hud.helpTitle')}">
+            <svg class="hud-btn-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span class="hud-btn-text" data-i18n="hud.help">${i18n.t('hud.help')}</span>
+          </button>
           <button type="button" class="btn hud-btn hud-shop-btn" data-act="shop" data-el="shop" data-i18n-title="hud.workshop" data-i18n-aria-label="hud.workshop" title="${i18n.t('hud.workshop')}" aria-label="${i18n.t('hud.workshop')}">
             <svg class="hud-btn-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
             <span class="hud-btn-text" data-i18n="hud.workshop">${i18n.t('hud.workshop')}</span>
@@ -148,6 +152,7 @@ export class Hud {
       sps: this.root.querySelector('[data-el="sps"]'),
       percent: this.root.querySelector('[data-el="percent"]'),
       bar: this.root.querySelector('[data-el="bar"]'),
+      help: this.root.querySelector('[data-el="help"]'),
       shop: this.root.querySelector('[data-el="shop"]'),
       menu: this.root.querySelector('[data-el="menu"]'),
       radar: this.root.querySelector('[data-el="radar"]'),
@@ -156,6 +161,7 @@ export class Hud {
       cheatsBadge: this.root.querySelector('[data-el="cheatsBadge"]'),
     };
 
+    this.el.help?.addEventListener('click', () => events.emit('hud:help'));
     this.el.shop.addEventListener('click', () => events.emit('hud:shop'));
     this.el.menu.addEventListener('click', () => events.emit('hud:menu'));
   }

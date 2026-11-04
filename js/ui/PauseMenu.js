@@ -3,6 +3,8 @@
 import { formatNumber } from './Hud.js';
 import { PrestigeModal } from './PrestigeModal.js';
 import { StatsModal } from './StatsModal.js';
+import { HelpModal } from './HelpModal.js';
+import { CreditsModal } from './CreditsModal.js';
 import { i18n } from '../core/I18n.js';
 import { events } from '../core/Events.js';
 
@@ -39,6 +41,10 @@ export class PauseMenu {
         new StatsModal(this.game?.modal, this.game?.statsManager, this.game?.achievements, this.audio).open();
       } else if (act === 'wardrobe') {
         this.game?.openWardrobe?.();
+      } else if (act === 'help') {
+        new HelpModal(this.game?.modal).open();
+      } else if (act === 'credits') {
+        new CreditsModal(this.game?.modal).open();
       } else if (act === 'prestige') {
         new PrestigeModal(this.game?.modal, this.save, this.game?.state, this.audio).open();
       } else if (act === 'settings') {
@@ -139,6 +145,8 @@ export class PauseMenu {
           <button type="button" class="btn btn-resume" data-act="resume" data-i18n="pause.resume">${i18n.t('pause.resume') || 'Riprendi Spedizione'}</button>
           <button type="button" class="btn btn-secondary" data-act="stats" data-i18n="pause.stats">${i18n.t('pause.stats') || 'Statistiche & Trofei'}</button>
           <button type="button" class="btn btn-secondary" data-act="wardrobe" data-i18n="pause.wardrobe">${i18n.t('pause.wardrobe') || 'Guardaroba & Skin'}</button>
+          <button type="button" class="btn btn-secondary" data-act="help" data-i18n="menu.help">${i18n.t('menu.help') || 'Aiuto & Comandi'}</button>
+          <button type="button" class="btn btn-secondary" data-act="credits" data-i18n="menu.credits">${i18n.t('menu.credits') || 'Crediti & Licenze'}</button>
           <button type="button" class="btn btn-secondary" data-act="prestige"><span data-i18n="pause.prestige">${i18n.t('pause.prestige') || 'Santuario dei Predecessori'}</span> (τ ${this.save?.getTablets?.() ?? 0})</button>
           <button type="button" class="btn btn-secondary" data-act="settings" data-i18n="settings.title">${i18n.t('settings.title') || 'Tutte le Impostazioni'}</button>
           <button type="button" class="btn btn-danger" data-act="save-exit" data-i18n="pause.saveAndExit">${i18n.t('pause.saveAndExit') || 'Salva ed Esci'}</button>

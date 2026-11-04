@@ -23,6 +23,7 @@ export const SCHEMA = {
   'controls.invertY':    { type: 'bool',  def: false },
   'controls.screenShake':{ type: 'bool',  def: true },
   'controls.haptics':    { type: 'bool',  def: true },
+  'accessibility.reducedMotion': { type: 'bool', def: false },
   'game.language':       { type: 'enum',  def: 'it', values: ['it', 'en'] },
   'game.notation':       { type: 'enum',  def: 'standard', values: ['standard', 'scientific', 'engineering'] },
 };
@@ -66,6 +67,11 @@ export class SettingsManager {
   static defaults() {
     const out = {};
     for (const [k, d] of Object.entries(SCHEMA)) out[k] = d.def;
+    try {
+      if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        out['accessibility.reducedMotion'] = true;
+      }
+    } catch {}
     return out;
   }
 
@@ -114,6 +120,7 @@ export class SettingsManager {
     if (key === 'raytracingSSR') key = 'graphics.raytracingSSR';
     if (key === 'haptics') key = 'controls.haptics';
     if (key === 'notation') key = 'game.notation';
+    if (key === 'reducedMotion') key = 'accessibility.reducedMotion';
     if (!(key in SCHEMA)) throw new Error(`Impostazione sconosciuta: ${key}`);
     return this.values[key];
   }
@@ -126,6 +133,7 @@ export class SettingsManager {
     if (key === 'raytracingSSR') key = 'graphics.raytracingSSR';
     if (key === 'haptics') key = 'controls.haptics';
     if (key === 'notation') key = 'game.notation';
+    if (key === 'reducedMotion') key = 'accessibility.reducedMotion';
     const def = SCHEMA[key];
     if (!def) return false;
     const v = coerce(def, val);
@@ -141,6 +149,9 @@ export class SettingsManager {
     }
     if (key === 'controls.haptics') {
       this._notify('haptics', v);
+    }
+    if (key === 'accessibility.reducedMotion') {
+      this._notify('reducedMotion', v);
     }
     if (key === 'game.notation') {
       this._notify('notation', v);

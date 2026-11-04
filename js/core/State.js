@@ -31,6 +31,7 @@ export class State {
     this.tablets = Number.isFinite(data.tablets) ? Math.max(0, data.tablets) : 0;
     this.metaUpgrades = { ...(data.metaUpgrades ?? {}) };
     this.sandMultiplier = 1.0;
+    this.temporaryDiscount = 0;
     this.lastSaved = data.lastSaved ?? data.lastSeen ?? Date.now();
   }
 
@@ -49,7 +50,9 @@ export class State {
   }
 
   get costDiscount() {
-    return Math.min(0.25, (this.metaUpgrades.tabletMagnetism ?? 0) * 0.05);
+    const meta = Math.min(0.25, (this.metaUpgrades.tabletMagnetism ?? 0) * 0.05);
+    const buff = this.temporaryDiscount ?? 0;
+    return Math.min(0.80, meta + buff);
   }
 
   /** Statistiche correnti derivate dai livelli degli upgrade e dai meta-perk. */

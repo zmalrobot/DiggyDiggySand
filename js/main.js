@@ -20,6 +20,7 @@ import { BiomeManager } from './world/BiomeManager.js';
 import { BiomeSelectModal } from './ui/BiomeSelectModal.js';
 import { Profiler } from './systems/Profiler.js';
 import { ProfilerOverlay } from './ui/ProfilerOverlay.js';
+import { Accessibility } from './core/Accessibility.js';
 
 window.addEventListener('error', (e) => console.error('[DDS] errore non gestito', e.error ?? e.message));
 window.addEventListener('unhandledrejection', (e) => console.error('[DDS] promise rifiutata', e.reason));
@@ -99,6 +100,9 @@ async function boot() {
   const profilerOverlay = new ProfilerOverlay({ profiler });
   if (scene) scene.setProfiler(profiler);
 
+  // Accessibilità e Comfort Visivo (Fase 19: Reduced Motion & Smart Pause)
+  const accessibility = new Accessibility({ settings, audioEngine: audio, sceneMgr: scene, game });
+
   // Scorciatoia da tastiera F3 per attivazione/disattivazione rapida
   window.addEventListener('keydown', (e) => {
     if (e.key === 'F3' || e.code === 'F3') {
@@ -109,7 +113,7 @@ async function boot() {
   });
 
   // Hook di debug per i test.
-  window.__dds = { settings, settingsModal, audio, save, scene, assets, menu, game, debugTools, statsManager, achievements, cosmeticsManager, wardrobeModal, biomeManager, biomeSelectModal, i18n, profiler, profilerOverlay };
+  window.__dds = { settings, settingsModal, audio, save, scene, assets, menu, game, debugTools, statsManager, achievements, cosmeticsManager, wardrobeModal, biomeManager, biomeSelectModal, i18n, profiler, profilerOverlay, accessibility };
 
   await startClicked;
   menu.show();

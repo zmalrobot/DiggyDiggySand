@@ -31,6 +31,9 @@ import { BiomeManager, BIOME_CATALOG } from '../world/BiomeManager.js';
 import { CameraController } from '../world/Camera.js';
 import { FloatingTextManager } from '../ui/FloatingText.js';
 import { Haptics } from './Haptics.js';
+import { DirectivesManager } from '../systems/Directives.js';
+import { DirectivesWidget } from '../ui/DirectivesWidget.js';
+import { HelpModal } from '../ui/HelpModal.js';
 import { i18n } from './I18n.js';
 
 const WORLD_SIZE = 200;
@@ -117,6 +120,11 @@ export class Game {
     this.digging = new Digging({ canvas, scene, state: this.state, audio, particles: this.particles });
     this.group.add(this.particles.mesh, this.digging.reticle);
 
+    const dirRoot = document.getElementById('directives-root');
+    this.directives = new DirectivesManager({ state: this.state, audio: this.audio, digging: this.digging });
+    this.directivesWidget = dirRoot ? new DirectivesWidget(dirRoot, this.directives) : null;
+    this.directivesWidget?.hide();
+
     this._tick = (dt) => this.update(dt);
     this._bindGlobal();
   }
@@ -125,6 +133,7 @@ export class Game {
     events.on('game:new', (data) => this.start(data));
     events.on('game:continue', (data) => this.start(data));
     events.on('hud:menu', () => this.openPause());
+    events.on('hud:help', () => new HelpModal(this.modal).open());
 
     events.on('dig:hit', ({ amount }) => {
       this.state.registerClick();
@@ -224,6 +233,8 @@ export class Game {
 
     this.menu.hide();
     this.hud.show();
+    this.directivesWidget?.show();
+    this.directives?.setDigging(this.digging);
     this._setupCamera();
     sm.setMode('game');
     sm.updaters.add(this._tick);
@@ -433,6 +444,8 @@ export class Game {
     }
 
     this.digging.update(dt);
+    this.directives?.update(dt);
+    this.directivesWidget?.update();
     this.workers?.update(dt);
     this.economy?.update(dt);
     this.foreshadowing?.update(dt);
@@ -574,6 +587,7 @@ export class Game {
     this.paused = false;
     this.pauseMenu?.close();
     this.tutorial?.complete();
+    this.directivesWidget?.hide();
     this.overlay?.hide();
     this.banner?.hide();
     this.digging.setEnabled(false);

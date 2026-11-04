@@ -50,6 +50,7 @@ export class CameraController {
 
     // Modello Trauma & Shake Procedurale Non Lineare (trauma^2)
     this.trauma = 0;
+    this.reducedMotion = false;
     this.shakeDamping = options.shakeDamping ?? 1.5;
     this.maxShakeOffset = options.maxShakeOffset ?? 0.85; // metri max offset
     this._shakeOffset = new THREE.Vector3();
@@ -110,6 +111,7 @@ export class CameraController {
    * @param {number} amount Incremento di trauma
    */
   addTrauma(amount) {
+    if (this.reducedMotion) return;
     if (typeof amount !== 'number' || Number.isNaN(amount)) return;
     this.trauma = Math.min(1.0, this.trauma + Math.max(0, amount));
   }

@@ -5,6 +5,8 @@ import { PrestigeModal } from './PrestigeModal.js';
 import { StatsModal } from './StatsModal.js';
 import { WardrobeModal } from './WardrobeModal.js';
 import { BiomeSelectModal } from './BiomeSelectModal.js';
+import { HelpModal } from './HelpModal.js';
+import { CreditsModal } from './CreditsModal.js';
 import { CosmeticsManager } from '../systems/CosmeticsManager.js';
 import { BiomeManager } from '../world/BiomeManager.js';
 import { i18n } from '../core/I18n.js';
@@ -50,6 +52,7 @@ export class MainMenu {
           <button type="button" class="btn btn-prestige" data-act="prestige"><span data-i18n="menu.prestige">Santuario dei Predecessori</span> (<span class="tablets-count">τ 0</span>)</button>
           <button type="button" class="btn" data-act="stats" data-i18n="menu.stats">Statistiche & Trofei</button>
           <button type="button" class="btn btn-wardrobe" data-act="wardrobe" data-i18n="menu.wardrobe">Guardaroba & Skin</button>
+          <button type="button" class="btn" data-act="help" data-i18n="menu.help">Aiuto & Comandi</button>
           <button type="button" class="btn" data-act="settings" data-i18n="menu.settings">Impostazioni</button>
           <button type="button" class="btn" data-act="credits" data-i18n="menu.credits">Crediti</button>
         </nav>
@@ -142,18 +145,12 @@ export class MainMenu {
 
   _settings() { this.settingsModal.open(); }
 
+  _help() {
+    new HelpModal(this.modal).open();
+  }
+
   _credits() {
-    const wrap = document.createElement('div');
-    wrap.className = 'credits';
-    wrap.innerHTML = `
-      <p><span class="accent">Diggy Diggy Sand</span> · ${i18n.t('menu.creditsP1') || 'gioco incrementale 3D con finali casuali.'}</p>
-      <p class="muted">${i18n.t('menu.creditsP2') || 'Motore: Three.js r160 (MIT). Font: Cinzel Decorative, Cinzel, Syne (SIL OFL, Google Fonts).'}</p>
-      <p class="muted">${i18n.t('menu.creditsP3') || 'Asset 3D e audio: CC0 (Kenney, Quaternius, OpenGameArt) quando presenti. In loro assenza, mesh e suoni procedurali.'}</p>`;
-    this.modal.open({
-      title: i18n.t('menu.credits') || 'Crediti',
-      content: wrap,
-      actions: [{ label: i18n.t('common.close') || 'Chiudi' }],
-    });
+    new CreditsModal(this.modal).open();
   }
 }
 

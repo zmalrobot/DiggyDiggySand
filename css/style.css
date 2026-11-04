@@ -2677,6 +2677,387 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
   }
 }
 
+/* ========================================================
+   FASE 19: DIRETTIVE DI SPEDIZIONE & WIDGET HUD
+   ======================================================== */
+#directives-root {
+  position: fixed;
+  top: 96px;
+  left: 18px;
+  z-index: 45;
+  pointer-events: none;
+}
+
+.directives-card {
+  position: relative;
+  width: 290px;
+  max-width: 90vw;
+  padding: 12px 14px;
+  background: rgba(3, 24, 38, 0.90);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(212, 175, 55, 0.45);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(15, 227, 193, 0.1);
+  clip-path: polygon(8px 0%, calc(100% - 8px) 0%, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0% calc(100% - 8px), 0% 8px);
+  pointer-events: auto;
+  user-select: none;
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), padding 0.3s ease, border-color 0.3s ease;
+}
+
+.directives-card.collapsed {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.directives-card.collapsed .directives-body {
+  display: none;
+}
+
+.directives-toggle-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  background: rgba(15, 227, 193, 0.15);
+  border: 1px solid var(--atlantis-teal);
+  color: var(--atlantis-teal);
+  cursor: pointer;
+  z-index: 2;
+  transition: background 0.2s, color 0.2s;
+}
+
+.directives-card.collapsed .directives-toggle-btn {
+  position: static;
+  width: 100%;
+  height: 100%;
+  border: none;
+  font-size: 18px;
+}
+
+.directives-toggle-btn:hover {
+  background: var(--atlantis-teal);
+  color: #031826;
+}
+
+.directives-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  padding-right: 28px;
+}
+
+.directives-badge {
+  font-family: var(--font-data);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold-glow);
+}
+
+.directives-timer {
+  font-family: var(--font-data);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--atlantis-teal);
+}
+
+.directives-timer.urgent {
+  color: #E74C3C;
+  animation: pulseUrgent 0.8s infinite alternate;
+}
+
+@keyframes pulseUrgent {
+  from { opacity: 0.7; transform: scale(0.96); }
+  to { opacity: 1.0; transform: scale(1.04); }
+}
+
+.directives-title {
+  font-family: var(--font-heading);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #FBF7EE;
+  margin: 0 0 8px 0;
+  line-height: 1.3;
+}
+
+.directives-progress-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.directives-progress-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-data);
+  font-size: 0.76rem;
+}
+
+.directives-progress-text {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.directives-reward-badge {
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 2px;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+}
+
+.directives-reward-badge.reward-sand {
+  background: rgba(245, 186, 35, 0.2);
+  border: 1px solid var(--gold-pharaoh);
+  color: var(--gold-glow);
+}
+
+.directives-reward-badge.reward-discount {
+  background: rgba(15, 227, 193, 0.2);
+  border: 1px solid var(--atlantis-teal);
+  color: var(--atlantis-teal);
+}
+
+.directives-reward-badge.reward-boost {
+  background: rgba(216, 125, 56, 0.25);
+  border: 1px solid #D87D38;
+  color: #F5A623;
+}
+
+.directives-bar-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(15, 227, 193, 0.2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.directives-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #0FE3C1, #00B4D8);
+  box-shadow: 0 0 8px rgba(15, 227, 193, 0.7);
+  transition: width 0.25s ease-out;
+}
+
+.directives-card.completed {
+  border-color: #2ECC71;
+  box-shadow: 0 0 16px rgba(46, 204, 113, 0.4);
+}
+
+.directives-card.failed {
+  border-color: rgba(231, 76, 60, 0.6);
+  opacity: 0.75;
+}
+
+/* ========================================================
+   FASE 19: ACCESSIBILITÀ & RIDUZIONE MOVIMENTO (REDUCED MOTION)
+   ======================================================== */
+.reduced-motion *,
+.reduced-motion *::before,
+.reduced-motion *::after {
+  animation-iteration-count: 1 !important;
+}
+
+.reduced-motion .floating-text {
+  animation-duration: 0.25s !important;
+}
+
+.reduced-motion .radar-sweep,
+.reduced-motion .radar-blip,
+.reduced-motion .directives-timer.urgent {
+  animation: none !important;
+}
+
+.reduced-motion .storm-boost-tag,
+.reduced-motion .hud-boost-tag {
+  animation: none !important;
+}
+
+/* ========================================================
+   FASE 19: MODALI AIUTO / COMANDI & CREDITI
+   ======================================================== */
+.help-modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 620px;
+}
+
+.help-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.help-section-title {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--gold-glow);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.help-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 8px;
+}
+
+.help-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(15, 227, 193, 0.05);
+  border: 1px solid rgba(15, 227, 193, 0.18);
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: #E0E7EC;
+}
+
+.key-badge {
+  font-family: var(--font-data);
+  font-weight: 700;
+  font-size: 0.75rem;
+  padding: 3px 8px;
+  background: rgba(245, 186, 35, 0.16);
+  border: 1px solid var(--gold-pharaoh);
+  color: var(--gold-glow);
+  border-radius: 3px;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.help-desc {
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: #CAD5DE;
+  margin: 0;
+}
+
+/* Crediti */
+.credits-modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 620px;
+}
+
+.credits-header-banner {
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(15, 227, 193, 0.25);
+}
+
+.credits-badge {
+  font-family: var(--font-data);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--atlantis-teal);
+}
+
+.credits-game-title {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  color: var(--gold-glow);
+  margin: 4px 0 2px 0;
+}
+
+.credits-version {
+  font-family: var(--font-data);
+  font-size: 0.8rem;
+}
+
+.credits-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.credits-sec-title {
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--gold-pharaoh);
+  margin: 0;
+}
+
+.credits-item,
+.credits-text {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: #CCD8E2;
+  margin: 0;
+}
+
+.credits-list {
+  margin: 0;
+  padding-left: 20px;
+  font-family: var(--font-body);
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: #CCD8E2;
+}
+
+.credits-link {
+  color: var(--atlantis-teal);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s, text-shadow 0.2s;
+}
+
+.credits-link:hover {
+  color: #FFFFFF;
+  text-shadow: 0 0 8px rgba(15, 227, 193, 0.8);
+}
+
+/* Responsive per Directives Widget */
+@media (max-width: 1024px) {
+  #directives-root {
+    top: 86px;
+    left: 12px;
+  }
+  .directives-card {
+    width: 260px;
+  }
+}
+
+@media (max-width: 600px) {
+  #directives-root {
+    top: calc(var(--safe-top, 10px) + 56px);
+    left: 8px;
+    z-index: 45;
+  }
+  .directives-card {
+    width: calc(100vw - 16px);
+    max-width: calc(100vw - 16px);
+  }
+}
+
 
 
 

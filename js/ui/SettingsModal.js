@@ -238,6 +238,11 @@ export class SettingsModal {
         this._toggle('graphics.raytracingSSR', i18n.t('settings.raytracingSSR') || 'Raytracing & Riflessi SSR'),
         i18n.t('settings.raytracingSSRHint') || 'Simula riflessi fotorealistici nello spazio dello schermo. Richiede GPU dedicata (Disattivato di default).'
       ),
+      this._row(
+        i18n.t('settings.reducedMotion') || 'Riduzione Movimento (Accessibilità)',
+        this._toggle('accessibility.reducedMotion', i18n.t('settings.reducedMotion') || 'Riduzione Movimento'),
+        i18n.t('settings.reducedMotionHint') || 'Disabilita camera shake, particelle rapide e attenua le transizioni visive'
+      ),
     );
   }
 
