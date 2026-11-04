@@ -100,6 +100,13 @@ const CORE_ASSETS = [
   './assets/audio/music/bgm_ocean.mp3',
   './assets/audio/music/bgm_glacier.mp3',
   './assets/audio/music/bgm_jungle.mp3',
+
+  // Modelli 3D Low-Poly GLTF (Kenney / Quaternius CC0)
+  './assets/models/tools/shovel.glb',
+  './assets/models/fleet/worker.glb',
+  './assets/models/fleet/excavator.glb',
+  './assets/models/city/obelisk.glb',
+  './assets/models/city/chest.glb',
 ];
 
 // 1. Installazione e precaching degli asset core

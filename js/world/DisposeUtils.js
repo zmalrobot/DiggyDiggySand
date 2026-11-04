@@ -76,3 +76,11 @@ export function disposeRenderTarget(rt) {
   } catch {}
 }
 
+export const DisposeUtils = {
+  deepDispose,
+  disposeRenderTarget,
+};
+
+export default DisposeUtils;
+
+

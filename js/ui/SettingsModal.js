@@ -21,6 +21,12 @@ function getOptionLabel(key, val) {
   if (key === 'graphics.fpsCap') {
     return i18n.t(`settings.fpsOptions.${v}`) || (v === '0' ? 'Illimitato' : `${v} FPS`);
   }
+  if (key === 'graphics.modelStyle') {
+    if (v === 'gltf') {
+      return i18n.t('settings.graphics.model_style_gltf') || 'Modelli Esterni GLTF (Consigliato)';
+    }
+    return i18n.t('settings.graphics.model_style_procedural') || 'Procedurali Matematici';
+  }
   if (key === 'game.language') {
     return i18n.t(`settings.languageOptions.${v}`) || (v === 'it' ? 'Italiano' : 'English');
   }
@@ -222,6 +228,11 @@ export class SettingsModal {
   _graphicsTab(p) {
     p.append(
       this._row(i18n.t('settings.renderScale') || 'Risoluzione di rendering', this._select('graphics.renderScale'), i18n.t('settings.renderScaleHint') || 'Scala della risoluzione interna'),
+      this._row(
+        i18n.t('settings.graphics.model_style_label') || 'Stile Modelli 3D',
+        this._select('graphics.modelStyle'),
+        i18n.t('settings.graphics.model_style_hint') || 'Alterna tra modelli low-poly GLTF di Kenney/Quaternius e geometrie procedurali matematiche'
+      ),
       this._row(i18n.t('settings.shadows') || 'Ombre', this._select('graphics.shadows')),
       this._row(i18n.t('settings.graphicsQuality') || 'Qualità particelle', this._select('graphics.particles')),
       this._row(i18n.t('settings.postProcessing') || 'Post-Processing (Bloom & Vignette)', this._toggle('graphics.postProcessing', 'Post-Processing'), i18n.t('settings.postProcessingHint') || 'Bagliori emissivi e color grading'),

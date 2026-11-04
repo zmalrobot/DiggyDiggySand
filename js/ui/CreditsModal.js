@@ -58,6 +58,15 @@ export class CreditsModal {
       </div>
 
       <div class="credits-section">
+        <h4 class="credits-sec-title" data-i18n="credits.models_title">🗿 ${i18n.t('credits.models_title') || 'Modelli 3D Low-Poly'}</h4>
+        <p class="credits-item">
+          Modelli di <strong>Kenney</strong> (<a href="https://kenney.nl" target="_blank" rel="noopener noreferrer" class="credits-link">kenney.nl ↗</a>) — <em>Survival Kit, Car Kit, Pirate Kit, Fantasy Town</em><br>
+          Personaggi di <strong>Quaternius</strong> (<a href="https://quaternius.com" target="_blank" rel="noopener noreferrer" class="credits-link">quaternius.com ↗</a>) — <em>Modular Characters</em><br>
+          Licenza: <strong>Creative Commons Zero (CC0 1.0 Universal — Public Domain)</strong>
+        </p>
+      </div>
+
+      <div class="credits-section">
         <h4 class="credits-sec-title">🎵 ${i18n.t('credits.musicTitle') || 'Musica di Sottofondo'}</h4>
         <p class="credits-item">
           Composta da <strong>Kevin MacLeod</strong> (<a href="https://incompetech.com" target="_blank" rel="noopener noreferrer" class="credits-link">incompetech.com</a>)<br>

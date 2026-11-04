@@ -142,14 +142,23 @@ const ID_TO_FALLBACK = {
   TOOL_SHOVEL: 'createShovel',
   TOOL_PICKAXE: 'createShovel',
   TOOL_DYNAMITE: 'createDynamite',
+  MODEL_SHOVEL: 'createShovel',
   UNIT_NOMAD: 'createWorker',
+  UNIT_SCARAB: 'createWorker',
+  MODEL_WORKER: 'createWorker',
   UNIT_SIFTER: 'createSifter',
   UNIT_EXCAVATOR: 'createExcavator',
+  MODEL_EXCAVATOR: 'createExcavator',
+  UNIT_DREDGE: 'createMonolith',
   UNIT_MONOLITH: 'createMonolith',
+  RUIN_COLUMN: 'createPillar',
   RUIN_PILLAR: 'createPillar',
   RUIN_OBELISK: 'createObelisk',
+  MODEL_OBELISK: 'createObelisk',
+  RUIN_TEMPLE: 'createObelisk',
   RUIN_WALL: 'createPillar',
   RUIN_CHEST: 'createChest',
+  MODEL_CHEST: 'createChest',
   END_CURSE_CORE: 'createSarcophagus',
   END_TREASURE_GEM: 'createGem',
   END_BIZ_CONE: 'createCone',
@@ -160,6 +169,23 @@ export function createFallback(id) {
   const fn = FallbackMeshes[ID_TO_FALLBACK[id]];
   if (fn) return fn();
   return mesh(new THREE.BoxGeometry(1, 1, 1), mat(PALETTE_3D.ruinsStone, { roughness: 0.88, metalness: 0.02, normalMap: getStoneNormalMap() }));
+}
+
+/**
+ * Crea una mesh procedurale per una chiave asset generica o percorso file.
+ * @param {string} assetKey
+ */
+export function createMesh(assetKey) {
+  if (!assetKey) return createFallback('RUIN_PILLAR');
+  const cleanKey = String(assetKey).toLowerCase().replace(/^assets\/models\//, '').replace(/\.glb$/, '');
+  if (cleanKey.includes('shovel')) return FallbackMeshes.createShovel();
+  if (cleanKey.includes('worker') || cleanKey.includes('scarab')) return FallbackMeshes.createWorker();
+  if (cleanKey.includes('excavator')) return FallbackMeshes.createExcavator();
+  if (cleanKey.includes('dredge') || cleanKey.includes('monolith')) return FallbackMeshes.createMonolith();
+  if (cleanKey.includes('obelisk') || cleanKey.includes('temple')) return FallbackMeshes.createObelisk();
+  if (cleanKey.includes('chest')) return FallbackMeshes.createChest();
+  if (cleanKey.includes('column') || cleanKey.includes('pillar')) return FallbackMeshes.createPillar();
+  return createFallback(assetKey);
 }
 
 export const FALLBACK_IDS = Object.keys(ID_TO_FALLBACK);

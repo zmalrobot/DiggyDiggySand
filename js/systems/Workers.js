@@ -5,6 +5,7 @@ import { PALETTE_3D } from '../world/ProceduralFactory.js';
 import { UPGRADE_CATALOG } from './Upgrades.js';
 import { events } from '../core/Events.js';
 import { getLayerColor } from '../world/Terrain.js';
+import { DisposeUtils } from '../world/DisposeUtils.js';
 
 
 const mat = (color, extra = {}) =>
@@ -200,6 +201,9 @@ export class Workers {
           this.setSkin(id);
         }
       }),
+      events.on('settings:modelStyleChanged', () => {
+        this.rebuildVisualMeshes();
+      }),
     ];
 
     this.syncWithUpgrades(this.state.upgrades);
@@ -215,6 +219,50 @@ export class Workers {
     if (!this.terrain) return;
     for (const w of this.workers) {
       w.mesh.position.y = this.terrain.heightAt(w.mesh.position.x, w.mesh.position.z);
+    }
+  }
+
+  /**
+   * Ricostruisce le mesh visive di tutti i lavoratori attivi a runtime
+   * in seguito al cambio di stile modello nelle impostazioni (GLTF vs Procedurali).
+   * Esegue DisposeUtils.deepDispose() su ciascuna vecchia mesh per liberare memoria GPU.
+   */
+  rebuildVisualMeshes() {
+    if (!this.workers || !this.workers.length) return;
+    for (const w of this.workers) {
+      if (!w.mesh) continue;
+      const oldMesh = w.mesh;
+      const pos = oldMesh.position.clone();
+      const rot = oldMesh.rotation.clone();
+
+      this.group.remove(oldMesh);
+      DisposeUtils.deepDispose(oldMesh);
+
+      let newMesh = null;
+      if (w.type === 'scarab') {
+        newMesh = this.assets?.getModel
+          ? this.assets.getModel('machinery/worker_scarab.glb', createScarabModel)
+          : createScarabModel();
+      } else if (w.type === 'excavator') {
+        newMesh = this.assets?.getModel
+          ? this.assets.getModel('machinery/excavator_steam.glb', createExcavatorModel)
+          : createExcavatorModel();
+      } else if (w.type === 'dredge') {
+        newMesh = this.assets?.getModel
+          ? this.assets.getModel('machinery/dredge.glb', createDredgeModel)
+          : createDredgeModel();
+      }
+
+      if (newMesh) {
+        if (!newMesh.userData) newMesh.userData = {};
+        if (this.currentSkin && this.currentSkin !== 'machinery_standard') {
+          this._applySkinToMesh(newMesh, this.currentSkin);
+        }
+        newMesh.position.copy(pos);
+        newMesh.rotation.copy(rot);
+        this.group.add(newMesh);
+        w.mesh = newMesh;
+      }
     }
   }
 

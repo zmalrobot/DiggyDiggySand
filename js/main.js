@@ -37,7 +37,7 @@ async function boot() {
   const settings = new SettingsManager();
   const audio = new AudioEngine(settings);
   const save = new Save();
-  const assets = new AssetLoader();
+  const assets = new AssetLoader(settings);
   const modal = new ModalManager(document.getElementById('modal-root'));
   const statsManager = new StatsManager();
 

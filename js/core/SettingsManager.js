@@ -19,6 +19,7 @@ export const SCHEMA = {
   'graphics.fpsCap':     { type: 'enum',  def: 60, values: [30, 60, 0] }, // 0 = senza limite
   'graphics.showProfiler': { type: 'bool', def: false },
   'graphics.raytracingSSR': { type: 'bool', def: false },
+  'graphics.modelStyle': { type: 'enum', def: 'gltf', values: ['gltf', 'procedural'] },
   'controls.cameraSens': { type: 'range', def: 1, min: 0.25, max: 2, step: 0.05 },
   'controls.invertY':    { type: 'bool',  def: false },
   'controls.screenShake':{ type: 'bool',  def: true },
@@ -118,6 +119,7 @@ export class SettingsManager {
   get(key) {
     if (key === 'showProfiler') key = 'graphics.showProfiler';
     if (key === 'raytracingSSR') key = 'graphics.raytracingSSR';
+    if (key === 'modelStyle') key = 'graphics.modelStyle';
     if (key === 'haptics') key = 'controls.haptics';
     if (key === 'notation') key = 'game.notation';
     if (key === 'reducedMotion') key = 'accessibility.reducedMotion';
@@ -131,6 +133,7 @@ export class SettingsManager {
   set(key, val) {
     if (key === 'showProfiler') key = 'graphics.showProfiler';
     if (key === 'raytracingSSR') key = 'graphics.raytracingSSR';
+    if (key === 'modelStyle') key = 'graphics.modelStyle';
     if (key === 'haptics') key = 'controls.haptics';
     if (key === 'notation') key = 'game.notation';
     if (key === 'reducedMotion') key = 'accessibility.reducedMotion';
@@ -146,6 +149,10 @@ export class SettingsManager {
     }
     if (key === 'graphics.raytracingSSR') {
       this._notify('raytracingSSR', v);
+    }
+    if (key === 'graphics.modelStyle') {
+      this._notify('modelStyle', v);
+      events.emit('settings:modelStyleChanged', v);
     }
     if (key === 'controls.haptics') {
       this._notify('haptics', v);
@@ -163,6 +170,7 @@ export class SettingsManager {
   subscribe(key, fn, { immediate = false } = {}) {
     if (key === 'showProfiler') key = 'graphics.showProfiler';
     if (key === 'raytracingSSR') key = 'graphics.raytracingSSR';
+    if (key === 'modelStyle') key = 'graphics.modelStyle';
     if (key === 'haptics') key = 'controls.haptics';
     if (key === 'notation') key = 'game.notation';
     if (!this.listeners.has(key)) this.listeners.set(key, new Set());

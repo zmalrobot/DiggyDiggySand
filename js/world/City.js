@@ -3,6 +3,8 @@
 import * as THREE from 'three';
 import { PALETTE_3D } from './ProceduralFactory.js';
 import { generateChiseledStoneNormalMap } from './TextureGenerator.js';
+import { DisposeUtils } from './DisposeUtils.js';
+import { events } from '../core/Events.js';
 
 const mat = (color, extra = {}) =>
   new THREE.MeshStandardMaterial({ color, flatShading: true, roughness: 0.85, ...extra });
@@ -25,6 +27,23 @@ export class City {
     this.group.name = 'buried-city';
 
     this._initMaterials();
+    this._buildCity();
+
+    events.on('settings:modelStyleChanged', () => {
+      this.rebuild();
+    });
+  }
+
+  /**
+   * Ricostruisce la città sepolta in seguito al cambio di stile dei modelli (GLTF vs Procedurali).
+   * Esegue DisposeUtils.deepDispose() su ciascuna entità per deallocare la memoria GPU.
+   */
+  rebuild() {
+    while (this.group.children.length > 0) {
+      const child = this.group.children[0];
+      this.group.remove(child);
+      DisposeUtils.deepDispose(child);
+    }
     this._buildCity();
   }
 

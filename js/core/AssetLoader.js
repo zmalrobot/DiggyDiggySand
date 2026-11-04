@@ -1,7 +1,7 @@
 // Caricamento asset con THREE.LoadingManager e THREE.GLTFLoader.
 // Fallback procedurale garantito in ogni condizione (ProceduralFactory.js).
 import * as THREE from 'three';
-import { createFallback, FALLBACK_IDS } from '../world/ProceduralFactory.js';
+import { createFallback, createMesh, FALLBACK_IDS } from '../world/ProceduralFactory.js';
 
 export const ASSET_TIMEOUT_MS = 10000;
 export const GLOBAL_TIMEOUT_MS = 30000;
@@ -10,13 +10,18 @@ const FONT_SPECS = ['700 1em "Cinzel Decorative"', '700 1em "Cinzel"', '500 1em 
 
 export const MODEL_REGISTRY = {
   // Tools
+  'tools/shovel.glb': { id: 'MODEL_SHOVEL', file: 'assets/models/tools/shovel.glb', fallback: 'createShovel' },
   'tools/shovel_basic.glb': { id: 'TOOL_SHOVEL', file: 'assets/models/tools/shovel_basic.glb', fallback: 'createShovel' },
   'tools/shovel_atlantean.glb': { id: 'TOOL_SHOVEL_ATLANTEAN', file: 'assets/models/tools/shovel_atlantean.glb', fallback: 'createShovel' },
-  // Machinery
+  // Machinery & Fleet
+  'fleet/worker.glb': { id: 'MODEL_WORKER', file: 'assets/models/fleet/worker.glb', fallback: 'createWorker' },
+  'fleet/excavator.glb': { id: 'MODEL_EXCAVATOR', file: 'assets/models/fleet/excavator.glb', fallback: 'createExcavator' },
   'machinery/worker_scarab.glb': { id: 'UNIT_SCARAB', file: 'assets/models/machinery/worker_scarab.glb', fallback: 'createWorker' },
   'machinery/excavator_steam.glb': { id: 'UNIT_EXCAVATOR', file: 'assets/models/machinery/excavator_steam.glb', fallback: 'createExcavator' },
   'machinery/dredge.glb': { id: 'UNIT_DREDGE', file: 'assets/models/machinery/dredge.glb', fallback: 'createMonolith' },
-  // Ruins
+  // Ruins & City
+  'city/obelisk.glb': { id: 'MODEL_OBELISK', file: 'assets/models/city/obelisk.glb', fallback: 'createObelisk' },
+  'city/chest.glb': { id: 'MODEL_CHEST', file: 'assets/models/city/chest.glb', fallback: 'createChest' },
   'ruins/column.glb': { id: 'RUIN_COLUMN', file: 'assets/models/ruins/column.glb', fallback: 'createPillar' },
   'ruins/temple_center.glb': { id: 'RUIN_TEMPLE', file: 'assets/models/ruins/temple_center.glb', fallback: 'createObelisk' },
   'ruins/chest.glb': { id: 'RUIN_CHEST', file: 'assets/models/ruins/chest.glb', fallback: 'createChest' },
@@ -28,13 +33,18 @@ const withTimeout = (promise, ms, label) => new Promise((resolve, reject) => {
 });
 
 export class AssetLoader {
-  constructor() {
+  constructor(settings = null) {
+    this.settings = settings;
     this.manager = new THREE.LoadingManager();
     this.models = new Map();   // id -> THREE.Object3D caricato
     this.pending = new Set();  // item ancora in corso (per il timeout globale)
     this.report = { loaded: [], fallback: [] };
     this.maxAnisotropy = 16;
     this.manifest = null;
+  }
+
+  setSettings(settings) {
+    this.settings = settings;
   }
 
   /** Avvolge un'operazione come item del LoadingManager; non rifiuta mai. */
@@ -171,15 +181,27 @@ export class AssetLoader {
     return this.getModel(id, fallbackGenerator);
   }
 
-  /** Restituisce un clone del modello caricato oppure il fallback procedurale. */
+  /**
+   * Restituisce un modello clonabile in base all'impostazione corrente (GLTF vs Procedurale):
+   * Se modelStyle === 'gltf' e il modello è disponibile, clona con flatShading e shadow mapping.
+   * Se modelStyle === 'procedural' o il modello non è precaricato, usa il fallback procedurale.
+   */
   getModel(id, fallbackGenerator = null) {
-    let src = this.models.get(id);
-    if (!src) {
-      const reg = MODEL_REGISTRY[id] || Object.values(MODEL_REGISTRY).find((r) => r.id === id);
-      if (reg) src = this.models.get(reg.id) || this.models.get(reg.file);
+    const style = this.settings?.get?.('graphics.modelStyle') ?? this.settings?.modelStyle ?? 'gltf';
+    if (style === 'gltf') {
+      let src = this.models.get(id);
+      if (!src) {
+        const reg = MODEL_REGISTRY[id] || Object.values(MODEL_REGISTRY).find((r) => r.id === id);
+        if (reg) src = this.models.get(reg.id) || this.models.get(reg.file);
+      }
+      if (src) {
+        const clone = src.clone(true);
+        this._prepareMesh(clone);
+        return clone;
+      }
     }
-    if (src) return src.clone(true);
+
     if (fallbackGenerator) return fallbackGenerator();
-    return createFallback(id);
+    return createMesh(id);
   }
 }
