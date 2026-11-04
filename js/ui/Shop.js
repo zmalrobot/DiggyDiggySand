@@ -1,8 +1,9 @@
 // Interfaccia Negozio Upgrade / Officina: cassetto scorrevole a tema Atlantean-Kemet,
 // schede per rami Manuale / Flotta, costi dinamici e pulsanti con bagliore dorato.
 import { events } from '../core/Events.js';
-import { UPGRADE_CATALOG, BRANCHES, getUpgradeCost, buyUpgrade } from '../systems/Upgrades.js';
+import { UPGRADE_CATALOG, BRANCHES, getUpgradeCost, buyUpgrade, getUpgradeName, getUpgradeDesc } from '../systems/Upgrades.js';
 import { formatNumber } from './Hud.js';
+import { i18n } from '../core/I18n.js';
 
 export class Shop {
   constructor(root, { state, audio }) {
@@ -17,6 +18,7 @@ export class Shop {
       events.on('sand:changed', () => this.updateAffordability()),
       events.on('upgrade:bought', () => this.render()),
       events.on('hud:shop', () => this.toggle()),
+      events.on('language:changed', () => this.refresh()),
     ];
 
     document.addEventListener('keydown', (e) => {
@@ -28,18 +30,18 @@ export class Shop {
     this.root.className = 'shop-container';
     this.root.innerHTML = `
       <div class="shop-backdrop"></div>
-      <aside class="panel shop-drawer" role="dialog" aria-label="Officina degli Scavi">
+      <aside class="panel shop-drawer" role="dialog" aria-label="${i18n.t('shop.title') || 'Officina degli Scavi'}">
         <div class="shop-header">
           <div class="shop-title-wrap">
-            <h2 class="shop-title">Officina delle Dune</h2>
-            <div class="shop-subtitle muted">Forgia la tecnologia e comanda la flotta</div>
+            <h2 class="shop-title" data-i18n="shop.title">${i18n.t('shop.title') || 'Officina delle Dune'}</h2>
+            <div class="shop-subtitle muted" data-i18n="shop.subtitle">${i18n.t('shop.subtitle') || 'Forgia la tecnologia e comanda la flotta'}</div>
           </div>
-          <button type="button" class="btn shop-close-btn" data-act="close" title="Chiudi Officina" aria-label="Chiudi">&times;</button>
+          <button type="button" class="btn shop-close-btn" data-act="close" data-i18n-title="common.close" data-i18n-aria-label="common.close" title="${i18n.t('common.close') || 'Chiudi'}" aria-label="${i18n.t('common.close') || 'Chiudi'}">&times;</button>
         </div>
 
         <div class="shop-tabs tabs" role="tablist">
-          <button type="button" class="tab active" data-tab="manual">Attrezzi Manuali</button>
-          <button type="button" class="tab" data-tab="fleet">Flotta Autonoma</button>
+          <button type="button" class="tab active" data-tab="manual" data-i18n="shop.tabs.manual">${i18n.t('shop.tabs.manual') || 'Attrezzi Manuali'}</button>
+          <button type="button" class="tab" data-tab="fleet" data-i18n="shop.tabs.fleet">${i18n.t('shop.tabs.fleet') || 'Flotta Autonoma'}</button>
         </div>
 
         <div class="shop-content" data-el="content">
@@ -99,6 +101,7 @@ export class Shop {
   }
 
   render() {
+    i18n.updateDOM(this.root);
     const list = Object.values(UPGRADE_CATALOG).filter((u) => u.branch === this.activeTab);
     this.content.innerHTML = list.map((def) => this._renderCard(def)).join('');
     this.updateAffordability();
@@ -114,17 +117,24 @@ export class Shop {
     const cost = getUpgradeCost(def, lvl);
     const canAfford = this.state.sand >= cost && !isMax;
 
+    const name = getUpgradeName(def);
+    const desc = getUpgradeDesc(def);
+    const benefit = def.getBenefit(lvl);
+    const maxText = i18n.t('shop.maxLevel') || 'MAX';
+    const buyText = i18n.t('shop.buyAction') || 'Acquista';
+    const completedText = i18n.t('shop.maxedAction') || 'Completato';
+
     return `
       <div class="panel surface upgrade-card ${isMax ? 'maxed' : ''}" data-card="${def.id}">
         <div class="upgrade-card-head">
-          <span class="upgrade-name">${def.name}</span>
-          <span class="upgrade-level num">Lv. ${lvl}${isMax ? ' (MAX)' : ` / ${def.maxLevel}`}</span>
+          <span class="upgrade-name">${name}</span>
+          <span class="upgrade-level num">Lv. ${lvl}${isMax ? ` (${maxText})` : ` / ${def.maxLevel}`}</span>
         </div>
-        <p class="upgrade-desc muted">${def.desc}</p>
-        <div class="upgrade-benefit accent">${def.getBenefit(lvl)}</div>
+        <p class="upgrade-desc muted">${desc}</p>
+        <div class="upgrade-benefit accent">${benefit}</div>
         <div class="upgrade-card-foot">
           <button type="button" class="btn btn-buy ${canAfford ? 'glow' : ''}" data-buy="${def.id}" ${canAfford ? '' : 'disabled'}>
-            <span class="buy-action">${isMax ? 'Completato' : 'Acquista'}</span>
+            <span class="buy-action">${isMax ? completedText : buyText}</span>
             ${isMax ? '' : `<span class="buy-cost num">${formatNumber(cost)} ⟡</span>`}
           </button>
         </div>

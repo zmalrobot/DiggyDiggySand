@@ -1,4 +1,6 @@
 // Modali e toast in stile vetro/oro. Il contenitore #modal-root si nasconde da solo quando è vuoto.
+import { i18n } from '../core/I18n.js';
+
 export class ModalManager {
   constructor(root) {
     this.root = root;
@@ -32,7 +34,18 @@ export class ModalManager {
     } else if (content) body.append(content);
     panel.append(body);
 
-    const handle = { close: () => {} };
+    const handle = {
+      close: () => {},
+      panel,
+      setTitle: (newTitle) => {
+        const h = panel.querySelector('.modal-title');
+        if (h) h.textContent = newTitle;
+      },
+      setActionLabel: (index, newLabel) => {
+        const btns = panel.querySelectorAll('.modal-actions .btn');
+        if (btns[index]) btns[index].textContent = newLabel;
+      },
+    };
     if (actions.length) {
       const bar = document.createElement('div');
       bar.className = 'modal-actions';
@@ -76,7 +89,13 @@ export class ModalManager {
   }
 
   /** Conferma di sicurezza. Risolve true/false. */
-  confirm({ title, message, confirmLabel = 'Conferma', cancelLabel = 'Annulla', danger = false }) {
+  confirm({
+    title,
+    message,
+    confirmLabel = i18n.t('common.confirm') || 'Conferma',
+    cancelLabel = i18n.t('common.cancel') || 'Annulla',
+    danger = false,
+  }) {
     return new Promise((resolve) => {
       let answered = false;
       const answer = (v) => { answered = true; resolve(v); };

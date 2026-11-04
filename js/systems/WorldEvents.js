@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { events } from '../core/Events.js';
 import { toast } from '../ui/Modal.js';
+import { i18n } from '../core/I18n.js';
 
 export class WorldEvents {
   constructor({ scene, terrain, state, audio, particles, banner, modal }) {
@@ -107,12 +108,13 @@ export class WorldEvents {
     }
 
     this.state.sandMultiplier = 1.5;
-    events.emit('event:boost', { active: true, label: '⚡ Tempesta: +50% Sabbia (30s)' });
+    const boostLabel = i18n.t('events.sandstorm.boost') || '⚡ Tempesta: +50% Sabbia (30s)';
+    events.emit('event:boost', { active: true, label: boostLabel });
 
     this.banner?.show({
       icon: '🌪️',
-      title: 'Tempesta di Sabbia!',
-      message: 'Un vento impetuoso solleva la duna: +50% Sabbia per ogni colpo (30s)!',
+      title: i18n.t('events.sandstorm.title') || 'Tempesta di Sabbia!',
+      message: i18n.t('events.sandstorm.message') || 'Un vento impetuoso solleva la duna: +50% Sabbia per ogni colpo (30s)!',
       duration: 6000,
     });
   }
@@ -124,9 +126,9 @@ export class WorldEvents {
 
     this.banner?.show({
       icon: '🐪',
-      title: 'Carovana Nomade',
-      message: 'Un mercante del deserto si è accampato ai margini dello scavo!',
-      actionLabel: 'Commercia',
+      title: i18n.t('events.merchant.title') || 'Carovana Nomade',
+      message: i18n.t('events.merchant.message') || 'Un mercante del deserto si è accampato ai margini dello scavo!',
+      actionLabel: i18n.t('events.merchant.trade') || 'Commercia',
       duration: 10000,
       onAction: () => this.openMerchantOffer(),
     });
@@ -180,13 +182,18 @@ export class WorldEvents {
     if (!this.activeEvent || this.activeEvent !== 'merchant') return;
     const content = document.createElement('div');
     content.className = 'merchant-modal';
+    const quote = i18n.t('events.merchant.quote') || '"Il deserto nasconde segreti a chi ha fretta, ma ricompensa chi sa commerciare."';
+    const offerTitle = i18n.t('events.merchant.offerTitle') || 'Iper-Scavo Nomade';
+    const offerDesc = i18n.t('events.merchant.offerDesc') || '+100% Sabbia per i prossimi 45 secondi.';
+    const buyBtnText = i18n.t('events.merchant.buyBtn', { cost: 150 }) || 'Acquista (150 Sabbia)';
+
     content.innerHTML = `
-      <p class="muted">"Il deserto nasconde segreti a chi ha fretta, ma ricompensa chi sa commerciare."</p>
+      <p class="muted">${quote}</p>
       <div class="merchant-offers">
         <div class="merchant-offer-card panel">
-          <div class="offer-title">Iper-Scavo Nomade</div>
-          <div class="offer-desc">+100% Sabbia per i prossimi 45 secondi.</div>
-          <button type="button" class="btn btn-offer" data-offer="boost">Acquista (150 Sabbia)</button>
+          <div class="offer-title">${offerTitle}</div>
+          <div class="offer-desc">${offerDesc}</div>
+          <button type="button" class="btn btn-offer" data-offer="boost">${buyBtnText}</button>
         </div>
       </div>
     `;
@@ -198,19 +205,20 @@ export class WorldEvents {
         this.state.spend(150);
         this.state.sandMultiplier = 2.0;
         this.boostTimer = 45;
-        events.emit('event:boost', { active: true, label: '✨ Iper-Scavo (x2.0): 45s' });
-        toast('Hai acquistato Iper-Scavo Nomade! (+100% Sabbia per 45s)');
+        const bLabel = i18n.t('events.merchant.boost') || '✨ Iper-Scavo (x2.0): 45s';
+        events.emit('event:boost', { active: true, label: bLabel });
+        toast(i18n.t('events.merchant.purchased') || 'Hai acquistato Iper-Scavo Nomade! (+100% Sabbia per 45s)');
         this.modal?.close?.();
         this._endActiveEvent();
       } else {
-        toast('Sabbia insufficiente per questa merce!');
+        toast(i18n.t('events.merchant.notEnough') || 'Sabbia insufficiente per questa merce!');
       }
     });
 
     this.modal?.open?.({
-      title: 'Mercante Nomade',
+      title: i18n.t('events.merchant.title') || 'Mercante Nomade',
       content,
-      actions: [{ label: 'Rinuncia' }],
+      actions: [{ label: i18n.t('events.merchant.decline') || 'Rinuncia' }],
     });
   }
 
@@ -225,7 +233,7 @@ export class WorldEvents {
     this.stormTransition = 0;
     this.stormFactor = 0;
     events.emit('event:boost', { active: false, label: '' });
-    toast('La tempesta di sabbia si è placata.');
+    toast(i18n.t('events.sandstorm.ended') || 'La tempesta di sabbia si è placata.');
     this.banner?.hide?.();
   }
 
@@ -234,7 +242,7 @@ export class WorldEvents {
       this._finalizeStormEnd();
     } else if (this.activeEvent === 'merchant') {
       this._removeMerchantCamp();
-      toast('La carovana nomade è ripartita per le dune.');
+      toast(i18n.t('events.merchant.departed') || 'La carovana nomade è ripartita per le dune.');
       this.activeEvent = null;
       this.eventDuration = 0;
       this.banner?.hide?.();

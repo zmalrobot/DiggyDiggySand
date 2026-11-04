@@ -1,5 +1,6 @@
 // Modale Guardaroba: personalizzazione skin pala, tinte sabbia e macchinari.
 import { i18n } from '../core/I18n.js';
+import { events } from '../core/Events.js';
 import { COSMETICS_CATALOG } from '../systems/CosmeticsManager.js';
 
 export class WardrobeModal {
@@ -10,11 +11,21 @@ export class WardrobeModal {
     this.audio = audio;
     this.game = game;
     this.currentTab = 'shovel';
+    this.root = null;
+    this.handle = null;
+
+    events.on('language:changed', () => {
+      if (this.handle && this.root) {
+        this._buildBody();
+        this.handle.setTitle?.(i18n.t('wardrobe.title') || 'Guardaroba delle Dune');
+        this.handle.setActionLabel?.(0, i18n.t('common.close') || 'Chiudi');
+      }
+    });
   }
 
-  open() {
-    const root = document.createElement('div');
-    root.className = 'wardrobe-modal';
+  _buildBody() {
+    if (!this.root) return;
+    this.root.innerHTML = '';
 
     const headerBar = document.createElement('div');
     headerBar.className = 'wardrobe-header-bar';
@@ -27,9 +38,9 @@ export class WardrobeModal {
     const tabBar = document.createElement('div');
     tabBar.className = 'tabs';
     tabBar.innerHTML = `
-      <button type="button" class="tab active" data-tab="shovel">${i18n.t('wardrobe.tabShovel') || 'Pale & Strumenti'}</button>
-      <button type="button" class="tab" data-tab="sand">${i18n.t('wardrobe.tabSand') || 'Biomi Sabbia'}</button>
-      <button type="button" class="tab" data-tab="machinery">${i18n.t('wardrobe.tabMachinery') || 'Macchinari'}</button>
+      <button type="button" class="tab ${this.currentTab === 'shovel' ? 'active' : ''}" data-tab="shovel">${i18n.t('wardrobe.tabShovel') || 'Pale & Strumenti'}</button>
+      <button type="button" class="tab ${this.currentTab === 'sand' ? 'active' : ''}" data-tab="sand">${i18n.t('wardrobe.tabSand') || 'Biomi Sabbia'}</button>
+      <button type="button" class="tab ${this.currentTab === 'machinery' ? 'active' : ''}" data-tab="machinery">${i18n.t('wardrobe.tabMachinery') || 'Macchinari'}</button>
     `;
 
     const body = document.createElement('div');
@@ -39,7 +50,7 @@ export class WardrobeModal {
     container.className = 'wardrobe-grid';
     body.append(container);
 
-    root.append(headerBar, tabBar, body);
+    this.root.append(headerBar, tabBar, body);
 
     const render = () => {
       this._renderGrid(container, this.currentTab, headerBar);
@@ -55,23 +66,29 @@ export class WardrobeModal {
     });
 
     render();
+  }
+
+  open() {
+    this.root = document.createElement('div');
+    this.root.className = 'wardrobe-modal';
+    this._buildBody();
 
     this.handle = this.modal.open({
       title: i18n.t('wardrobe.title') || 'Guardaroba delle Dune',
-      content: root,
+      content: this.root,
       wide: true,
       actions: [{ label: i18n.t('common.close') || 'Chiudi' }],
+      onClose: () => {
+        this.handle = null;
+        this.root = null;
+      },
     });
   }
 
   close() {
     this.handle?.close?.();
     this.handle = null;
-  }
-
-  close() {
-    this.handle?.close?.();
-    this.handle = null;
+    this.root = null;
   }
 
   _renderGrid(container, category, headerBar) {

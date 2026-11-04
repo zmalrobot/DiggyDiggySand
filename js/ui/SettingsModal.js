@@ -1,25 +1,30 @@
 // Modale impostazioni: ogni controllo scrive subito su SettingsManager e si risincronizza ai cambi esterni.
 import { SCHEMA } from '../core/SettingsManager.js';
 import { i18n } from '../core/I18n.js';
+import { events } from '../core/Events.js';
 import { UPGRADE_CATALOG } from '../systems/Upgrades.js';
 import { toast } from './Modal.js';
 
-const TABS = [
-  { id: 'audio', label: 'Audio' },
-  { id: 'graphics', label: 'Grafica' },
-  { id: 'controls', label: 'Controlli' },
-  { id: 'data', label: 'Dati & Lingua' },
-  { id: 'cheats', label: 'Trucchi' },
-];
-
-const OPTION_LABELS = {
-  'graphics.renderScale': { 0.5: '0.5×', 0.75: '0.75×', 1: '1.0×' },
-  'graphics.shadows': { off: 'Disattivate', low: 'Basse', high: 'Alte' },
-  'graphics.particles': { low: 'Basse', med: 'Medie', high: 'Alte' },
-  'graphics.dayNightCycle': { auto: 'Automatico (Dinamico)', day: 'Sempre Giorno', night: 'Sempre Notte' },
-  'graphics.fpsCap': { 30: '30 FPS', 60: '60 FPS', 0: 'Illimitato' },
-  'game.language': { it: 'Italiano', en: 'English' },
-};
+function getOptionLabel(key, val) {
+  const v = String(val);
+  if (key === 'graphics.renderScale') return `${v}×`;
+  if (key === 'graphics.shadows') {
+    return i18n.t(`settings.shadowsOptions.${v}`) || (v === 'off' ? 'Disattivate' : v === 'low' ? 'Basse' : 'Alte');
+  }
+  if (key === 'graphics.particles') {
+    return i18n.t(`settings.graphicsOptions.${v}`) || (v === 'low' ? 'Basse' : v === 'med' ? 'Medie' : 'Alte');
+  }
+  if (key === 'graphics.dayNightCycle') {
+    return i18n.t(`settings.dayNightOptions.${v}`) || (v === 'auto' ? 'Automatico' : v === 'day' ? 'Giorno' : 'Notte');
+  }
+  if (key === 'graphics.fpsCap') {
+    return i18n.t(`settings.fpsOptions.${v}`) || (v === '0' ? 'Illimitato' : `${v} FPS`);
+  }
+  if (key === 'game.language') {
+    return i18n.t(`settings.languageOptions.${v}`) || (v === 'it' ? 'Italiano' : 'English');
+  }
+  return v;
+}
 
 export class SettingsModal {
   constructor({ settings, modal, save, audio, game = null }) {
@@ -28,6 +33,18 @@ export class SettingsModal {
     this.save = save;
     this.audio = audio;
     this.game = game;
+    this.currentTab = 'audio';
+    this.unsubs = [];
+    this.modalRoot = null;
+    this.handle = null;
+
+    events.on('language:changed', () => {
+      if (this.handle && this.modalRoot) {
+        this._renderModalBody(this.modalRoot, this.currentTab);
+        this.handle.setTitle?.(i18n.t('settings.title') || 'Impostazioni');
+        this.handle.setActionLabel?.(0, i18n.t('common.close') || 'Chiudi');
+      }
+    });
   }
 
   get activeGame() {
@@ -39,9 +56,33 @@ export class SettingsModal {
   }
 
   open() {
+    this.modalRoot = document.createElement('div');
+    this.modalRoot.className = 'settings settings-modal';
+    this._renderModalBody(this.modalRoot, this.currentTab || 'audio');
+
+    this.handle = this.modal.open({
+      title: i18n.t('settings.title') || 'Impostazioni',
+      content: this.modalRoot,
+      wide: true,
+      actions: [{ label: i18n.t('common.close') || 'Chiudi' }],
+      onClose: () => {
+        this.unsubs.forEach((u) => u());
+        this.unsubs = [];
+        this.handle = null;
+        this.modalRoot = null;
+      },
+    });
+  }
+
+  close() {
+    this.handle?.close?.();
+  }
+
+  _renderModalBody(root, activeTabId = 'audio') {
+    this.unsubs.forEach((u) => u());
     this.unsubs = [];
-    const root = document.createElement('div');
-    root.className = 'settings settings-modal';
+    root.innerHTML = '';
+
     const tabBar = document.createElement('div');
     tabBar.className = 'tabs';
     tabBar.setAttribute('role', 'tablist');
@@ -70,7 +111,9 @@ export class SettingsModal {
       pages[t.id].className = 'tab-page';
       body.append(pages[t.id]);
     }
+
     const select = (id) => {
+      this.currentTab = id;
       tabBar.querySelectorAll('.tab').forEach((b) => b.classList.toggle('active', b.dataset.tab === id));
       Object.entries(pages).forEach(([k, p]) => p.classList.toggle('hidden', k !== id));
     };
@@ -80,20 +123,9 @@ export class SettingsModal {
     this._controlsTab(pages.controls);
     this._dataTab(pages.data);
     this._cheatsTab(pages.cheats);
+
     root.append(tabBar, body);
-    select('audio');
-
-    this.handle = this.modal.open({
-      title: 'Impostazioni',
-      content: root,
-      wide: true,
-      actions: [{ label: 'Chiudi' }],
-      onClose: () => this.unsubs.forEach((u) => u()),
-    });
-  }
-
-  close() {
-    this.handle?.close?.();
+    select(activeTabId);
   }
 
   _row(label, control, hint) {
@@ -134,7 +166,10 @@ export class SettingsModal {
     track.className = 'track';
     const span = document.createElement('span');
     span.className = 'toggle-text';
-    const sync = (v) => { input.checked = v; span.textContent = v ? 'Attivo' : 'Disattivo'; };
+    const sync = (v) => {
+      input.checked = v;
+      span.textContent = v ? (i18n.t('settings.active') || 'Attivo') : (i18n.t('settings.inactive') || 'Disattivo');
+    };
     this.unsubs.push(this.settings.subscribe(key, sync, { immediate: true }));
     input.addEventListener('change', () => this.settings.set(key, input.checked));
     label.append(input, track, span);
@@ -151,46 +186,49 @@ export class SettingsModal {
     for (const v of def.values) {
       const o = document.createElement('option');
       o.value = String(v);
-      o.textContent = OPTION_LABELS[key]?.[v] ?? String(v);
+      o.textContent = getOptionLabel(key, v);
       sel.append(o);
     }
     this.unsubs.push(this.settings.subscribe(key, (v) => { sel.value = String(v); }, { immediate: true }));
-    sel.addEventListener('change', () => this.settings.set(key, sel.value));
+    sel.addEventListener('change', () => {
+      const val = key === 'graphics.renderScale' || key === 'graphics.fpsCap' ? Number(sel.value) : sel.value;
+      this.settings.set(key, val);
+    });
     return sel;
   }
 
   _audioTab(p) {
     p.append(
-      this._row('Volume generale', this._slider('audio.master')),
-      this._row('Musica', this._slider('audio.music')),
-      this._row('Effetti sonori', this._slider('audio.sfx', { previewSfx: true })),
-      this._row('Muto', this._toggle('audio.mute', 'Muto')),
+      this._row(i18n.t('settings.masterVolume') || 'Volume generale', this._slider('audio.master')),
+      this._row(i18n.t('settings.musicVolume') || 'Musica', this._slider('audio.music')),
+      this._row(i18n.t('settings.sfxVolume') || 'Effetti sonori', this._slider('audio.sfx', { previewSfx: true })),
+      this._row(i18n.t('settings.mute') || 'Muto', this._toggle('audio.mute', i18n.t('settings.mute') || 'Muto')),
     );
     if (!this.audio?.supported) {
       const n = document.createElement('p');
       n.className = 'muted';
-      n.textContent = 'Il tuo browser non supporta Web Audio: l\'audio è disattivato.';
+      n.textContent = i18n.t('settings.webAudioUnsupported') || 'Il tuo browser non supporta Web Audio: l\'audio è disattivato.';
       p.append(n);
     }
   }
 
   _graphicsTab(p) {
     p.append(
-      this._row('Risoluzione di rendering', this._select('graphics.renderScale'), 'Scala della risoluzione interna'),
-      this._row('Ombre', this._select('graphics.shadows')),
-      this._row('Qualità particelle', this._select('graphics.particles')),
-      this._row('Post-Processing (Bloom & Vignette)', this._toggle('graphics.postProcessing', 'Post-Processing'), 'Bagliori emissivi e color grading'),
-      this._row('Particelle Atmosferiche', this._toggle('graphics.dustMotes', 'Particelle Atmosferiche'), 'Pulviscolo fluttuante nel cratere'),
-      this._row(i18n.t('settings.dayNight') || 'Ciclo Giorno/Notte', this._select('graphics.dayNightCycle'), 'Auto / Giorno / Notte'),
-      this._row('Limite FPS', this._select('graphics.fpsCap')),
+      this._row(i18n.t('settings.renderScale') || 'Risoluzione di rendering', this._select('graphics.renderScale'), i18n.t('settings.renderScaleHint') || 'Scala della risoluzione interna'),
+      this._row(i18n.t('settings.shadows') || 'Ombre', this._select('graphics.shadows')),
+      this._row(i18n.t('settings.graphicsQuality') || 'Qualità particelle', this._select('graphics.particles')),
+      this._row(i18n.t('settings.postProcessing') || 'Post-Processing (Bloom & Vignette)', this._toggle('graphics.postProcessing', 'Post-Processing'), i18n.t('settings.postProcessingHint') || 'Bagliori emissivi e color grading'),
+      this._row(i18n.t('settings.dustMotes') || 'Particelle Atmosferiche', this._toggle('graphics.dustMotes', 'Particelle Atmosferiche'), i18n.t('settings.dustMotesHint') || 'Pulviscolo fluttuante nel cratere'),
+      this._row(i18n.t('settings.dayNight') || 'Ciclo Giorno/Notte', this._select('graphics.dayNightCycle'), i18n.t('settings.dayNightHint') || 'Auto / Giorno / Notte'),
+      this._row(i18n.t('settings.fpsCap') || 'Limite FPS', this._select('graphics.fpsCap')),
     );
   }
 
   _controlsTab(p) {
     p.append(
-      this._row('Sensibilità camera', this._slider('controls.cameraSens', { format: (v) => `${Number(v).toFixed(2)}×` })),
-      this._row('Inverti asse Y', this._toggle('controls.invertY', 'Inverti asse Y')),
-      this._row('Screen shake', this._toggle('controls.screenShake', 'Screen shake')),
+      this._row(i18n.t('settings.cameraSens') || 'Sensibilità camera', this._slider('controls.cameraSens', { format: (v) => `${Number(v).toFixed(2)}×` })),
+      this._row(i18n.t('settings.invertY') || 'Inverti asse Y', this._toggle('controls.invertY', i18n.t('settings.invertY') || 'Inverti asse Y')),
+      this._row(i18n.t('settings.screenShake') || 'Screen shake', this._toggle('controls.screenShake', i18n.t('settings.screenShake') || 'Screen shake')),
     );
   }
 
@@ -203,7 +241,7 @@ export class SettingsModal {
     area.className = 'json-area';
     area.rows = 6;
     area.spellcheck = false;
-    area.placeholder = 'Incolla qui un JSON di impostazioni da importare…';
+    area.placeholder = i18n.t('settings.jsonPlaceholder') || 'Incolla qui un JSON di impostazioni da importare…';
     const status = document.createElement('div');
     status.className = 'muted data-status';
 
@@ -219,44 +257,59 @@ export class SettingsModal {
     const io = document.createElement('div');
     io.className = 'btn-row';
     io.append(
-      mkBtn('Esporta JSON', () => {
+      mkBtn(i18n.t('settings.exportJson') || 'Esporta JSON', () => {
         area.value = this.settings.exportJSON();
-        status.textContent = 'Impostazioni esportate nel riquadro.';
+        status.textContent = i18n.t('settings.exportedStatus') || 'Impostazioni esportate nel riquadro.';
       }),
-      mkBtn('Importa JSON', () => {
+      mkBtn(i18n.t('settings.importJson') || 'Importa JSON', () => {
         const r = this.settings.importJSON(area.value);
-        status.textContent = r.ok ? `Importate ${r.applied} impostazioni modificate.` : `Errore: ${r.error}`;
+        status.textContent = r.ok
+          ? (i18n.t('settings.importedStatus', { count: r.applied }) || `Importate ${r.applied} impostazioni modificate.`)
+          : `${i18n.t('settings.errorStatus') || 'Errore'}: ${r.error}`;
       }),
     );
 
     const reset = document.createElement('div');
     reset.className = 'btn-row';
     reset.append(
-      mkBtn('Ripristina impostazioni', async () => {
+      mkBtn(i18n.t('settings.resetDefaults') || 'Ripristina impostazioni', async () => {
         const ok = await this.modal.confirm({
-          title: 'Ripristinare i valori predefiniti?',
-          message: 'Tutte le impostazioni torneranno ai valori iniziali. Il salvataggio di gioco non viene toccato.',
-          confirmLabel: 'Ripristina',
+          title: i18n.t('settings.resetTitle') || 'Ripristinare i valori predefiniti?',
+          message: i18n.t('settings.resetMsg') || 'Tutte le impostazioni torneranno ai valori iniziali. Il salvataggio di gioco non viene toccato.',
+          confirmLabel: i18n.t('settings.resetConfirm') || 'Ripristina',
+          cancelLabel: i18n.t('common.cancel') || 'Annulla',
         });
-        if (ok) { this.settings.resetDefaults(); status.textContent = 'Impostazioni ripristinate.'; }
+        if (ok) {
+          this.settings.resetDefaults();
+          status.textContent = i18n.t('settings.resetDone') || 'Impostazioni ripristinate.';
+        }
       }),
-      mkBtn('Elimina salvataggio', async () => {
-        if (!this.save.hasValidSave()) { status.textContent = 'Nessun salvataggio da eliminare.'; return; }
+      mkBtn(i18n.t('settings.deleteSave') || 'Elimina salvataggio', async () => {
+        if (!this.save.hasValidSave()) {
+          status.textContent = i18n.t('settings.noSaveToDelete') || 'Nessun salvataggio da eliminare.';
+          return;
+        }
         const ok = await this.modal.confirm({
-          title: 'Eliminare il salvataggio?',
-          message: 'La spedizione in corso andrà persa per sempre. L\'azione non è reversibile.',
-          confirmLabel: 'Elimina definitivamente',
+          title: i18n.t('settings.deleteSaveTitle') || 'Eliminare il salvataggio?',
+          message: i18n.t('settings.deleteSaveMsg') || 'La spedizione in corso andrà persa per sempre. L\'azione non è reversibile.',
+          confirmLabel: i18n.t('settings.deleteSaveConfirm') || 'Elimina definitivamente',
+          cancelLabel: i18n.t('common.cancel') || 'Annulla',
           danger: true,
         });
         if (ok) {
           this.save.clear();
-          status.textContent = 'Salvataggio eliminato.';
+          status.textContent = i18n.t('settings.saveDeleted') || 'Salvataggio eliminato.';
           document.dispatchEvent(new CustomEvent('dds:save-cleared'));
         }
       }, true),
     );
 
-    p.append(this._row('Impostazioni', io), area, this._row('Reset', reset), status);
+    p.append(
+      this._row(i18n.t('settings.settingsBackup') || 'Backup Impostazioni', io),
+      area,
+      this._row(i18n.t('settings.resetSection') || 'Reset & Dati', reset),
+      status
+    );
   }
 
   async _requireCheatConfirmation(actionFn) {
@@ -324,7 +377,7 @@ export class SettingsModal {
       this._requireCheatConfirmation(() => {
         this.activeState?.addSand(100000);
         this.activeGame?.saveNow?.();
-        toast('+100.000 Sabbia accreditata!');
+        toast(i18n.t('settings.cheats.sandAdded100k') || '+100.000 Sabbia accreditata!');
       });
     });
 
@@ -337,7 +390,7 @@ export class SettingsModal {
       this._requireCheatConfirmation(() => {
         this.activeState?.addSand(1000000);
         this.activeGame?.saveNow?.();
-        toast('+1.000.000 Sabbia accreditata!');
+        toast(i18n.t('settings.cheats.sandAdded1M') || '+1.000.000 Sabbia accreditata!');
       });
     });
     sandRow.append(btn100k, btn1M);
@@ -361,7 +414,7 @@ export class SettingsModal {
           }
           s?.setCompletion(fraction);
           g?.saveNow?.();
-          toast(`Completamento scavo impostato al ${pct}%`);
+          toast(i18n.t('settings.cheats.compSet', { pct }) || `Completamento scavo impostato al ${pct}%`);
         });
       });
       return b;
@@ -379,10 +432,10 @@ export class SettingsModal {
     const endingSel = document.createElement('select');
     endingSel.className = 'select';
     const endings = [
-      { id: 'curse', label: 'La Maledizione di Atlantide (Curse)' },
-      { id: 'treasure', label: 'Il Tesoro d\'Oro Puro (Treasure)' },
-      { id: 'business', label: 'L\'Impresa di Scavo SRL (Business)' },
-      { id: 'secret', label: 'L\'Ascensione di Atlantide (Secret)' },
+      { id: 'curse', label: i18n.t('endings.curse.title') || 'La Maledizione di Atlantide' },
+      { id: 'treasure', label: i18n.t('endings.treasure.title') || 'Il Tesoro d\'Oro Puro' },
+      { id: 'business', label: i18n.t('endings.business.title') || 'L\'Impresa di Scavo SRL' },
+      { id: 'secret', label: i18n.t('endings.secret.title') || 'L\'Ascensione di Atlantide' },
     ];
     endings.forEach((e) => {
       const opt = document.createElement('option');
@@ -412,7 +465,7 @@ export class SettingsModal {
         g?.saveNow?.();
         this.handle?.close?.();
         g?.pauseMenu?.close?.();
-        toast(`Finale forzato: ${endingId}`);
+        toast(i18n.t('settings.cheats.endingForced', { ending: endingId }) || `Finale forzato: ${endingId}`);
       });
     });
     endingRow.append(endingSel, triggerEndingBtn);
@@ -433,7 +486,7 @@ export class SettingsModal {
           g.saveNow?.();
           this.handle?.close?.();
           g.pauseMenu?.close?.();
-          toast('Tempesta di Sabbia scatenata!');
+          toast(i18n.t('settings.cheats.stormTriggered') || 'Tempesta di Sabbia scatenata!');
         }
       });
     });
@@ -450,7 +503,7 @@ export class SettingsModal {
           g.saveNow?.();
           this.handle?.close?.();
           g.pauseMenu?.close?.();
-          toast('Carovana Nomade arrivata!');
+          toast(i18n.t('settings.cheats.merchantTriggered') || 'Carovana Nomade arrivata!');
         }
       });
     });
@@ -468,7 +521,9 @@ export class SettingsModal {
     godTrack.className = 'track';
     const godText = document.createElement('span');
     godText.className = 'toggle-text';
-    godText.textContent = godInput.checked ? 'Attivo' : 'Disattivo';
+    godText.textContent = godInput.checked
+      ? (i18n.t('settings.active') || 'Attivo')
+      : (i18n.t('settings.inactive') || 'Disattivo');
 
     godInput.addEventListener('change', async () => {
       if (godInput.checked) {
@@ -477,18 +532,18 @@ export class SettingsModal {
           confirmed = true;
           if (this.activeState) this.activeState.godMode = true;
           this.activeGame?.saveNow?.();
-          godText.textContent = 'Attivo';
-          toast('Super Pala (God Mode) Attivata!');
+          godText.textContent = i18n.t('settings.active') || 'Attivo';
+          toast(i18n.t('settings.cheats.godModeOn') || 'Super Pala (God Mode) Attivata!');
         });
         if (!confirmed || !this.activeState?.cheatsEnabled) {
           godInput.checked = false;
-          godText.textContent = 'Disattivo';
+          godText.textContent = i18n.t('settings.inactive') || 'Disattivo';
         }
       } else {
         if (this.activeState) this.activeState.godMode = false;
         this.activeGame?.saveNow?.();
-        godText.textContent = 'Disattivo';
-        toast('Super Pala Disattivata.');
+        godText.textContent = i18n.t('settings.inactive') || 'Disattivo';
+        toast(i18n.t('settings.cheats.godModeOff') || 'Super Pala Disattivata.');
       }
     });
     godLabel.append(godInput, godTrack, godText);
@@ -517,11 +572,10 @@ export class SettingsModal {
         g?.shop?.render?.();
         g?.economy?.recalculateSPS?.();
         g?.saveNow?.();
-        toast('Tutti gli upgrade sbloccati al massimo!');
+        toast(i18n.t('settings.cheats.maxUpgradesDone') || 'Tutti gli upgrade sbloccati al massimo!');
       });
     });
     upgradesRow.append(maxUpgradesBtn);
     p.append(this._row(i18n.t('settings.cheats.upgradesSection') || 'Potenziamenti Massimi', upgradesRow));
   }
 }
-

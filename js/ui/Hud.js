@@ -1,6 +1,7 @@
 // HUD di gioco: contatore Sabbia, rateo passivo (+X/s), barra di completamento (obelisco), pulsanti Officina/Menu
 // e modulo Georadar di profondità con visualizzazione a scansione sonar e letture criptiche.
 import { events } from '../core/Events.js';
+import { i18n } from '../core/I18n.js';
 
 const SUFFIXES = ['', 'k', 'M', 'B', 'T', 'Qa', 'Qi'];
 
@@ -45,6 +46,10 @@ export class Hud {
         if (id === 'georadar') this.refreshRadar(true);
       }),
       events.on('cheats:enabled', () => this.refresh()),
+      events.on('language:changed', () => {
+        i18n.updateDOM(this.root);
+        this.refreshRadar(false);
+      }),
       events.on('event:boost', ({ active, label }) => {
         if (this.el.boost) {
           if (active) {
@@ -63,27 +68,27 @@ export class Hud {
     this.root.innerHTML = `
       <div class="hud-top panel" role="status" aria-live="off">
         <div class="hud-block hud-sand">
-          <span class="hud-label">Sabbia</span>
+          <span class="hud-label" data-i18n="hud.sand">${i18n.t('hud.sand')}</span>
           <div class="hud-sand-row">
             <span class="hud-num" data-el="sand">0</span>
             <span class="hud-sps muted" data-el="sps">+0/s</span>
-            <div class="hud-cheats-badge hidden" data-el="cheatsBadge" title="Trucchi attivi — Obiettivi bloccati" aria-label="Trucchi attivi — Obiettivi bloccati">
+            <div class="hud-cheats-badge hidden" data-el="cheatsBadge" data-i18n-title="hud.cheatsActive" data-i18n-aria-label="hud.cheatsActive" title="${i18n.t('hud.cheatsActive')}" aria-label="${i18n.t('hud.cheatsActive')}">
               <span class="cheats-icon">🛠️</span>
-              <span class="cheats-tag">TRUCCHI</span>
+              <span class="cheats-tag" data-i18n="hud.cheatsTag">${i18n.t('hud.cheatsTag')}</span>
             </div>
           </div>
           <div class="hud-boost-tag hidden accent" data-el="boost"></div>
         </div>
         <div class="hud-block hud-progress">
           <div class="hud-progress-head">
-            <span class="hud-label">Deserto scavato</span>
+            <span class="hud-label" data-i18n="hud.desertExcavated">${i18n.t('hud.desertExcavated')}</span>
             <span class="hud-percent" data-el="percent">0.0%</span>
           </div>
           <div class="obelisk-bar glow" data-el="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="fill"></div></div>
         </div>
         <div class="hud-actions">
-          <button type="button" class="btn hud-btn hud-shop-btn" data-act="shop" data-el="shop">Officina</button>
-          <button type="button" class="btn hud-btn hud-menu-btn" data-act="menu" data-el="menu" title="Pausa / Impostazioni" aria-label="Pausa e Impostazioni">⚙️ Pausa</button>
+          <button type="button" class="btn hud-btn hud-shop-btn" data-act="shop" data-el="shop" data-i18n="hud.workshop">${i18n.t('hud.workshop')}</button>
+          <button type="button" class="btn hud-btn hud-menu-btn" data-act="menu" data-el="menu" data-i18n="hud.pause" data-i18n-title="hud.pauseTitle" data-i18n-aria-label="hud.pauseTitle" title="${i18n.t('hud.pauseTitle')}" aria-label="${i18n.t('hud.pauseTitle')}">${i18n.t('hud.pause')}</button>
         </div>
       </div>
 
@@ -96,10 +101,10 @@ export class Hud {
           </div>
           <div class="radar-info">
             <div class="radar-head">
-              <span class="radar-title">Georadar</span>
-              <span class="radar-status accent">ATTIVO</span>
+              <span class="radar-title" data-i18n="hud.radarTitle">${i18n.t('hud.radarTitle')}</span>
+              <span class="radar-status accent" data-i18n="hud.radarActive">${i18n.t('hud.radarActive')}</span>
             </div>
-            <div class="radar-reading muted" data-el="radarReading">Scansione in corso...</div>
+            <div class="radar-reading muted" data-el="radarReading" data-i18n="hud.radarScanning">${i18n.t('hud.radarScanning')}</div>
           </div>
         </div>
       </div>`;

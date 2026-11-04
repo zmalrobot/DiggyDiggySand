@@ -1,6 +1,7 @@
 // Modale Statistiche di Carriera e Galleria Trofei
 // Doppia scheda con numeri in font Syne, icone araldiche e stato di sblocco in tempo reale.
 import { i18n } from '../core/I18n.js';
+import { events } from '../core/Events.js';
 import { formatNumber } from './Hud.js';
 
 function formatDuration(totalSeconds) {
@@ -19,48 +20,69 @@ export class StatsModal {
     this.statsManager = statsManager;
     this.achievements = achievements;
     this.audio = audio;
+    this.currentTab = 'stats';
+    this.root = null;
+    this.handle = null;
+
+    events.on('language:changed', () => {
+      if (this.handle && this.root) {
+        this._renderContent();
+        this.handle.setTitle?.(i18n.t('stats.title'));
+        this.handle.setActionLabel?.(0, i18n.t('common.close'));
+      }
+    });
   }
 
-  open() {
-    const root = document.createElement('div');
-    root.className = 'stats-modal';
+  _renderContent() {
+    if (!this.root) return;
+    this.root.innerHTML = '';
 
     const tabBar = document.createElement('div');
     tabBar.className = 'tabs';
     tabBar.innerHTML = `
-      <button type="button" class="tab active" data-tab="stats">${i18n.t('stats.tabStats')}</button>
-      <button type="button" class="tab" data-tab="trophies">${i18n.t('stats.tabTrophies')} (${this.achievements?.getUnlockedCount?.() ?? 0}/${this.achievements?.getTotalCount?.() ?? 12})</button>
+      <button type="button" class="tab ${this.currentTab === 'stats' ? 'active' : ''}" data-tab="stats">${i18n.t('stats.tabStats')}</button>
+      <button type="button" class="tab ${this.currentTab === 'trophies' ? 'active' : ''}" data-tab="trophies">${i18n.t('stats.tabTrophies')} (${this.achievements?.getUnlockedCount?.() ?? 0}/${this.achievements?.getTotalCount?.() ?? 12})</button>
     `;
 
     const body = document.createElement('div');
     body.className = 'tab-body';
 
     const statsPage = document.createElement('div');
-    statsPage.className = 'tab-page';
+    statsPage.className = `tab-page ${this.currentTab === 'stats' ? '' : 'hidden'}`;
     this._renderStatsPage(statsPage);
 
     const trophiesPage = document.createElement('div');
-    trophiesPage.className = 'tab-page hidden';
+    trophiesPage.className = `tab-page ${this.currentTab === 'trophies' ? '' : 'hidden'}`;
     this._renderTrophiesPage(trophiesPage);
 
     body.append(statsPage, trophiesPage);
-    root.append(tabBar, body);
+    this.root.append(tabBar, body);
 
     tabBar.addEventListener('click', (e) => {
       const b = e.target.closest('.tab');
       if (!b) return;
       tabBar.querySelectorAll('.tab').forEach((t) => t.classList.remove('active'));
       b.classList.add('active');
-      const target = b.dataset.tab;
-      statsPage.classList.toggle('hidden', target !== 'stats');
-      trophiesPage.classList.toggle('hidden', target !== 'trophies');
+      this.currentTab = b.dataset.tab;
+      statsPage.classList.toggle('hidden', this.currentTab !== 'stats');
+      trophiesPage.classList.toggle('hidden', this.currentTab !== 'trophies');
     });
+  }
+
+  open() {
+    this.root = document.createElement('div');
+    this.root.className = 'stats-modal';
+    this._renderContent();
 
     this.handle = this.modal.open({
       title: i18n.t('stats.title'),
-      content: root,
+      content: this.root,
       wide: true,
       actions: [{ label: i18n.t('common.close') }],
+      onClose: () => {
+        this.handle = null;
+        this.root = null;
+      },
     });
   }
 

@@ -4,6 +4,7 @@ import { formatNumber } from './Hud.js';
 import { PrestigeModal } from './PrestigeModal.js';
 import { StatsModal } from './StatsModal.js';
 import { i18n } from '../core/I18n.js';
+import { events } from '../core/Events.js';
 
 export class PauseMenu {
   constructor(root = document.body, { game, settings, settingsModal, audio, save }) {
@@ -17,6 +18,9 @@ export class PauseMenu {
     this.el = null;
 
     this._build();
+    this._unsubLang = events.on('language:changed', () => {
+      if (this.isOpen) this._renderContent();
+    });
   }
 
   _build() {
@@ -62,11 +66,7 @@ export class PauseMenu {
     });
   }
 
-  open() {
-    if (this.isOpen) return;
-    this.isOpen = true;
-    this.game?._setPaused?.(true);
-
+  _renderContent() {
     if (!this.el) return;
 
     let isMuted = false;
@@ -86,19 +86,30 @@ export class PauseMenu {
     const timeFormatted = `${mins}m ${secs.toString().padStart(2, '0')}s`;
     const sandFormatted = formatNumber(s?.sand ?? 0);
 
+    const titleText = i18n.t('pause.title') || 'Pausa Spedizione';
+    const elapsedLabel = i18n.t('pause.elapsed') || 'Tempo trascorso';
+    const sandLabel = i18n.t('hud.sand') || 'Sabbia';
+    const quickTitle = i18n.t('pause.quickSettings') || 'Impostazioni Rapide';
+    const masterVolLabel = i18n.t('settings.masterVolume') || 'Volume Master';
+    const muteLabel = i18n.t('settings.mute') || 'Silenzioso (Muto)';
+    const gfxLabel = i18n.t('settings.graphicsQuality') || 'Qualità Grafica';
+    const optLow = i18n.t('settings.graphicsOptions.low') || 'Bassa (Mobile)';
+    const optMed = i18n.t('settings.graphicsOptions.med') || 'Media (Bilanciata)';
+    const optHigh = i18n.t('settings.graphicsOptions.high') || 'Alta (Dettagliata)';
+
     this.el.innerHTML = `
       <div class="pause-card panel">
         <header class="pause-header">
           <div class="pause-badge">⏳</div>
-          <h2 class="display pause-title">Pausa Spedizione</h2>
-          <div class="pause-sub muted">Tempo trascorso: <span class="accent">${timeFormatted}</span> · Sabbia: <span class="accent">${sandFormatted}</span></div>
+          <h2 class="display pause-title" data-i18n="pause.title">${titleText}</h2>
+          <div class="pause-sub muted">${elapsedLabel}: <span class="accent">${timeFormatted}</span> · ${sandLabel}: <span class="accent">${sandFormatted}</span></div>
         </header>
 
         <div class="pause-quick-settings">
-          <h3 class="quick-title">Impostazioni Rapide</h3>
+          <h3 class="quick-title" data-i18n="pause.quickSettings">${quickTitle}</h3>
 
           <div class="pause-row">
-            <label class="pause-label" for="pause-vol">Volume Master</label>
+            <label class="pause-label" for="pause-vol" data-i18n="settings.masterVolume">${masterVolLabel}</label>
             <div class="pause-ctl">
               <input type="range" id="pause-vol" name="pause-volume" min="0" max="100" value="${vol}" class="slider">
               <span class="pause-val">${vol}%</span>
@@ -106,31 +117,31 @@ export class PauseMenu {
           </div>
 
           <div class="pause-row">
-            <label class="pause-label" for="pause-mute">Silenzioso (Muto)</label>
+            <label class="pause-label" for="pause-mute" data-i18n="settings.mute">${muteLabel}</label>
             <div class="pause-ctl">
               <input type="checkbox" id="pause-mute" name="pause-mute" ${isMuted ? 'checked' : ''} class="toggle">
             </div>
           </div>
 
           <div class="pause-row">
-            <label class="pause-label" for="pause-gfx">Qualità Grafica</label>
+            <label class="pause-label" for="pause-gfx" data-i18n="settings.graphicsQuality">${gfxLabel}</label>
             <div class="pause-ctl">
               <select id="pause-gfx" name="pause-graphics" class="select">
-                <option value="low" ${gfx === 'low' ? 'selected' : ''}>Bassa (Mobile)</option>
-                <option value="med" ${gfx === 'med' ? 'selected' : ''}>Media (Bilanciata)</option>
-                <option value="high" ${gfx === 'high' ? 'selected' : ''}>Alta (Dettagliata)</option>
+                <option value="low" ${gfx === 'low' ? 'selected' : ''}>${optLow}</option>
+                <option value="med" ${gfx === 'med' ? 'selected' : ''}>${optMed}</option>
+                <option value="high" ${gfx === 'high' ? 'selected' : ''}>${optHigh}</option>
               </select>
             </div>
           </div>
         </div>
 
         <div class="pause-actions">
-          <button type="button" class="btn btn-resume" data-act="resume">${i18n.t('pause.resume') || 'Riprendi Spedizione'}</button>
-          <button type="button" class="btn btn-secondary" data-act="stats">${i18n.t('pause.stats') || 'Statistiche & Trofei'}</button>
-          <button type="button" class="btn btn-secondary" data-act="wardrobe">${i18n.t('pause.wardrobe') || 'Guardaroba & Skin'}</button>
-          <button type="button" class="btn btn-secondary" data-act="prestige">${i18n.t('pause.prestige') || 'Santuario dei Predecessori'} (τ ${this.save?.getTablets?.() ?? 0})</button>
-          <button type="button" class="btn btn-secondary" data-act="settings">${i18n.t('settings.title') || 'Tutte le Impostazioni'}</button>
-          <button type="button" class="btn btn-danger" data-act="save-exit">${i18n.t('pause.saveAndExit') || 'Salva ed Esci'}</button>
+          <button type="button" class="btn btn-resume" data-act="resume" data-i18n="pause.resume">${i18n.t('pause.resume') || 'Riprendi Spedizione'}</button>
+          <button type="button" class="btn btn-secondary" data-act="stats" data-i18n="pause.stats">${i18n.t('pause.stats') || 'Statistiche & Trofei'}</button>
+          <button type="button" class="btn btn-secondary" data-act="wardrobe" data-i18n="pause.wardrobe">${i18n.t('pause.wardrobe') || 'Guardaroba & Skin'}</button>
+          <button type="button" class="btn btn-secondary" data-act="prestige"><span data-i18n="pause.prestige">${i18n.t('pause.prestige') || 'Santuario dei Predecessori'}</span> (τ ${this.save?.getTablets?.() ?? 0})</button>
+          <button type="button" class="btn btn-secondary" data-act="settings" data-i18n="settings.title">${i18n.t('settings.title') || 'Tutte le Impostazioni'}</button>
+          <button type="button" class="btn btn-danger" data-act="save-exit" data-i18n="pause.saveAndExit">${i18n.t('pause.saveAndExit') || 'Salva ed Esci'}</button>
         </div>
       </div>
     `;
@@ -141,7 +152,15 @@ export class PauseMenu {
     if (slider && valText) {
       slider.oninput = () => { valText.textContent = `${slider.value}%`; };
     }
+  }
 
+  open() {
+    if (this.isOpen) return;
+    this.isOpen = true;
+    this.game?._setPaused?.(true);
+    if (!this.el) return;
+
+    this._renderContent();
     this.el.classList.remove('hidden');
     requestAnimationFrame(() => this.el.classList.add('visible'));
   }
@@ -159,6 +178,7 @@ export class PauseMenu {
   }
 
   dispose() {
+    this._unsubLang?.();
     if (this.el?.parentElement) {
       this.el.parentElement.removeChild(this.el);
     }

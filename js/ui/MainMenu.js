@@ -66,6 +66,7 @@ export class MainMenu {
     events.on('meta:bought', () => this.refresh());
     events.on('biome:unlocked', () => this.refresh());
     events.on('i18n:changed', () => this.refresh());
+    events.on('language:changed', () => this.refresh());
   }
 
   show() {
@@ -112,9 +113,10 @@ export class MainMenu {
   async _new() {
     if (this.save.hasValidSave()) {
       const ok = await this.modal.confirm({
-        title: 'Sovrascrivere la spedizione?',
-        message: 'Esiste già un salvataggio. Iniziare una nuova spedizione lo cancellerà in modo definitivo.',
-        confirmLabel: 'Sovrascrivi',
+        title: i18n.t('menu.overwriteConfirmTitle') || 'Sovrascrivere la spedizione?',
+        message: i18n.t('menu.overwriteConfirmMsg') || 'Esiste già un salvataggio. Iniziare una nuova spedizione lo cancellerà in modo definitivo.',
+        confirmLabel: i18n.t('menu.overwriteBtn') || 'Sovrascrivi',
+        cancelLabel: i18n.t('common.cancel') || 'Annulla',
         danger: true,
       });
       if (!ok) return;
@@ -144,10 +146,14 @@ export class MainMenu {
     const wrap = document.createElement('div');
     wrap.className = 'credits';
     wrap.innerHTML = `
-      <p><span class="accent">Diggy Diggy Sand</span> · gioco incrementale 3D con finali casuali.</p>
-      <p class="muted">Motore: Three.js r160 (MIT). Font: Cinzel Decorative, Cinzel, Syne (SIL OFL, Google Fonts).</p>
-      <p class="muted">Asset 3D e audio: CC0 (Kenney, Quaternius, OpenGameArt) quando presenti. In loro assenza, mesh e suoni procedurali.</p>`;
-    this.modal.open({ title: 'Crediti', content: wrap, actions: [{ label: 'Chiudi' }] });
+      <p><span class="accent">Diggy Diggy Sand</span> · ${i18n.t('menu.creditsP1') || 'gioco incrementale 3D con finali casuali.'}</p>
+      <p class="muted">${i18n.t('menu.creditsP2') || 'Motore: Three.js r160 (MIT). Font: Cinzel Decorative, Cinzel, Syne (SIL OFL, Google Fonts).'}</p>
+      <p class="muted">${i18n.t('menu.creditsP3') || 'Asset 3D e audio: CC0 (Kenney, Quaternius, OpenGameArt) quando presenti. In loro assenza, mesh e suoni procedurali.'}</p>`;
+    this.modal.open({
+      title: i18n.t('menu.credits') || 'Crediti',
+      content: wrap,
+      actions: [{ label: i18n.t('common.close') || 'Chiudi' }],
+    });
   }
 }
 

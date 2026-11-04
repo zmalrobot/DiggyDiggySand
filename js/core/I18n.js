@@ -1,6 +1,6 @@
-// Motore di Localizzazione Dinamica (Italiano / Inglese)
-// Supporta traduzioni gerarchiche, interpolazione parametri ({count}, {amount})
-// e aggiornamento automatico degli elementi DOM tramite selettori [data-i18n].
+// Motore di Localizzazione Dinamica e Rigore i18n (Italiano / Inglese).
+// Dizionario centralizzato universale, interpolazione parametri ({count}, {pct}, ecc.),
+// reattività DOM immediata con data-i18n e sincronizzazione con SettingsManager.
 import { events } from './Events.js';
 
 export const DICTIONARY = {
@@ -15,9 +15,17 @@ export const DICTIONARY = {
       sec: 's',
       min: 'm',
       hours: 'h',
+      save: 'Salva',
+      continue: 'Continua',
+      collect: 'Raccogli',
+      active: 'Attivo',
+      inactive: 'Disattivo',
+      yes: 'Sì',
+      no: 'No',
+      reset: 'Ripristina',
     },
     menu: {
-      title: 'Diggy\nDiggy Sand',
+      title: 'Diggy<br>Diggy Sand',
       subtitle: 'Svuota il deserto. Scopri cosa dorme sotto.',
       newGame: 'Nuova Spedizione',
       continue: 'Continua',
@@ -28,59 +36,184 @@ export const DICTIONARY = {
       settings: 'Impostazioni',
       credits: 'Crediti',
       noSave: 'Nessun salvataggio disponibile',
+      confirmOverwriteTitle: 'Sovrascrivere la spedizione?',
+      confirmOverwriteMsg: 'Esiste già un salvataggio attivo. Iniziare una nuova spedizione lo cancellerà in modo definitivo. Vuoi procedere?',
+      overwrite: 'Sovrascrivi',
+      creditsTitle: 'Crediti di Sviluppo',
+      creditsIntro: 'Diggy Diggy Sand · miner incrementale 3D in low-poly chiseled con rovine e finali dinamici.',
+      creditsEngine: 'Motore: Three.js r160. Font: Cinzel Decorative, Cinzel, Syne (Google Fonts).',
+      creditsAssets: 'Asset 3D e audio: Licenza CC0 (Kenney, Quaternius, OpenGameArt) con fallback procedurali.',
     },
     hud: {
       sandLabel: 'Sabbia Estratta',
+      sand: 'Sabbia',
       spsLabel: 'al secondo',
+      spsSuffix: '/s',
+      progress: 'Deserto scavato',
+      desertExcavated: 'Deserto scavato',
+      completionPct: '{pct}% scavato',
       radarDepth: 'Profondità',
       radarBedrock: 'Roccia Madre',
-      workshop: 'Officina delle Dune',
+      workshop: 'Officina',
+      workshopFull: 'Officina delle Dune',
       pause: 'Pausa',
-      stormBoost: 'TEMPESTA +50%',
+      pauseTitle: 'Pausa / Impostazioni',
+      stormBoost: '⚡ TEMPESTA +50%',
+      cheatsBadgeTitle: 'Trucchi attivi — Obiettivi bloccati',
+      cheatsBadgeTag: 'TRUCCHI',
+      cheatsActive: 'Trucchi attivi — Obiettivi bloccati',
+      cheatsTag: 'TRUCCHI',
+      radarTitle: 'Georadar',
+      radarStatus: 'ATTIVO',
+      radarActive: 'ATTIVO',
+      radarScanning: 'Scansione in corso...',
     },
     shop: {
       title: 'Officina delle Dune',
-      tabTools: 'Strumenti',
+      subtitle: 'Forgia la tecnologia e comanda la flotta',
+      tabManual: 'Attrezzi Manuali',
       tabFleet: 'Flotta Autonoma',
+      tabs: {
+        manual: 'Attrezzi Manuali',
+        fleet: 'Flotta Autonoma',
+      },
+      tabTools: 'Strumenti',
       tabRadar: 'Georadar',
       level: 'Livello',
       cost: 'Costo',
       maxed: 'Massimo',
+      max: 'MAX',
+      maxLevel: 'MAX',
       buy: 'Acquista',
+      buyAction: 'Acquista',
+      completed: 'Completato',
+      maxedAction: 'Completato',
       dpsLabel: 'DPS',
       powerLabel: 'Potenza',
       freqLabel: 'Frequenza',
       radiusLabel: 'Raggio',
+      closeShop: 'Chiudi Officina',
     },
     upgrades: {
       shovel: {
-        name: 'Pala Rinforzata',
-        desc: 'Aumenta la potenza di ogni colpo di scavo.',
+        name: 'Pala in Oricalco',
+        desc: 'Affina la lama e incrementa la sabbia estratta per ogni singolo colpo.',
+        benefit: '+1 Sabbia per colpo (Attuale: {amount})',
       },
       frequency: {
-        name: 'Impugnatura Bilanciata',
-        desc: 'Velocizza la cadenza di scavo a mano.',
+        name: 'Ritmo Cinetico',
+        desc: 'Riduce l\'intervallo tra i colpi continuati quando tieni premuto il mouse.',
+        benefit: 'Frequenza hold: {rate} colpi/s',
       },
       radius: {
-        name: 'Vanga a Lama Larga',
-        desc: 'Allarga il raggio dell\'impatto nel terreno.',
-      },
-      scarab: {
-        name: 'Scarafaggio Meccanico',
-        desc: 'Automa agile che setaccia le dune in autonomia.',
-      },
-      excavator: {
-        name: 'Escavatore a Vapore',
-        desc: 'Macchinario pesante che frantuma strati profondi.',
-      },
-      dredge: {
-        name: 'Draga d\'Oricalco',
-        desc: 'Imponente struttura atlantidea a rotazione continua.',
+        name: 'Raggio di Scavo',
+        desc: 'Espande il raggio del cratere conico a ogni impatto sul terreno.',
+        benefit: 'Raggio: {radius}m (+0.45m)',
       },
       georadar: {
         name: 'Georadar di Profondità',
-        desc: 'Rileva anomalie e rovine sepolte nel sottosuolo.',
+        desc: 'Bussola a risonanza che scansiona il sottosuolo e rileva anomalie prima di dissotterrarle.',
+        benefitActive: 'Radar attivo nell\'HUD con letture live',
+        benefitInactive: 'Sblocca bussola e letture criptiche del sottosuolo',
       },
+      scarab: {
+        name: 'Scarafaggio Meccanico',
+        desc: 'Automa dorato leggero che pattuglia le dune e scava la sabbia a intervalli regolari.',
+        benefit: '+1.0 Sabbia/s per livello (Totale: {total}/s)',
+      },
+      excavator: {
+        name: 'Escavatore a Vapore',
+        desc: 'Macchinario pesante con braccio a pistone che scava crateri ampi con grande potenza.',
+        benefit: '+25.0 Sabbia/s per livello (Totale: {total}/s)',
+      },
+      dredge: {
+        name: 'Draga Sabbiosa Atlantea',
+        desc: 'Imponente struttura a tamburo rotante che polverizza interi banchi di sabbia compressa.',
+        benefit: '+200.0 Sabbia/s per livello (Totale: {total}/s)',
+      },
+    },
+    biomes: {
+      modalTitle: 'Seleziona Bioma di Spedizione',
+      modalSubtitle: 'Scegli il sito archeologico per la tua nuova spedizione',
+      startBtn: 'Avvia Spedizione',
+      cancelBtn: 'Annulla',
+      selectedBadge: 'Selezionato',
+      selectBtn: 'Seleziona Bioma',
+      unlockTabletsBtn: 'Sblocca ({cost} τ)',
+      lockedReq: 'Richiede {wins} Vittoria/e oppure {cost} τ',
+      modifiersLabel: 'Modificatori Attivi',
+      desert: {
+        name: "Deserto d'Oro",
+        subtitle: 'Le Dune Ancestrali di Kemet',
+        lore: 'Sabbie dorate millenarie che celano il Santuario dell\'Obelisco, viali colonnati e camere d\'oricalco.',
+        modifier: 'Resistenza Standard | Volume 100%',
+      },
+      ocean: {
+        name: 'Oceano Prosciugato',
+        subtitle: 'Abisso Corallino Sommerso',
+        lore: 'Un antico fondale oceanico prosciugato dove giace un galeone atlantideo spezzato tra archi di conchiglie fossili.',
+        modifier: 'Resistenza -20% | Volume +15% | Valore +25%',
+      },
+      glacier: {
+        name: 'Ghiacciaio Arcaico',
+        subtitle: 'Cripta del Permafrost Eterno',
+        lore: 'Monoliti esagonali di ghiaccio, guglie cristalline e templi congelati custoditi da uno strato di permafrost.',
+        modifier: 'Permafrost +35% Res. | Schegge Ghiaccio | Valore +35%',
+      },
+      jungle: {
+        name: 'Giungla Sepolta',
+        subtitle: 'Ziggurat di Smeraldo e Radici',
+        lore: 'Bassi templi a ziggurat e menhir incisi avvolti da radici fossili che richiedono colpi multipli per essere spezzate.',
+        modifier: 'Radici Sepolte (-35% Raggio) | Valore +40%',
+      },
+    },
+    endings: {
+      curse: {
+        badge: '☠️',
+        title: 'La Maledizione di Atlantide',
+        subtitle: 'L\'Antico Sigillo è Infranto',
+        desc: 'Hai scavato troppo in profondità. L\'oscurità primordiale che riposava sotto la città si è risvegliata, tingendo il cielo di sangue e terrore cosmico.',
+        quote: 'Forse avresti dovuto lasciare la sabbia dov\'era...',
+        text: 'Forse avresti dovuto lasciare la sabbia dov\'era... Hai scavato troppo in profondità e l\'antico sigillo dell\'obelisco è andato in frantumi. Le tenebre millenarie sono state liberate sul mondo, tingendo il cielo di sangue e terrore cosmico.',
+      },
+      treasure: {
+        badge: '👑',
+        title: 'Il Tesoro d\'Oro Puro',
+        subtitle: 'La Ricchezza Immortale di Atlantide',
+        desc: 'Le fondamenta della città sommersa risplendono d\'oro massiccio, monete cerulee e reliquie inestimabili d\'oricalco.',
+        quote: 'Sei oscenamente ricco. La sabbia ti appartiene.',
+        text: 'Sei oscenamente ricco! Le volte millenarie si sono spalancate, inondando la fossa di monete d\'oro zecchino, gemme cerulee e reliquie inestimabili d\'oricalco. Il deserto è stato domato e il suo tesoro più sontuoso è ora tuo.',
+      },
+      business: {
+        badge: '🏗️',
+        title: 'L\'Impresa di Scavo SRL',
+        subtitle: 'Certificato di Costituzione Impresa Edile',
+        desc: 'Nessun dio mistico, nessun cataclisma: solo un vecchio secchiello arrugginito e un impero minerario miliardario.',
+        quote: 'La cava è aperta. La produzione non si ferma mai.',
+        text: 'Nessuna antica divinità, nessun cataclisma cosmico e nessun tesoro millenario. In fondo allo scavo c\'era solo un vecchio secchiello arrugginito. In compenso, hai rimosso milioni di tonnellate di sabbia fondando un colosso dell\'edilizia pesante con una flotta inarrestabile!',
+      },
+      secret: {
+        badge: '🔱',
+        title: 'L\'Ascensione di Atlantide',
+        subtitle: 'Il Risveglio della Civiltà Sommersa',
+        desc: 'Le rovine sepolte si sollevano in volo verso il cielo avvolte da luce d\'oricalco, consacrandoti Primo Custode.',
+        quote: 'I Predecessori hanno riaperto le porte della volta celeste.',
+        text: 'Non hai liberato una maledizione, né cercato mero oro o profitto: hai risvegliato il cuore perduto di Atlantide. La città millenaria risorge dalle sabbie eterne verso il cielo, incoronandoti Primo Custode dell\'Oricalco.',
+      },
+      buttons: {
+        newGame: 'Nuova Spedizione',
+        menu: 'Torna al Menu',
+        sandbox: 'Continua in Sandbox Libera',
+      },
+      stats: {
+        time: 'Tempo Spedizione',
+        sand: 'Sabbia Estratta',
+        clicks: 'Colpi di Pala',
+        tablets: 'Tavolette Antiche',
+        valuation: 'Valutazione d\'Impresa Stimata',
+        fleetCount: 'Unità della Flotta',
+      },
+      toastCollected: '+{amount} Sabbia raccolta!',
     },
     settings: {
       title: 'Impostazioni',
@@ -89,10 +222,94 @@ export const DICTIONARY = {
       tabControls: 'Controlli',
       tabData: 'Dati & Lingua',
       tabCheats: 'Trucchi',
+      master: 'Volume Principale',
+      music: 'Ambiente & Musica',
+      sfx: 'Effetti Sonori',
+      mute: 'Silenzioso (Muto)',
+      language: 'Lingua di Gioco',
+      renderScale: 'Risoluzione Render',
+      shadows: 'Ombre Dinamiche',
+      particles: 'Dettaglio Particelle',
+      dayNight: 'Ciclo Giorno/Notte',
+      fpsCap: 'Limite Frame Rate',
+      cameraSens: 'Sensibilità Telecamera',
+      invertY: 'Inverti Asse Verticale',
+      screenShake: 'Scuotimento Schermo',
       postProcessing: 'Post-Processing (Bloom & Vignette)',
-      postProcessingDesc: 'Bagliori emissivi e gradiente caldo cinematografico',
-      dustMotes: 'Particelle Atmosferiche',
-      dustMotesDesc: 'Pulviscolo fluttuante nel cratere',
+      postProcessingDesc: 'Bagliori emissivi oricalco e gradiente caldo cinematografico',
+      dustMotes: 'Particelle Atmosferiche (Dust Motes)',
+      dustMotesDesc: 'Pulviscolo minerale dorato fluttuante nel cratere',
+      graphicsLow: 'Bassa (Prestazioni)',
+      graphicsMed: 'Media (Bilanciata)',
+      graphicsHigh: 'Alta (Dettagliata)',
+      shadowsOff: 'Disattivate',
+      shadowsLow: 'Morbide',
+      shadowsHigh: 'Ultra Dettagliate',
+      dayNightAuto: 'Automatico (Continuo)',
+      dayNightDay: 'Sempre Giorno',
+      dayNightNight: 'Sempre Notte',
+      fpsNoLimit: 'Nessun Limite',
+      dataExport: 'Esporta Salvataggio',
+      dataImport: 'Importa Salvataggio',
+      dataReset: 'Ripristina Impostazioni',
+      clearSave: 'Elimina Salvataggio Corrente',
+      clearSaveConfirm: 'Sei sicuro di voler eliminare la spedizione in corso? Questa azione è irreversibile.',
+      saveClearedToast: 'Salvataggio eliminato.',
+      resetSettingsConfirm: 'Ripristinare tutte le impostazioni ai valori di fabbrica?',
+      jsonPlaceholder: 'Incolla qui un JSON di impostazioni da importare…',
+      exportJson: 'Esporta JSON',
+      importJson: 'Importa JSON',
+      exportedStatus: 'Impostazioni esportate nel riquadro.',
+      importedStatus: 'Importate {count} impostazioni modificate.',
+      errorStatus: 'Errore',
+      resetDefaults: 'Ripristina impostazioni',
+      resetTitle: 'Ripristinare i valori predefiniti?',
+      resetMsg: 'Tutte le impostazioni torneranno ai valori iniziali. Il salvataggio di gioco non viene toccato.',
+      resetConfirm: 'Ripristina',
+      resetDone: 'Impostazioni ripristinate.',
+      deleteSave: 'Elimina salvataggio',
+      noSaveToDelete: 'Nessun salvataggio da eliminare.',
+      deleteSaveTitle: 'Eliminare il salvataggio?',
+      deleteSaveMsg: 'La spedizione in corso andrà persa per sempre. L\'azione non è reversibile.',
+      deleteSaveConfirm: 'Elimina definitivamente',
+      saveDeleted: 'Salvataggio eliminato.',
+      settingsBackup: 'Backup Impostazioni',
+      resetSection: 'Reset & Dati',
+      active: 'Attivo',
+      inactive: 'Disattivo',
+      masterVolume: 'Volume generale',
+      musicVolume: 'Musica',
+      sfxVolume: 'Effetti sonori',
+      webAudioUnsupported: 'Il tuo browser non supporta Web Audio: l\'audio è disattivato.',
+      renderScaleHint: 'Scala della risoluzione interna',
+      graphicsQuality: 'Qualità particelle',
+      postProcessingHint: 'Bagliori emissivi e color grading',
+      dustMotesHint: 'Pulviscolo fluttuante nel cratere',
+      dayNightHint: 'Auto / Giorno / Notte',
+      graphicsOptions: {
+        low: 'Bassa (Mobile)',
+        med: 'Media (Bilanciata)',
+        high: 'Alta (Dettagliata)',
+      },
+      shadowsOptions: {
+        off: 'Disattivate',
+        low: 'Basse',
+        high: 'Alte',
+      },
+      dayNightOptions: {
+        auto: 'Automatico (Dinamico)',
+        day: 'Sempre Giorno',
+        night: 'Sempre Notte',
+      },
+      fpsOptions: {
+        '0': 'Illimitato',
+        '30': '30 FPS',
+        '60': '60 FPS',
+      },
+      languageOptions: {
+        it: 'Italiano',
+        en: 'English',
+      },
       cheats: {
         title: 'Modalità Trucchi & Creative',
         subtitle: 'Modifica liberamente parametri ed eventi della spedizione corrente.',
@@ -116,44 +333,123 @@ export const DICTIONARY = {
         godModeSection: 'Super Pala (God Mode)',
         godModeLabel: 'Super Pala (God Mode)',
         godModeHint: 'Raggio di scavo decuplicato e zero tempo di attesa tra i colpi',
+        godModeActive: 'Attivo',
+        godModeInactive: 'Disattivo',
         upgradesSection: 'Potenziamenti Massimi',
         maxUpgradesBtn: 'Sblocca Tutti gli Upgrade',
         notInGame: 'I trucchi possono essere utilizzati solo durante una spedizione in corso.',
         hudBadge: 'Trucchi attivi — Obiettivi bloccati',
+        toastSand100k: '+100.000 Sabbia accreditata!',
+        toastSand1M: '+1.000.000 Sabbia accreditata!',
+        toastComp: 'Completamento scavo impostato al {pct}%',
+        toastEnding: 'Finale forzato: {id}',
+        toastStorm: 'Tempesta di Sabbia scatenata!',
+        toastMerchant: 'Carovana Nomade arrivata!',
+        toastGodOn: 'Super Pala (God Mode) Attivata!',
+        toastGodOff: 'Super Pala Disattivata.',
+        toastMaxUpgrades: 'Tutti gli upgrade sbloccati al massimo!',
       },
-      master: 'Volume Principale',
-      music: 'Ambiente & Musica',
-      sfx: 'Effetti Sonori',
-      mute: 'Muto',
-      language: 'Lingua di Gioco',
-      renderScale: 'Risoluzione Render',
-      shadows: 'Ombre',
-      particles: 'Dettaglio Particelle',
-      dayNight: 'Ciclo Giorno/Notte',
-      fpsCap: 'Limite Frame Rate',
-      cameraSens: 'Sensibilità Telecamera',
-      invertY: 'Inverti Asse Verticale',
-      screenShake: 'Scuotimento Schermo',
-      clearSave: 'Cancella Salvataggio',
-      clearSaveConfirm: 'Sei sicuro di voler eliminare la spedizione in corso? Questa azione non può essere annullata.',
-      resetSettings: 'Ripristina Impostazioni Predefinite',
-      exportSave: 'Esporta Dati',
-      importSave: 'Importa Dati',
     },
-    pause: {
-      title: 'Spedizione in Pausa',
-      resume: 'Riprendi Scavo',
-      stats: 'Statistiche & Trofei',
-      wardrobe: 'Guardaroba & Skin',
-      prestige: 'Santuario (τ)',
-      saveAndExit: 'Salva ed Esci',
+    achievements: {
+      FIRST_DIG: {
+        title: 'Primo Colpo d\'Oro',
+        desc: 'Effettua il tuo primo colpo di pala nella duna.',
+      },
+      DUNE_BREAKER: {
+        title: 'Dune Breaker',
+        desc: 'Accumula 100.000 unità di sabbia in una singola spedizione.',
+      },
+      MACHINE_LORD: {
+        title: 'Signore delle Macchine',
+        desc: 'Schiera almeno 5 lavoratori o escavatori contemporaneamente.',
+      },
+      ECHOES_PAST: {
+        title: 'Echi del Passato',
+        desc: 'Riporta alla luce il santuario centrale dell\'obelisco sotto le dune.',
+      },
+      TRINITY: {
+        title: 'Trinità della Sabbia',
+        desc: 'Scopri tutti e tre i finali base (Maledizione, Tesoro, Impresa).',
+      },
+      AWAKENING: {
+        title: 'Il Risveglio',
+        desc: 'Assisti all\'Ascensione di Atlantide nel Finale Segreto.',
+      },
+      SPEEDRUNNER: {
+        title: 'Corsa contro il Tempo',
+        desc: 'Completa una spedizione in meno di 20 minuti.',
+      },
+      SAND_HOARDER: {
+        title: 'Custode dell\'Oro',
+        desc: 'Accumula 1.000.000 di sabbia totale nella tua carriera.',
+      },
+      ANCIENT_WISDOM: {
+        title: 'Saggezza Antica',
+        desc: 'Accumula le tue prime Tavolette Antiche τ dal Santuario.',
+      },
+      STORM_SURVIVOR: {
+        title: 'Cavalcatempeste',
+        desc: 'Scava durante una Tempesta di Sabbia attiva.',
+      },
+      NOMAD_PARTNER: {
+        title: 'Affare nel Deserto',
+        desc: 'Concludi uno scambio commerciale con il Mercante Nomade.',
+      },
+      COMPLETIONIST: {
+        title: 'Archeologo Supremo',
+        desc: 'Raggiungi il 100% di scavo di una duna.',
+      },
+    },
+    tutorial: {
+      firstDig: 'Tocca o tieni premuto per scavare la duna',
+      currency: 'La sabbia estratta è la tua valuta!',
+      workshopAvailable: 'Nuovi strumenti disponibili nell\'Officina!',
+    },
+    events: {
+      sandstormTitle: 'Tempesta di Sabbia!',
+      sandstormMsg: 'Un vento impetuoso solleva la duna: +50% Sabbia per ogni colpo (30s)!',
+      sandstormBoostLabel: '⚡ Tempesta: +50% Sabbia (30s)',
+      sandstormToastEnded: 'La tempesta di sabbia si è placata.',
+      merchantTitle: 'Carovana Nomade',
+      merchantMsg: 'Un mercante del deserto si è accampato ai margini dello scavo!',
+      merchantAction: 'Commercia',
+      merchantToastLeft: 'La carovana nomade è ripartita per le dune.',
+      merchantLore: '"Il deserto nasconde segreti a chi ha fretta, ma ricompensa chi sa commerciare."',
+      hyperDigTitle: 'Iper-Scavo Nomade',
+      hyperDigDesc: '+100% Sabbia per i prossimi 45 secondi.',
+      hyperDigBuy: 'Acquista (150 Sabbia)',
+      hyperDigBoostLabel: '✨ Iper-Scavo (x2.0): 45s',
+      hyperDigSuccess: 'Hai acquistato Iper-Scavo Nomade! (+100% Sabbia per 45s)',
+      insufficientSand: 'Sabbia insufficiente per questa merce!',
+      decline: 'Rinuncia',
+    },
+    prestige: {
+      title: 'Santuario dei Predecessori',
+      currency: 'Tavolette Antiche: τ {count}',
+      intro: 'La conoscenza dei cicli passati non va perduta. Spendi le Tavolette Antiche per imprimere perk permanenti validi per tutte le spedizioni future.',
+      level: 'Lv. {lvl}/{max}',
+      max: 'MAX',
+      shovelEcho: {
+        name: 'Eco della Pala',
+        desc: 'L\'esperienza dei cicli passati guida la lama: +15% potenza base di scavo permanente per livello.',
+        benefit: '+{pct}% Potenza di Scavo Permanente',
+      },
+      excavatorBlueprint: {
+        name: 'Progetto dell\'Escavatore',
+        desc: 'Inizia ogni futura spedizione con Automi Scarabei già operativi nel cratere.',
+        benefit: '{count} Scarabei operativi all\'avvio',
+      },
+      tabletMagnetism: {
+        name: 'Magnetismo delle Tavolette',
+        desc: 'Favore antico: sconto del 5% su tutti i costi in sabbia dell\'Officina per livello.',
+        benefit: '-{pct}% Costi di Acquisto (Max -25%)',
+      },
     },
     wardrobe: {
       title: 'Guardaroba delle Dune',
       subtitle: 'Personalizza l\'aspetto dei tuoi strumenti, sabbia e macchinari con le Tavolette Antiche (τ).',
-      tablets: 'Tavolette Antiche: {count} τ',
+      tablets: 'Tavolette Antiche: τ {count}',
       tabShovel: 'Pale & Strumenti',
-      tabShovels: 'Pale & Strumenti',
       tabSand: 'Biomi Sabbia',
       tabMachinery: 'Flotta Macchinari',
       equipped: 'Equipaggiato',
@@ -175,49 +471,26 @@ export const DICTIONARY = {
         machinery_atlantis_teal: { name: 'Flotta d\'Atlantide', desc: 'Composito oricalco e condensatori luminescenti' },
       },
     },
-    tutorial: {
-      firstDig: 'Tocca o tieni premuto per scavare la duna',
-      currency: 'La sabbia estratta è la tua valuta',
-      workshopAvailable: 'Nuovi strumenti disponibili nell\'Officina',
+    gallery: {
+      title: 'Galleria dei Finali',
+      progress: 'Progresso Collezionista: {count}/{total} ({pct}%)',
+      sealedTitle: '??? Sigillo Dormiente',
+      unlockedStatus: '✓ Epilogo Sbloccato',
+      lockedStatus: 'Non ancora scoperto',
     },
-    events: {
-      sandstormTitle: 'Tempesta di Sabbia',
-      sandstormMsg: 'Venti dorati sollevano il deserto! +50% sabbia estratta per 30s!',
-      merchantTitle: 'Carovana Nomade',
-      merchantMsg: 'Un mercante del deserto si è accampato sul crinale!',
-      merchantTrade: 'Commercia',
-      merchantDealBought: 'Patto nomade siglato con successo!',
-    },
-    endings: {
-      curse: {
-        badge: 'Maledizione',
-        title: 'Il Sigillo Infranto',
-        desc: 'Hai scavato troppo a fondo. L\'antica oscurità che riposava sotto la città si è risvegliata.',
-        quote: 'Forse avresti dovuto lasciare la sabbia dov\'era...',
-      },
-      treasure: {
-        badge: 'Tesoro',
-        title: 'La Cripta dell\'Oro Puro',
-        desc: 'Le fondamenta della città sommersa risplendono d\'oro massiccio e gemme inestimabili.',
-        quote: 'Sei oscenamente ricco. La sabbia ti appartiene.',
-      },
-      business: {
-        badge: 'Impresa',
-        title: 'L\'Impresa di Scavo SRL',
-        desc: 'Nessun mistero mistico: solo una colossale operazione mineraria altamente redditizia.',
-        quote: 'La cava è aperta. La produzione non si ferma mai.',
-      },
-      secret: {
-        badge: 'Ascensione',
-        title: 'Il Risveglio di Atlantide',
-        desc: 'Le rovine sepolte si sollevano verso il cielo avvolte da luce d\'oricalco.',
-        quote: 'I Predecessori hanno riaperto le porte della volta celeste.',
-      },
-      buttons: {
-        newGame: 'Nuova Spedizione',
-        menu: 'Torna al Menu',
-        sandbox: 'Continua in Sandbox Libera',
-      },
+    pause: {
+      title: 'Spedizione in Pausa',
+      subtitle: 'Tempo trascorso: {time} · Sabbia: {sand}',
+      quickSettings: 'Impostazioni Rapide',
+      masterVol: 'Volume Master',
+      muteLabel: 'Silenzioso (Muto)',
+      graphicsLabel: 'Qualità Grafica',
+      resume: 'Riprendi Spedizione',
+      stats: 'Statistiche & Trofei',
+      wardrobe: 'Guardaroba & Skin',
+      prestige: 'Santuario dei Predecessori (τ {count})',
+      settingsBtn: 'Tutte le Impostazioni',
+      saveAndExit: 'Salva ed Esci',
     },
     stats: {
       title: 'Carriera & Trofei',
@@ -234,90 +507,27 @@ export const DICTIONARY = {
       dateUnlocked: 'Sbloccato il',
       cheatsWarning: 'Obiettivi disabilitati: sono stati utilizzati trucchi in questa partita',
     },
-    achievements: {
-      FIRST_DIG: {
-        title: 'Primo Colpo d\'Oro',
-        desc: 'Effettua il tuo primo colpo di pala nella duna.',
-      },
-      DUNE_BREAKER: {
-        title: 'Dune Breaker',
-        desc: 'Accumula 100.000 unità di sabbia in una spedizione.',
-      },
-      MACHINE_LORD: {
-        title: 'Signore delle Macchine',
-        desc: 'Schiera almeno 5 lavoratori o escavatori contemporaneamente.',
-      },
-      ECHOES_PAST: {
-        title: 'Echi del Passato',
-        desc: 'Riporta alla luce il tempio centrale sotto le dune.',
-      },
-      TRINITY: {
-        title: 'Trinità della Sabbia',
-        desc: 'Scopri tutti e tre i finali base (Maledizione, Tesoro, Impresa).',
-      },
-      AWAKENING: {
-        title: 'Il Risveglio',
-        desc: 'Assisti all\'Ascensione di Atlantide nel Finale Segreto.',
-      },
-      SPEEDRUNNER: {
-        title: 'Corsa contro il Tempo',
-        desc: 'Completa una spedizione in meno di 20 minuti.',
-      },
-      SAND_HOARDER: {
-        title: 'Custode dell\'Oro',
-        desc: 'Accumula 1.000.000 di sabbia totale nella tua carriera.',
-      },
-      ANCIENT_WISDOM: {
-        title: 'Saggezza Antica',
-        desc: 'Accumula le tue prime Tavolette Antiche τ.',
-      },
-      STORM_SURVIVOR: {
-        title: 'Cavalcatempeste',
-        desc: 'Scava durante una Tempesta di Sabbia attiva.',
-      },
-      NOMAD_PARTNER: {
-        title: 'Affare nel Deserto',
-        desc: 'Concludi uno scambio con il Mercante Nomade.',
-      },
-      COMPLETIONIST: {
-        title: 'Archeologo Supremo',
-        desc: 'Raggiungi il 100% di scavo di una duna.',
-      },
+    loading: {
+      title: 'Diggy Diggy Sand',
+      subtitle: 'Preparazione della spedizione',
+      status: 'Risveglio degli antichi meccanismi…',
+      startBtn: 'Inizia Spedizione',
+      tips: [
+        'La sabbia non mente: ogni granello rimosso avvicina la città dimenticata.',
+        'Gli Atlantidei chiamavano l\'oricalco "il metallo che ricorda la luce".',
+        'Tieni premuto per scavare senza sosta. Le mani stanche non esistono per un faraone.',
+        'I Nomadi scavano piano, ma non dormono mai.',
+        'Sotto le dune, qualcosa pulsa di luce turchese. Non è un miraggio.',
+        'Un colpo critico splende come il sole di mezzogiorno: cerca le scintille dorate.',
+        'Gli obelischi puntano al cielo perché ciò che sta sotto non dovrebbe essere ignorato.',
+        'Non tutte le spedizioni finiscono allo stesso modo. Nessuno sa cosa troverà.',
+      ],
     },
-    biomes: {
-      modalTitle: 'Seleziona Bioma di Spedizione',
-      modalSubtitle: 'Scegli il sito archeologico per la tua nuova spedizione',
-      startBtn: 'Avvia Spedizione',
-      cancelBtn: 'Annulla',
-      selectedBadge: 'Selezionato',
-      selectBtn: 'Seleziona Bioma',
-      unlockTabletsBtn: 'Sblocca ({cost} τ)',
-      lockedReq: 'Richiede {wins} Vittoria/e oppure {cost} τ',
-      modifiersLabel: 'Modificatori Attivi',
-      desert: {
-        name: "Deserto d'Oro",
-        subtitle: 'Le Dune Ancestrali di Kemet',
-        lore: 'Sabbie dorate millenarie che celano il Santuario dell\'Obelisco, viali colonnati e camere d\'oricalco.',
-        modifier: 'Resistenza Standard | Volume 100%',
-      },
-      ocean: {
-        name: 'Oceano Prosciugato',
-        subtitle: 'Abisso Corallino Sommerso',
-        lore: 'Un antico fondale oceanico prosciugato dove giace un galeone atlantideo spezzato in due tra archi di conchiglie giganti.',
-        modifier: 'Resistenza -20% | Volume +15% | Valore +25%',
-      },
-      glacier: {
-        name: 'Ghiacciaio Arcaico',
-        subtitle: 'Cripta del Permafrost Eterno',
-        lore: 'Monoliti esagonali di ghiaccio, guglie cristalline e templi congelati custoditi da uno strato di permafrost.',
-        modifier: 'Permafrost +35% Res. | Schegge Ghiaccio | Valore +35%',
-      },
-      jungle: {
-        name: 'Giungla Sepolta',
-        subtitle: 'Ziggurat di Smeraldo e Radici',
-        lore: 'Bassi templi a ziggurat e menhir incisi avvolti da radici fossili che richiedono colpi multipli per essere spezzate.',
-        modifier: 'Radici Sepolte (-35% Raggio) | Valore +40%',
-      },
+    offline: {
+      title: 'Spedizione Automatica',
+      content: 'Mentre eri via, i tuoi scavi hanno prodotto <span class="num accent">+{amount}</span> Sabbia.',
+      elapsed: 'Tempo trascorso: {mins} min (Efficienza flotta 50%).',
+      claim: 'Raccogli',
     },
   },
 
@@ -332,9 +542,17 @@ export const DICTIONARY = {
       sec: 's',
       min: 'm',
       hours: 'h',
+      save: 'Save',
+      continue: 'Continue',
+      collect: 'Collect',
+      active: 'Active',
+      inactive: 'Disabled',
+      yes: 'Yes',
+      no: 'No',
+      reset: 'Reset',
     },
     menu: {
-      title: 'Diggy\nDiggy Sand',
+      title: 'Diggy<br>Diggy Sand',
       subtitle: 'Clear the desert. Discover what sleeps below.',
       newGame: 'New Expedition',
       continue: 'Continue',
@@ -345,59 +563,184 @@ export const DICTIONARY = {
       settings: 'Settings',
       credits: 'Credits',
       noSave: 'No save file available',
+      confirmOverwriteTitle: 'Overwrite expedition?',
+      confirmOverwriteMsg: 'An active save already exists. Starting a new expedition will erase it permanently. Do you wish to proceed?',
+      overwrite: 'Overwrite',
+      creditsTitle: 'Development Credits',
+      creditsIntro: 'Diggy Diggy Sand · 3D chiseled low-poly incremental miner with sunken ruins and multiple endings.',
+      creditsEngine: 'Engine: Three.js r160. Fonts: Cinzel Decorative, Cinzel, Syne (Google Fonts).',
+      creditsAssets: '3D and Audio Assets: CC0 License (Kenney, Quaternius, OpenGameArt) with procedural fallbacks.',
     },
     hud: {
       sandLabel: 'Extracted Sand',
+      sand: 'Sand',
       spsLabel: 'per second',
+      spsSuffix: '/s',
+      progress: 'Desert excavated',
+      desertExcavated: 'Excavated Desert',
+      completionPct: '{pct}% excavated',
       radarDepth: 'Depth',
       radarBedrock: 'Bedrock',
-      workshop: 'Dune Workshop',
+      workshop: 'Workshop',
+      workshopFull: 'Dune Workshop',
       pause: 'Pause',
-      stormBoost: 'STORM +50%',
+      pauseTitle: 'Pause / Settings',
+      stormBoost: '⚡ STORM +50%',
+      cheatsBadgeTitle: 'Cheats active — Achievements locked',
+      cheatsBadgeTag: 'CHEATS',
+      cheatsActive: 'Cheats active — Achievements locked',
+      cheatsTag: 'CHEATS',
+      radarTitle: 'Georadar',
+      radarStatus: 'ACTIVE',
+      radarActive: 'ACTIVE',
+      radarScanning: 'Scanning in progress...',
     },
     shop: {
       title: 'Dune Workshop',
-      tabTools: 'Tools',
+      subtitle: 'Forge technology and command your autonomous fleet',
+      tabManual: 'Manual Tools',
       tabFleet: 'Autonomous Fleet',
+      tabs: {
+        manual: 'Manual Tools',
+        fleet: 'Autonomous Fleet',
+      },
+      tabTools: 'Tools',
       tabRadar: 'Georadar',
       level: 'Level',
       cost: 'Cost',
-      maxed: 'Max',
-      buy: 'Purchase',
+      maxed: 'Maxed',
+      max: 'MAX',
+      maxLevel: 'MAX',
+      buy: 'Buy',
+      buyAction: 'Buy',
+      completed: 'Completed',
+      maxedAction: 'Completed',
       dpsLabel: 'DPS',
       powerLabel: 'Power',
       freqLabel: 'Frequency',
       radiusLabel: 'Radius',
+      closeShop: 'Close Workshop',
     },
     upgrades: {
       shovel: {
-        name: 'Reinforced Shovel',
-        desc: 'Increases the power of each manual shovel strike.',
+        name: 'Orichalcum Shovel',
+        desc: 'Sharpens the blade to extract more sand with every single strike.',
+        benefit: '+1 Sand per strike (Current: {amount})',
       },
       frequency: {
-        name: 'Balanced Grip',
-        desc: 'Accelerates the speed of manual digging.',
+        name: 'Kinetic Rhythm',
+        desc: 'Reduces the interval between sustained digging strikes while holding down.',
+        benefit: 'Hold frequency: {rate} strikes/s',
       },
       radius: {
-        name: 'Wide-Blade Spade',
-        desc: 'Widens the impact area on the sand dunes.',
-      },
-      scarab: {
-        name: 'Clockwork Scarab',
-        desc: 'Agile automaton that sieves the dunes autonomously.',
-      },
-      excavator: {
-        name: 'Steam Excavator',
-        desc: 'Heavy machinery that shatters deep compressed rock layers.',
-      },
-      dredge: {
-        name: 'Orichalcum Dredge',
-        desc: 'Massive rotating Atlantean structure of boundless extraction.',
+        name: 'Digging Radius',
+        desc: 'Expands the conical impact radius across the terrain with each blow.',
+        benefit: 'Radius: {radius}m (+0.45m)',
       },
       georadar: {
         name: 'Deep Georadar',
-        desc: 'Detects buried anomalies and subterranean ruins.',
+        desc: 'Resonance compass that scans the subterranean strata and detects anomalies before unearthing them.',
+        benefitActive: 'Active in HUD with real-time sonar readings',
+        benefitInactive: 'Unlocks compass and cryptic subterranean readings',
       },
+      scarab: {
+        name: 'Clockwork Scarab',
+        desc: 'Light golden automaton that patrols the dunes and digs sand at steady intervals.',
+        benefit: '+1.0 Sand/s per level (Total: {total}/s)',
+      },
+      excavator: {
+        name: 'Steam Excavator',
+        desc: 'Heavy machinery with piston arm that carves wide craters with massive power.',
+        benefit: '+25.0 Sand/s per level (Total: {total}/s)',
+      },
+      dredge: {
+        name: 'Atlantean Sand Dredge',
+        desc: 'Colossal rotating drum excavator that pulverizes entire shelves of compressed bedrock sand.',
+        benefit: '+200.0 Sand/s per level (Total: {total}/s)',
+      },
+    },
+    biomes: {
+      modalTitle: 'Select Expedition Biome',
+      modalSubtitle: 'Choose the archaeological excavation site for your new expedition',
+      startBtn: 'Begin Expedition',
+      cancelBtn: 'Cancel',
+      selectedBadge: 'Selected',
+      selectBtn: 'Select Biome',
+      unlockTabletsBtn: 'Unlock ({cost} τ)',
+      lockedReq: 'Requires {wins} Victory(ies) or {cost} τ',
+      modifiersLabel: 'Active Modifiers',
+      desert: {
+        name: 'Golden Desert',
+        subtitle: 'The Ancestral Dunes of Kemet',
+        lore: 'Ancient golden sands concealing the Obelisk Sanctuary, colonnaded avenues, and orichalcum chambers.',
+        modifier: 'Standard Resistance | 100% Volume',
+      },
+      ocean: {
+        name: 'Sunken Ocean',
+        subtitle: 'Sunken Coral Abyss',
+        lore: 'A dried prehistoric ocean floor where an ancient Atlantean galleon lies broken between giant fossil clam arches.',
+        modifier: 'Resistance -20% | Volume +15% | Value +25%',
+      },
+      glacier: {
+        name: 'Archaic Glacier',
+        subtitle: 'Crypt of Eternal Permafrost',
+        lore: 'Hexagonal ice monoliths, crystalline spires, and frozen temples shielded beneath a tough permafrost crust.',
+        modifier: 'Permafrost +35% Res. | Ice Shards | Value +35%',
+      },
+      jungle: {
+        name: 'Buried Jungle',
+        subtitle: 'Emerald Ziggurat & Roots',
+        lore: 'Low-slung stepped temples and inscribed menhirs entwined with petrified roots that take multiple blows to sever.',
+        modifier: 'Buried Roots (-35% Radius) | Value +40%',
+      },
+    },
+    endings: {
+      curse: {
+        badge: '☠️',
+        title: 'The Curse of Atlantis',
+        subtitle: 'The Ancient Seal is Broken',
+        desc: 'You dug too deep. The primordial darkness slumbering under the sunken city has awakened, staining the skies in cosmic dread.',
+        quote: 'Perhaps you should have left the sand where it lay...',
+        text: 'Perhaps you should have left the sand where it lay... You dug too deep and shattered the ancient obelisk seal. Millennia of slumbering shadows have been unleashed upon the world, dyeing the heavens with blood and cosmic terror.',
+      },
+      treasure: {
+        badge: '👑',
+        title: 'The Pure Gold Vault',
+        subtitle: 'The Immortal Wealth of Atlantis',
+        desc: 'The bedrock of the sunken city gleams with solid gold, cerulean gemstones, and boundless priceless orichalcum relics.',
+        quote: 'You are obscenely wealthy. The desert belongs to you.',
+        text: 'You are obscenely rich! The ancient vaults have burst open, flooding the excavation crater with pure gold bullion, azure gems, and priceless orichalcum artifacts. The great dune has been conquered and its grandest treasure is yours.',
+      },
+      business: {
+        badge: '🏗️',
+        title: 'Excavation Corp Ltd.',
+        subtitle: 'Heavy Construction Incorporation Certificate',
+        desc: 'No mythical gods, no cosmic doom: just an old rusty bucket and a multibillion-dollar mining conglomerate.',
+        quote: 'The quarry is open. Production never stops.',
+        text: 'No slumbering gods, no cosmic cataclysm, and no magical treasure. At the bottom of the pit lay only an old rusted bucket. In return, you removed millions of tons of sand and founded a heavy civil engineering titan with an unstoppable fleet!',
+      },
+      secret: {
+        badge: '🔱',
+        title: 'The Ascension of Atlantis',
+        subtitle: 'Awakening of the Sunken Metropolis',
+        desc: 'The buried ruins rise heavenward cloaked in brilliant orichalcum luminescence, crowning you First Warden.',
+        quote: 'The Predecessors have reopened the gates of the celestial vault.',
+        text: 'You released no dark curse, nor did you seek mere gold or corporate profit: you awakened the lost heart of Atlantis. The thousand-year city ascends from the eternal dunes into the sky, crowning you the First Warden of Orichalcum.',
+      },
+      buttons: {
+        newGame: 'New Expedition',
+        menu: 'Back to Menu',
+        sandbox: 'Continue in Free Sandbox',
+      },
+      stats: {
+        time: 'Expedition Time',
+        sand: 'Extracted Sand',
+        clicks: 'Manual Shovel Strikes',
+        tablets: 'Ancient Tablets',
+        valuation: 'Estimated Company Valuation',
+        fleetCount: 'Fleet Units',
+      },
+      toastCollected: '+{amount} Sand collected!',
     },
     settings: {
       title: 'Settings',
@@ -406,25 +749,109 @@ export const DICTIONARY = {
       tabControls: 'Controls',
       tabData: 'Data & Language',
       tabCheats: 'Cheats',
+      master: 'Master Volume',
+      music: 'Ambient & Music',
+      sfx: 'Sound Effects',
+      mute: 'Mute Audio',
+      language: 'Game Language',
+      renderScale: 'Render Resolution',
+      shadows: 'Dynamic Shadows',
+      particles: 'Particle Detail',
+      dayNight: 'Day/Night Cycle',
+      fpsCap: 'Frame Rate Limit',
+      cameraSens: 'Camera Sensitivity',
+      invertY: 'Invert Vertical Pitch',
+      screenShake: 'Screen Shake',
       postProcessing: 'Post-Processing (Bloom & Vignette)',
-      postProcessingDesc: 'Emissive glow and cinematic warmth gradient',
+      postProcessingDesc: 'Emissive orichalcum bloom and warm cinematic vignette',
       dustMotes: 'Atmospheric Dust Motes',
-      dustMotesDesc: 'Floating ambient dust particles',
+      dustMotesDesc: 'Floating golden silica dust particles above the crater',
+      graphicsLow: 'Low (Performance)',
+      graphicsMed: 'Medium (Balanced)',
+      graphicsHigh: 'High (Detailed)',
+      shadowsOff: 'Disabled',
+      shadowsLow: 'Soft Shadows',
+      shadowsHigh: 'Ultra Detailed',
+      dayNightAuto: 'Automatic (Continuous)',
+      dayNightDay: 'Always Day',
+      dayNightNight: 'Always Night',
+      fpsNoLimit: 'No Limit',
+      dataExport: 'Export Save Data',
+      dataImport: 'Import Save Data',
+      dataReset: 'Reset Preferences',
+      clearSave: 'Delete Current Expedition',
+      clearSaveConfirm: 'Are you sure you want to delete your current expedition? This cannot be undone.',
+      saveClearedToast: 'Expedition save deleted.',
+      resetSettingsConfirm: 'Reset all settings back to default values?',
+      jsonPlaceholder: 'Paste settings JSON here to import…',
+      exportJson: 'Export JSON',
+      importJson: 'Import JSON',
+      exportedStatus: 'Settings exported to text area.',
+      importedStatus: 'Imported {count} modified settings.',
+      errorStatus: 'Error',
+      resetDefaults: 'Reset settings',
+      resetTitle: 'Restore default values?',
+      resetMsg: 'All settings will return to initial values. Game save is untouched.',
+      resetConfirm: 'Reset',
+      resetDone: 'Settings restored.',
+      deleteSave: 'Delete save',
+      noSaveToDelete: 'No save to delete.',
+      deleteSaveTitle: 'Delete save file?',
+      deleteSaveMsg: 'The current expedition will be permanently lost. This action is irreversible.',
+      deleteSaveConfirm: 'Delete permanently',
+      saveDeleted: 'Save file deleted.',
+      settingsBackup: 'Settings Backup',
+      resetSection: 'Reset & Data',
+      active: 'Active',
+      inactive: 'Inactive',
+      masterVolume: 'Master volume',
+      musicVolume: 'Music',
+      sfxVolume: 'Sound effects',
+      webAudioUnsupported: 'Your browser does not support Web Audio: audio is disabled.',
+      renderScaleHint: 'Internal resolution scale',
+      graphicsQuality: 'Particle quality',
+      postProcessingHint: 'Emissive glow and color grading',
+      dustMotesHint: 'Floating dust motes in the crater',
+      dayNightHint: 'Auto / Day / Night',
+      graphicsOptions: {
+        low: 'Low (Mobile)',
+        med: 'Medium (Balanced)',
+        high: 'High (Detailed)',
+      },
+      shadowsOptions: {
+        off: 'Disabled',
+        low: 'Low',
+        high: 'High',
+      },
+      dayNightOptions: {
+        auto: 'Automatic (Dynamic)',
+        day: 'Always Day',
+        night: 'Always Night',
+      },
+      fpsOptions: {
+        '0': 'Unlimited',
+        '30': '30 FPS',
+        '60': '60 FPS',
+      },
+      languageOptions: {
+        it: 'Italiano',
+        en: 'English',
+      },
       cheats: {
         title: 'Cheats & Creative Mode',
-        subtitle: 'Freely alter parameters and events in the current expedition.',
-        warningActive: '⚠️ Cheats active: Achievements are permanently locked for this run.',
-        warningInactive: 'Activating any cheat will permanently disable all Achievements for this expedition.',
+        subtitle: 'Freely alter parameters, terrain, and events in the active expedition.',
+        warningActive: '⚠️ Cheats active: Trophy and Achievement unlocks are permanently locked out for this run.',
+        warningInactive: 'Activating any cheat will permanently lock out all Achievements for this expedition.',
         confirmTitle: 'Warning: Cheats Mode',
-        confirmMsg: 'Activating cheats allows you to freely alter sand, terrain, and events, but permanently disables all Achievements for this expedition. Continue?',
-        confirmBtn: 'Confirm and Disable Achievements',
-        sandSection: 'Add Sand',
+        confirmMsg: 'Enabling cheats allows unrestricted sand grants, terrain excavation, and event triggers, but will permanently disable all Achievement unlocks for this expedition. Continue?',
+        confirmBtn: 'Confirm & Lockout Achievements',
+        sandSection: 'Grant Sand',
         addSand100k: '+100,000 Sand',
         addSand1M: '+1,000,000 Sand',
-        completionSection: 'Fast Excavation Completion',
-        comp50: 'Set 50%',
-        comp95: 'Set 95%',
-        comp99: 'Set 99% (Climax)',
+        completionSection: 'Instant Excavation Progress',
+        comp50: 'Set to 50%',
+        comp95: 'Set to 95%',
+        comp99: 'Set to 99% (Climax)',
         endingSection: 'Force Expedition Ending',
         endingBtn: 'Trigger Climax Now',
         eventsSection: 'Trigger Desert Event',
@@ -432,223 +859,234 @@ export const DICTIONARY = {
         eventMerchant: '⛺ Nomad Merchant',
         godModeSection: 'Super Shovel (God Mode)',
         godModeLabel: 'Super Shovel (God Mode)',
-        godModeHint: '10x digging radius and instantaneous strike rate',
-        upgradesSection: 'Max Upgrades',
+        godModeHint: '10x digging radius with zero cooldown between consecutive strikes',
+        godModeActive: 'Active',
+        godModeInactive: 'Disabled',
+        upgradesSection: 'Max All Upgrades',
         maxUpgradesBtn: 'Unlock All Upgrades',
         notInGame: 'Cheats can only be used during an active expedition.',
         hudBadge: 'Cheats active — Achievements locked',
+        toastSand100k: '+100,000 Sand granted!',
+        toastSand1M: '+1,000,000 Sand granted!',
+        toastComp: 'Excavation progress set to {pct}%',
+        toastEnding: 'Forced ending: {id}',
+        toastStorm: 'Sandstorm unleashed!',
+        toastMerchant: 'Nomad Caravan arrived!',
+        toastGodOn: 'Super Shovel (God Mode) Activated!',
+        toastGodOff: 'Super Shovel Disabled.',
+        toastMaxUpgrades: 'All upgrades maxed out!',
       },
-      master: 'Master Volume',
-      music: 'Ambience & Music',
-      sfx: 'Sound Effects',
-      mute: 'Mute',
-      language: 'Game Language',
-      renderScale: 'Render Resolution',
-      shadows: 'Shadows',
-      particles: 'Particle Detail',
-      dayNight: 'Day/Night Cycle',
-      fpsCap: 'Frame Rate Cap',
-      cameraSens: 'Camera Sensitivity',
-      invertY: 'Invert Vertical Axis',
-      screenShake: 'Screen Shake',
-      clearSave: 'Erase Save Data',
-      clearSaveConfirm: 'Are you sure you want to delete the current expedition? This cannot be undone.',
-      resetSettings: 'Restore Default Settings',
-      exportSave: 'Export Data',
-      importSave: 'Import Data',
-    },
-    pause: {
-      title: 'Expedition Paused',
-      resume: 'Resume Digging',
-      stats: 'Stats & Trophies',
-      wardrobe: 'Wardrobe & Skins',
-      prestige: 'Sanctuary (τ)',
-      saveAndExit: 'Save & Exit',
-    },
-    wardrobe: {
-      title: 'Dune Wardrobe',
-      subtitle: 'Customize the look of your tools, sand, and machinery using Ancient Tablets (τ).',
-      tablets: 'Ancient Tablets: {count} τ',
-      tabShovel: 'Shovels & Tools',
-      tabShovels: 'Shovels & Tools',
-      tabSand: 'Sand Biomes',
-      tabMachinery: 'Machinery Fleet',
-      equipped: 'Equipped',
-      equip: 'Equip',
-      unlock: 'Unlock for {cost} τ',
-      needTablets: 'Need tablets',
-      free: 'Default',
-      skins: {
-        shovel_bronze: { name: 'Bronze Shovel', desc: 'Sturdy shovel forged during the earliest excavations' },
-        shovel_gold: { name: 'Royal Gold Shovel', desc: 'Golden alloy glistening under the desert sun' },
-        shovel_crystal: { name: 'Crystal Shovel', desc: 'Ethereal blade inlaid with glowing orichalcum' },
-        shovel_obsidian: { name: 'Obsidian Shovel', desc: 'Black volcanic glass tempered deep underground' },
-        sand_classic: { name: 'Classic Sand', desc: 'Original golden grains of the Great Dune' },
-        sand_mars: { name: 'Mars Sand', desc: 'Crimson mineral dust from unknown alien horizons' },
-        sand_caribbean: { name: 'Caribbean Sand', desc: 'White limestone minerals and coral reef powder' },
-        sand_volcanic: { name: 'Volcanic Sand', desc: 'Pitch-black basalt and volcanic lapilli' },
-        machinery_standard: { name: 'Standard Fleet', desc: 'Copper and bronze alloy automatons and scarabs' },
-        machinery_royal_gold: { name: 'Royal Gold Fleet', desc: 'Ceremonial gilded hulls fit for pharaohs' },
-        machinery_atlantis_teal: { name: 'Atlantis Fleet', desc: 'Orichalcum composite with luminescent condensers' },
-      },
-    },
-    tutorial: {
-      firstDig: 'Tap or hold to dig into the sand dune',
-      currency: 'Extracted sand is your currency',
-      workshopAvailable: 'New equipment available in the Workshop',
-    },
-    events: {
-      sandstormTitle: 'Sandstorm',
-      sandstormMsg: 'Golden gales sweep the desert! +50% sand extracted for 30s!',
-      merchantTitle: 'Nomad Caravan',
-      merchantMsg: 'A desert merchant has set up camp on the ridge!',
-      merchantTrade: 'Trade',
-      merchantDealBought: 'Nomad pact signed successfully!',
-    },
-    endings: {
-      curse: {
-        badge: 'Curse',
-        title: 'The Shattered Seal',
-        desc: 'You dug too deep. Ancient darkness slumbering beneath the city has awakened.',
-        quote: 'Perhaps you should have left the sand where it lay...',
-      },
-      treasure: {
-        badge: 'Treasure',
-        title: 'The Vault of Pure Gold',
-        desc: 'The foundations of the sunken city shine with solid gold and invaluable gems.',
-        quote: 'You are obscenely wealthy. The desert belongs to you.',
-      },
-      business: {
-        badge: 'Enterprise',
-        title: 'Excavation Inc.',
-        desc: 'No mystical mystery: just a colossal, highly profitable quarry operation.',
-        quote: 'The quarry is open. Production never sleeps.',
-      },
-      secret: {
-        badge: 'Ascension',
-        title: 'The Awakening of Atlantis',
-        desc: 'The sunken ruins levitate into the sky shrouded in orichalcum dawn.',
-        quote: 'The Ancestors have reopened the celestial gateway.',
-      },
-      buttons: {
-        newGame: 'New Expedition',
-        menu: 'Back to Menu',
-        sandbox: 'Continue in Free Sandbox',
-      },
-    },
-    stats: {
-      title: 'Career & Trophies',
-      tabStats: 'Statistics',
-      tabTrophies: 'Achievements',
-      totalClicks: 'Manual Shovel Strikes',
-      totalSandLifetime: 'Lifetime Sand Extracted',
-      totalPlaytime: 'Total Playtime',
-      ruinsUncovered: 'Ruins Uncovered',
-      runsCompleted: 'Expeditions Completed',
-      bestRunTime: 'Fastest Completion Time',
-      noRecord: 'No record yet',
-      trophiesUnlocked: 'Trophies Unlocked',
-      dateUnlocked: 'Unlocked on',
-      cheatsWarning: 'Achievements disabled: cheats have been used in this expedition',
     },
     achievements: {
       FIRST_DIG: {
         title: 'First Golden Strike',
-        desc: 'Perform your first shovel strike into the dune.',
+        desc: 'Execute your very first manual shovel strike into the great dune.',
       },
       DUNE_BREAKER: {
         title: 'Dune Breaker',
-        desc: 'Accumulate 100,000 units of sand in a single run.',
+        desc: 'Accumulate 100,000 units of sand in a single expedition.',
       },
       MACHINE_LORD: {
-        title: 'Machine Lord',
-        desc: 'Deploy at least 5 workers or excavators simultaneously.',
+        title: 'Lord of the Machines',
+        desc: 'Deploy at least 5 autonomous workers or excavators simultaneously.',
       },
       ECHOES_PAST: {
         title: 'Echoes of the Past',
-        desc: 'Uncover the central temple beneath the dunes.',
+        desc: 'Unearth the central obelisk sanctuary slumbering under the sands.',
       },
       TRINITY: {
-        title: 'Trinity of Sand',
-        desc: 'Discover all three base endings (Curse, Treasure, Enterprise).',
+        title: 'Trinity of the Sand',
+        desc: 'Discover all three core endings (Curse, Treasure, Business).',
       },
       AWAKENING: {
         title: 'The Awakening',
         desc: 'Witness the Ascension of Atlantis in the Secret Ending.',
       },
       SPEEDRUNNER: {
-        title: 'Against the Clock',
-        desc: 'Complete an expedition in under 20 minutes.',
+        title: 'Race Against Time',
+        desc: 'Complete an entire expedition in under 20 minutes.',
       },
       SAND_HOARDER: {
-        title: 'Keeper of Gold',
-        desc: 'Accumulate 1,000,000 total lifetime sand in your career.',
+        title: 'Gold Keeper',
+        desc: 'Accumulate a lifetime career total of 1,000,000 sand.',
       },
       ANCIENT_WISDOM: {
         title: 'Ancient Wisdom',
-        desc: 'Accumulate your first Ancient Tablets τ.',
+        desc: 'Earn your first Ancient Tablets τ from the Sanctuary.',
       },
       STORM_SURVIVOR: {
         title: 'Storm Rider',
-        desc: 'Dig while an active Sandstorm sweeps the desert.',
+        desc: 'Dig actively while a wild Sandstorm is ravaging the dune.',
       },
       NOMAD_PARTNER: {
         title: 'Desert Deal',
-        desc: 'Complete a transaction with the Nomad Merchant.',
+        desc: 'Strike a trade bargain with the Nomad Merchant caravan.',
       },
       COMPLETIONIST: {
         title: 'Supreme Archaeologist',
-        desc: 'Reach 100% completion of a desert excavation.',
+        desc: 'Reach 100% full excavation of an entire desert crater.',
       },
     },
-    biomes: {
-      modalTitle: 'Select Expedition Biome',
-      modalSubtitle: 'Choose the archaeological site for your new expedition',
-      startBtn: 'Launch Expedition',
-      cancelBtn: 'Cancel',
-      selectedBadge: 'Selected',
-      selectBtn: 'Select Biome',
-      unlockTabletsBtn: 'Unlock ({cost} τ)',
-      lockedReq: 'Requires {wins} Win(s) or {cost} τ',
-      modifiersLabel: 'Active Modifiers',
-      desert: {
-        name: 'Golden Desert',
-        subtitle: 'The Ancestral Dunes of Kemet',
-        lore: 'Millenary golden sands hiding the Obelisk Sanctuary, colonnaded avenues, and orichalcum chambers.',
-        modifier: 'Standard Resistance | Volume 100%',
+    tutorial: {
+      firstDig: 'Tap or hold down to dig into the dune',
+      currency: 'Extracted sand is your currency!',
+      workshopAvailable: 'New excavation tools ready in the Workshop!',
+    },
+    events: {
+      sandstormTitle: 'Sandstorm!',
+      sandstormMsg: 'Furious desert winds lift the dune: +50% Sand per strike (30s)!',
+      sandstormBoostLabel: '⚡ Storm: +50% Sand (30s)',
+      sandstormToastEnded: 'The sandstorm has subsided.',
+      merchantTitle: 'Nomad Caravan',
+      merchantMsg: 'A desert merchant has set up camp along the crater ridge!',
+      merchantAction: 'Trade',
+      merchantToastLeft: 'The nomad caravan has departed into the dunes.',
+      merchantLore: '"The desert hides its secrets from the hurried, but rewards those who trade wisely."',
+      hyperDigTitle: 'Nomad Hyper-Dig',
+      hyperDigDesc: '+100% Sand extraction for the next 45 seconds.',
+      hyperDigBuy: 'Purchase (150 Sand)',
+      hyperDigBoostLabel: '✨ Hyper-Dig (x2.0): 45s',
+      hyperDigSuccess: 'Purchased Nomad Hyper-Dig! (+100% Sand for 45s)',
+      insufficientSand: 'Not enough sand for this trade!',
+      decline: 'Decline',
+    },
+    prestige: {
+      title: 'Sanctuary of Ancestors',
+      currency: 'Ancient Tablets: τ {count}',
+      intro: 'The lore of past cycles is never lost. Spend Ancient Tablets to imprint permanent perks across all future expeditions.',
+      level: 'Lv. {lvl}/{max}',
+      max: 'MAX',
+      shovelEcho: {
+        name: 'Echo of the Spade',
+        desc: 'Wisdom of past cycles guides your strike: +15% permanent base dig power per level.',
+        benefit: '+{pct}% Permanent Dig Power',
       },
-      ocean: {
-        name: 'Drained Ocean',
-        subtitle: 'Submerged Coral Abyss',
-        lore: 'An ancient drained seabed where a sunken Atlantean galleon lies broken in two amidst giant shell arches.',
-        modifier: 'Resistance -20% | Volume +15% | Value +25%',
+      excavatorBlueprint: {
+        name: 'Excavator Blueprint',
+        desc: 'Begin every future expedition with Clockwork Scarabs already excavating the crater.',
+        benefit: '{count} Scarabs operating at start',
       },
-      glacier: {
-        name: 'Glacial Frost',
-        subtitle: 'Crypt of Eternal Permafrost',
-        lore: 'Hexagonal ice monoliths, crystalline spires, and frozen temples guarded by a dense permafrost layer.',
-        modifier: 'Permafrost +35% Res. | Ice Shards | Value +35%',
+      tabletMagnetism: {
+        name: 'Tablet Magnetism',
+        desc: 'Ancestral favor: grants a 5% discount on all Workshop sand costs per level.',
+        benefit: '-{pct}% Purchase Costs (Max -25%)',
       },
-      jungle: {
-        name: 'Overgrown Oasis',
-        subtitle: 'Emerald Ziggurat & Roots',
-        lore: 'Low stepped ziggurat temples and engraved menhirs wrapped in buried roots requiring multiple strikes to break.',
-        modifier: 'Buried Roots (-35% Radius) | Value +40%',
+    },
+    wardrobe: {
+      title: 'Dune Wardrobe',
+      subtitle: 'Customize the appearance of your shovels, sands, and machinery using Ancient Tablets (τ).',
+      tablets: 'Ancient Tablets: τ {count}',
+      tabShovel: 'Shovels & Spades',
+      tabSand: 'Sand Biomes',
+      tabMachinery: 'Machinery Fleet',
+      equipped: 'Equipped',
+      equip: 'Equip',
+      unlock: 'Unlock for {cost} τ',
+      needTablets: 'Need more tablets',
+      free: 'Default',
+      skins: {
+        shovel_bronze: { name: 'Bronze Shovel', desc: 'Sturdy shovel forged during initial digs' },
+        shovel_gold: { name: 'Royal Gold Spade', desc: 'Golden alloy glistening under the desert sun' },
+        shovel_crystal: { name: 'Crystal Blade', desc: 'Ethereal edge inlaid with glowing orichalcum' },
+        shovel_obsidian: { name: 'Obsidian Spade', desc: 'Volcanic black glass tempered in the deep earth' },
+        sand_classic: { name: 'Classic Sand', desc: 'The original golden grains of the Great Dune' },
+        sand_mars: { name: 'Martian Dust', desc: 'Crimson mineral dust from uncharted alien wastes' },
+        sand_caribbean: { name: 'Caribbean Coral', desc: 'White limestone minerals from sunken coral atolls' },
+        sand_volcanic: { name: 'Volcanic Ash', desc: 'Black basalt and quenched lava granules' },
+        machinery_standard: { name: 'Standard Fleet', desc: 'Copper and bronze alloy clockwork automations' },
+        machinery_royal_gold: { name: 'Golden Fleet', desc: 'Pharaonic ceremonial polished gold chassis' },
+        machinery_atlantis_teal: { name: 'Atlantis Fleet', desc: 'Orichalcum composite with luminescent capacitors' },
       },
+    },
+    gallery: {
+      title: 'Endings Gallery',
+      progress: 'Collector Progress: {count}/{total} ({pct}%)',
+      sealedTitle: '??? Slumbering Seal',
+      unlockedStatus: '✓ Epilogue Unlocked',
+      lockedStatus: 'Not yet discovered',
+    },
+    pause: {
+      title: 'Expedition Paused',
+      subtitle: 'Time elapsed: {time} · Sand: {sand}',
+      quickSettings: 'Quick Settings',
+      masterVol: 'Master Volume',
+      muteLabel: 'Mute Audio',
+      graphicsLabel: 'Graphics Quality',
+      resume: 'Resume Expedition',
+      stats: 'Stats & Trophies',
+      wardrobe: 'Wardrobe & Skins',
+      prestige: 'Sanctuary of Ancestors (τ {count})',
+      settingsBtn: 'All Settings',
+      saveAndExit: 'Save & Exit',
+    },
+    stats: {
+      title: 'Career & Trophies',
+      tabStats: 'Statistics',
+      tabTrophies: 'Achievements',
+      totalClicks: 'Manual Shovel Strikes',
+      totalSandLifetime: 'Lifetime Total Sand',
+      totalPlaytime: 'Total Playtime',
+      ruinsUncovered: 'Unearthed Ruins',
+      runsCompleted: 'Completed Expeditions',
+      bestRunTime: 'Best Dig Record',
+      noRecord: 'No record',
+      trophiesUnlocked: 'Achievements Unlocked',
+      dateUnlocked: 'Unlocked on',
+      cheatsWarning: 'Achievements disabled: cheats have been enabled during this run',
+    },
+    loading: {
+      title: 'Diggy Diggy Sand',
+      subtitle: 'Preparing the expedition',
+      status: 'Awakening ancient mechanisms…',
+      startBtn: 'Begin Expedition',
+      tips: [
+        'The sand does not lie: every grain moved brings the lost city closer.',
+        'The Atlanteans called orichalcum "the metal that remembers light".',
+        'Hold down to dig continuously. Weary hands do not exist for a pharaoh.',
+        'The Nomads dig slowly, but they never sleep.',
+        'Beneath the dunes, something pulses with turquoise light. It is no mirage.',
+        'A critical hit blazes like the noonday sun: watch for golden sparks.',
+        'Obelisks point heavenward because what lies beneath should never be ignored.',
+        'Not all expeditions end the same way. None can foresee what awaits below.',
+      ],
+    },
+    offline: {
+      title: 'Automated Expedition',
+      content: 'While you were away, your autonomous diggers gathered <span class="num accent">+{amount}</span> Sand.',
+      elapsed: 'Elapsed time: {mins} min (Fleet efficiency 50%).',
+      claim: 'Claim',
     },
   },
 };
 
 export class I18n {
-  constructor(settings = null) {
-    this.settings = settings;
-    this.lang = settings?.get?.('game.language') || 'it';
+  constructor(lang = 'it') {
+    this.lang = ['it', 'en'].includes(lang) ? lang : 'it';
+    this.settings = null;
+    I18n.instance = this;
+  }
 
-    settings?.subscribe?.('game.language', (val) => {
-      if (val && ['it', 'en'].includes(val) && val !== this.lang) {
-        this.setLanguage(val);
-      }
-    });
+  static get currentLang() {
+    return I18n.instance ? I18n.instance.lang : 'it';
+  }
+
+  static set currentLang(lang) {
+    if (I18n.instance) I18n.instance.setLanguage(lang);
+  }
+
+  get currentLang() {
+    return this.lang;
+  }
+
+  set currentLang(lang) {
+    this.setLanguage(lang);
+  }
+
+  bindSettings(settings) {
+    this.settings = settings;
+    const initial = settings?.get?.('game.language') || 'it';
+    this.setLanguage(initial);
+    settings?.subscribe?.('game.language', (l) => this.setLanguage(l));
   }
 
   setLanguage(lang) {
@@ -657,10 +1095,11 @@ export class I18n {
     if (this.settings && this.settings.get('game.language') !== lang) {
       this.settings.set('game.language', lang);
     }
-    if (typeof document !== 'undefined') {
+    if (typeof document !== 'undefined' && document.documentElement) {
       document.documentElement.lang = lang;
       this.updateDOM();
     }
+    events.emit('language:changed', lang);
     events.emit('i18n:changed', { lang });
   }
 
@@ -669,53 +1108,68 @@ export class I18n {
   }
 
   onLanguageChange(fn) {
-    return events.on('i18n:changed', fn);
+    const unsub1 = events.on('language:changed', (lang) => fn({ lang }));
+    const unsub2 = events.on('i18n:changed', fn);
+    return () => { unsub1(); unsub2(); };
+  }
+
+  static t(key, params = {}) {
+    return (I18n.instance || i18n).t(key, params);
   }
 
   /**
-   * Risolve una chiave di traduzione nidificata (es. 'menu.newGame' o 'achievements.FIRST_DIG.title').
-   * Supporta parametri di interpolazione: t('shop.levelParam', { count: 5 }) => "Livello 5"
+   * Risolve una chiave di traduzione nidificata (es. 'hud.sand' o 'achievements.FIRST_DIG.title').
+   * Supporta parametri di interpolazione: t('hud.completionPct', { pct: '45.2' }) => "45.2% scavato"
    */
   t(key, params = {}) {
     if (!key) return '';
     const parts = key.split('.');
-    let cur = DICTIONARY[this.lang] || DICTIONARY.it;
 
+    // 1. Prova con la lingua attiva
+    let cur = DICTIONARY[this.lang];
     for (const p of parts) {
-      if (!cur || cur[p] === undefined) {
-        // Fallback a italiano se la chiave non esiste nella lingua attuale
-        cur = null;
-        break;
-      }
+      if (cur === undefined || cur === null) break;
       cur = cur[p];
     }
 
-    if (cur === null || cur === undefined) {
-      let fallback = DICTIONARY.it;
+    // 2. Fallback alla lingua alternativa (it o en)
+    if (cur === undefined || cur === null) {
+      const altLang = this.lang === 'it' ? 'en' : 'it';
+      let alt = DICTIONARY[altLang];
       for (const p of parts) {
-        if (!fallback || fallback[p] === undefined) {
-          fallback = key;
-          break;
-        }
-        fallback = fallback[p];
+        if (alt === undefined || alt === null) break;
+        alt = alt[p];
       }
-      cur = fallback;
+      cur = alt;
+    }
+
+    // 3. Fallback alla chiave stessa se assente ovunque
+    if (cur === undefined || cur === null) {
+      cur = key;
     }
 
     if (typeof cur !== 'string') return cur ?? key;
 
-    // Interpolazione parametri
+    // 4. Interpolazione parametri dinamici {key}
     return cur.replace(/\{(\w+)\}/g, (_, k) => (params[k] !== undefined ? params[k] : `{${k}}`));
   }
 
+  static updateDOM(root = typeof document !== 'undefined' ? document : null) {
+    if (I18n.instance) I18n.instance.updateDOM(root);
+  }
+
   /**
-   * Scansiona ed aggiorna tutti gli elementi con attributo `data-i18n="chiave"`
-   * o `data-i18n-title="chiave"` nel sottoalbero specificato.
+   * Scansiona ed aggiorna tutti gli elementi con attributi di localizzazione nel DOM:
+   * - [data-i18n]: textContent
+   * - [data-i18n-html]: innerHTML
+   * - [data-i18n-title]: attributo title
+   * - [data-i18n-placeholder]: attributo placeholder
+   * - [data-i18n-aria-label]: attributo aria-label
    */
-  updateDOM(root = document) {
+  updateDOM(root = typeof document !== 'undefined' ? document : null) {
     if (!root || !root.querySelectorAll) return;
 
-    // Testo interno
+    // Testo interno puro
     root.querySelectorAll('[data-i18n]').forEach((el) => {
       const key = el.getAttribute('data-i18n');
       if (key) {
@@ -726,20 +1180,36 @@ export class I18n {
       }
     });
 
-    // Attributo title
+    // Testo HTML
+    root.querySelectorAll('[data-i18n-html]').forEach((el) => {
+      const key = el.getAttribute('data-i18n-html');
+      if (key) {
+        const text = this.t(key);
+        if (text && el.innerHTML !== text) {
+          el.innerHTML = text;
+        }
+      }
+    });
+
+    // Titoli tooltip
     root.querySelectorAll('[data-i18n-title]').forEach((el) => {
       const key = el.getAttribute('data-i18n-title');
       if (key) el.setAttribute('title', this.t(key));
     });
 
-    // Attributo placeholder
+    // Segnaposti form
     root.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
       const key = el.getAttribute('data-i18n-placeholder');
       if (key) el.setAttribute('placeholder', this.t(key));
+    });
+
+    // Accessibilità screen reader
+    root.querySelectorAll('[data-i18n-aria-label]').forEach((el) => {
+      const key = el.getAttribute('data-i18n-aria-label');
+      if (key) el.setAttribute('aria-label', this.t(key));
     });
   }
 }
 
 // Istanza globale singleton pronta all'uso
 export const i18n = new I18n();
-

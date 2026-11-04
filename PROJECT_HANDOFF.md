@@ -336,6 +336,30 @@ Verifiche manuali da fare: valori persistiti dopo il ricaricamento; `localStorag
     - *Zoom Cinematico con Wheel:* intercettazione eventi rotellina con `e.preventDefault()`, damping esponenziale della distanza e clamping rigoroso tra `12.0m` (fondo dello scavo) e `135.0m` (panoramica completa).
   - Verificata con 96 test unitari complessivi (4 suite specifiche M17 in `tests/phase16.test.mjs`, 100% superati) e browser QA end-to-end (`tests/phase16_browser_qa.mjs`, 0 errori console, screenshot `dds_qa_camera_zoomed_grain.png`, `dds_qa_camera_rotated_qe.png`, `dds_qa_storm_fade_in.png`).
 
+- [x] **M18** Rigore i18n, Dizionario Completo (IT/EN) e Reattività Dinamica dell'Interfaccia (Fase 14):
+  - Dizionario Centralizzato e Completo (`js/core/I18n.js`):
+    - Strutturato in 17 namespace speculari tra Italiano (`it`) ed English (`en`): `common`, `hud`, `shop`, `upgrades`, `biomes`, `endings`, `settings`, `achievements`, `tutorial`, `events`, `prestige`, `wardrobe`, `gallery`, `pause`, `loading`, `stats`, `menu`.
+    - Traduzioni accurate, prive di placeholder vuoti o chiavi orfane, conformi allo stile Atlantean-Kemet e alla terminologia del GDD / Art Bible.
+  - Interpolazione Parametrica e Fallback a Cascata:
+    - Metodo `t(key, params = {})` con supporto per segnaposto dinamici (`{amount}`, `{rate}`, `{pct}`, `{count}`, `{cost}`, `{total}`, ecc.).
+    - Fallback sicuro: se una chiave è assente nella lingua attiva, recupera la stringa dall'altra lingua o restituisce la chiave stessa senza generare eccezioni o schermate bianche.
+  - Reattività DOM Universale e Pulizia Testi Hardcoded:
+    - Metodo `I18n.updateDOM(root)` che scansiona ed aggiorna in tempo reale tutti gli elementi con: `[data-i18n]` (textContent), `[data-i18n-html]` (innerHTML), `[data-i18n-title]` (attributo title), `[data-i18n-placeholder]` (segnaposto form) e `[data-i18n-aria-label]` (accessibilità).
+    - Eliminazione di ogni stringa hardcoded e refactoring con sottoscrizione all'evento `language:changed`:
+      - `Hud.js`: contatori, badge trucchi, etichette progresso, pulsanti e letture sonar del Georadar.
+      - `Shop.js` & `Upgrades.js`: titoli drawer, schede rami, nomi, descrizioni e formule dei benefici dei potenziamenti.
+      - `SettingsModal.js`: schede tab, opzioni selettori (ombre, particelle, ciclo giorno/notte, fps cap, lingua), stato toggle (Attivo/Disattivo), backup JSON, modali di conferma e sezione trucchi con relativi toast bilingui.
+      - `PauseMenu.js`: intestazione, durata trascorso, impostazioni rapide e azioni.
+      - `MainMenu.js`: pulsanti di spedizione, santuario, guardaroba, modale di sovrascrittura salvataggio e crediti.
+      - `Overlay.js` e moduli epilogo (`CurseEnding.js`, `TreasureEnding.js`, `BusinessEnding.js`, `SecretEnding.js`): titoli, sottotitoli narrativi, statistiche di run e pulsanti d'azione (Sandbox, Nuova Spedizione, Menu).
+      - `Tutorial.js`: passaggi guidati del primo scavo, valuta sabbia e officina con re-render in loco se attivo durante lo switch linguistico.
+      - `WorldEvents.js`: notifiche banner, boost HUD e trattativa con il Mercante Nomade.
+      - `PrestigeModal.js`, `GalleryModal.js`, `WardrobeModal.js`, `StatsModal.js`: completezza localizzazione e metodo pubblico `close()`.
+  - Sincronizzazione Bidirezionale `SettingsManager` <-> `I18n`:
+    - Il cambio di `game.language` nelle Impostazioni scrive immediatamente su `localStorage`, aggiorna `document.documentElement.lang`, scatena `I18n.updateDOM()` ed emette `language:changed` ed `i18n:changed`.
+    - Tutti i componenti e modali aperti si aggiornano istantaneamente sul posto senza richiedere il refresh del browser (`location.reload()`).
+  - Verificata con 101 test unitari complessivi (5 suite specifiche M18 in `tests/phase14_i18n.test.mjs`, 100% superati) e browser QA headless Chrome (`tests/phase14_i18n_browser_qa.mjs`, 0 errori console, 0 eccezioni, screenshot `dds_qa_i18n_menu_it.png`, `dds_qa_i18n_settings_en.png`, `dds_qa_i18n_hud_en.png`, `dds_qa_i18n_shop_en.png`, `dds_qa_i18n_hud_re_it.png`).
+
 Piano dettagliato con codice e verifiche: vedi la sezione "Roadmap" sopra e le formule in `Ideas/upgrade_tree_specification.md`.
 
 ## 6. Convenzioni

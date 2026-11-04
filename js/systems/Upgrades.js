@@ -1,10 +1,27 @@
 // Catalogo e logica degli upgrade: formule di costo esponenziale, statistiche di scavo e produzione passiva (SPS).
 import { events } from '../core/Events.js';
+import { i18n } from '../core/I18n.js';
 
 export const BRANCHES = {
-  manual: { id: 'manual', name: 'Scavo Manuale', desc: 'Migliora la pala, la rapidità e l\'area di impatto.' },
-  fleet: { id: 'fleet', name: 'Flotta Autonoma', desc: 'Costrutti e macchine che scavano automaticamente il deserto.' },
+  manual: {
+    id: 'manual',
+    get name() { return i18n.t('shop.tabs.manual') || 'Scavo Manuale'; },
+    get desc() { return i18n.t('shop.subtitle') || 'Migliora la pala, la rapidità e l\'area di impatto.'; },
+  },
+  fleet: {
+    id: 'fleet',
+    get name() { return i18n.t('shop.tabs.fleet') || 'Flotta Autonoma'; },
+    get desc() { return i18n.t('shop.subtitle') || 'Costrutti e macchine che scavano automaticamente il deserto.'; },
+  },
 };
+
+export function getUpgradeName(def) {
+  return i18n.t(`upgrades.${def.id}.name`) || def.name;
+}
+
+export function getUpgradeDesc(def) {
+  return i18n.t(`upgrades.${def.id}.desc`) || def.desc;
+}
 
 export const UPGRADE_CATALOG = {
   // Ramo A: Manual Tooling
@@ -17,7 +34,7 @@ export const UPGRADE_CATALOG = {
     maxLevel: 50,
     desc: 'Affina la lama e incrementa la sabbia estratta per ogni singolo colpo.',
     getBenefit(lvl) {
-      return `+1 Sabbia per colpo (Attuale: ${1 + lvl})`;
+      return i18n.t('upgrades.shovel.benefit', { amount: 1 + lvl }) || `+1 Sabbia per colpo (Attuale: ${1 + lvl})`;
     },
   },
   frequency: {
@@ -30,7 +47,7 @@ export const UPGRADE_CATALOG = {
     desc: 'Riduce l\'intervallo tra i colpi continuati quando tieni premuto il mouse.',
     getBenefit(lvl) {
       const rate = lvl === 0 ? '2.0' : (1 / Math.max(0.06, 0.35 * Math.pow(0.93, lvl))).toFixed(1);
-      return `Frequenza hold: ${rate} colpi/s`;
+      return i18n.t('upgrades.frequency.benefit', { rate }) || `Frequenza hold: ${rate} colpi/s`;
     },
   },
   radius: {
@@ -42,7 +59,8 @@ export const UPGRADE_CATALOG = {
     maxLevel: 15,
     desc: 'Espande il raggio del cratere conico a ogni impatto sul terreno.',
     getBenefit(lvl) {
-      return `Raggio: ${(1.5 + lvl * 0.45).toFixed(2)}m (+0.45m)`;
+      const rad = (1.5 + lvl * 0.45).toFixed(2);
+      return i18n.t('upgrades.radius.benefit', { radius: rad }) || `Raggio: ${rad}m (+0.45m)`;
     },
   },
   georadar: {
@@ -54,10 +72,12 @@ export const UPGRADE_CATALOG = {
     maxLevel: 1,
     desc: 'Bussola a risonanza che scansiona il sottosuolo e rileva anomalie prima di dissotterrarle.',
     getBenefit(lvl) {
-      return lvl > 0 ? 'Radar attivo nell\'HUD con letture live' : 'Sblocca bussola e letture criptiche del sottosuolo';
+      if (lvl > 0) {
+        return i18n.t('upgrades.georadar.benefitActive') || 'Radar attivo nell\'HUD con letture live';
+      }
+      return i18n.t('upgrades.georadar.benefitInactive') || 'Sblocca bussola e letture criptiche del sottosuolo';
     },
   },
-
 
   // Ramo B: Autonomous Fleet
   scarab: {
@@ -72,7 +92,8 @@ export const UPGRADE_CATALOG = {
     digRadius: 1.2,
     desc: 'Automa dorato leggero che pattuglia le dune e scava la sabbia a intervalli regolari.',
     getBenefit(lvl) {
-      return `+1.0 Sabbia/s per livello (Totale: ${(lvl * 1.0).toFixed(1)}/s)`;
+      const total = (lvl * 1.0).toFixed(1);
+      return i18n.t('upgrades.scarab.benefit', { total }) || `+1.0 Sabbia/s per livello (Totale: ${total}/s)`;
     },
   },
   excavator: {
@@ -87,7 +108,8 @@ export const UPGRADE_CATALOG = {
     digRadius: 3.2,
     desc: 'Macchinario pesante con braccio a pistone che scava crateri ampi con grande potenza.',
     getBenefit(lvl) {
-      return `+25.0 Sabbia/s per livello (Totale: ${(lvl * 25.0).toFixed(1)}/s)`;
+      const total = (lvl * 25.0).toFixed(1);
+      return i18n.t('upgrades.excavator.benefit', { total }) || `+25.0 Sabbia/s per livello (Totale: ${total}/s)`;
     },
   },
   dredge: {
@@ -102,7 +124,8 @@ export const UPGRADE_CATALOG = {
     digRadius: 5.5,
     desc: 'Imponente ruota a tazze rotante che macina e rimuove enormi volumi di duna.',
     getBenefit(lvl) {
-      return `+200.0 Sabbia/s per livello (Totale: ${(lvl * 200.0).toFixed(1)}/s)`;
+      const total = (lvl * 200.0).toFixed(1);
+      return i18n.t('upgrades.dredge.benefit', { total }) || `+200.0 Sabbia/s per livello (Totale: ${total}/s)`;
     },
   },
 };
