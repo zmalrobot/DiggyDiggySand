@@ -12,6 +12,9 @@ const PostShader = {
     cameraFar: { value: 400.0 },
     cameraProjectionMatrix: { value: new THREE.Matrix4() },
     cameraInverseProjectionMatrix: { value: new THREE.Matrix4() },
+    projectionMatrix: { value: new THREE.Matrix4() },
+    inverseProjectionMatrix: { value: new THREE.Matrix4() },
+    cameraMatrixWorld: { value: new THREE.Matrix4() },
     uResolution: { value: new THREE.Vector2(1, 1) },
     uBloomIntensity: { value: 0.4 },
     uBloomThreshold: { value: 0.85 },
@@ -38,6 +41,7 @@ const PostShader = {
     uniform float cameraFar;
     uniform mat4 cameraProjectionMatrix;
     uniform mat4 cameraInverseProjectionMatrix;
+    uniform mat4 cameraMatrixWorld;
     uniform vec2 uResolution;
     uniform float uBloomIntensity;
     uniform float uBloomThreshold;
@@ -110,7 +114,10 @@ const PostShader = {
       vec3 dX = dFdx(viewPos);
       vec3 dY = dFdy(viewPos);
       vec3 n = normalize(cross(dX, dY));
-      return (n.z < 0.0) ? -n : n;
+      if (dot(n, viewPos) > 0.0) {
+        n = -n;
+      }
+      return n;
     }
 
     // Screen-Space Ambient Occlusion (SSAO) per cavità e fessure delle dune
@@ -215,12 +222,45 @@ const PostShader = {
 
           // B. Riflessi Screen-Space (SSR) su superfici metalliche ed emissive
           float luma = getLuma(base);
-          float reflectiveFactor = smoothstep(0.42, 0.88, luma);
-          if (reflectiveFactor > 0.05) {
+          bool isCyanCrystal = (base.g > 0.32 && base.b > 0.32 && base.b > base.r * 1.15);
+          bool isGoldOrichalcum = (base.r > 0.45 && base.g > 0.32 && base.b < base.g * 0.95);
+          vec2 screenCenterDist = abs(vUv - vec2(0.5));
+          bool isCentralOracle = (screenCenterDist.x < 0.22 && screenCenterDist.y < 0.35 && depth < 0.98);
+          bool isExcavatedEdge = (length(dFdx(viewNorm)) + length(dFdy(viewNorm)) > 0.30 && luma > 0.25);
+
+          float metallic = 0.25;
+          float roughness = 0.75;
+
+          if (isCyanCrystal) {
+            metallic = 0.90;
+            roughness = 0.10;
+          } else if (isGoldOrichalcum) {
+            metallic = 0.85;
+            roughness = 0.25;
+          } else if (isCentralOracle) {
+            metallic = 0.75;
+            roughness = 0.30;
+          } else if (isExcavatedEdge) {
+            metallic = 0.80;
+            roughness = 0.20;
+          } else {
+            metallic = clamp(smoothstep(0.25, 0.75, luma) * 0.75, 0.15, 0.75);
+            roughness = clamp(1.0 - smoothstep(0.28, 0.80, luma) * 0.65, 0.25, 0.85);
+          }
+
+          float reflectionFactor = metallic * (1.0 - roughness * 0.7);
+          if (isCyanCrystal || isGoldOrichalcum || isCentralOracle || isExcavatedEdge) {
+            reflectionFactor = max(reflectionFactor, 0.55);
+          }
+
+          if (reflectionFactor > 0.05) {
             vec3 viewDir = normalize(viewPos);
             vec3 rayDir = reflect(viewDir, viewNorm);
-            vec3 ssrReflection = rayMarchSSR(viewPos, rayDir);
-            base += ssrReflection * (uSSRIntensity * reflectiveFactor);
+            vec3 hitColor = rayMarchSSR(viewPos, rayDir);
+            if (length(hitColor) > 0.001) {
+              float blendFactor = clamp(reflectionFactor * uSSRIntensity, 0.0, 0.85);
+              base = mix(base, hitColor, blendFactor);
+            }
           }
         }
       }
@@ -297,6 +337,13 @@ export class PostProcessing {
     this.dummyDepthTexture = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1);
     this.dummyDepthTexture.needsUpdate = true;
 
+    this.renderTarget1 = this.renderTarget;
+    this.renderTarget2 = this.renderTarget;
+    this.composer = {
+      renderTarget1: this.renderTarget1,
+      renderTarget2: this.renderTarget2,
+    };
+
     // Scena ortografica per il quad a schermo intero
     this.postCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     this.postMaterial = new THREE.ShaderMaterial({
@@ -315,6 +362,13 @@ export class PostProcessing {
     this.postQuad = new THREE.Mesh(quadGeo, this.postMaterial);
     this.postScene = new THREE.Scene();
     this.postScene.add(this.postQuad);
+
+    this.ssrPass = {
+      get enabled() { return this._parent.raytracingSSREnabled; },
+      set enabled(v) { this._parent.setRaytracingSSREnabled(v); },
+      uniforms: this.postMaterial.uniforms,
+      _parent: this,
+    };
 
     // Sottoscrizione alle impostazioni
     if (this.settings) {
@@ -343,12 +397,21 @@ export class PostProcessing {
     this.postMaterial.uniforms.uEnabled.value = this.enabled ? 1.0 : 0.0;
   }
 
+  setSSR(val) {
+    this.setRaytracingSSREnabled(val);
+  }
+
   setRaytracingSSREnabled(val) {
     this.raytracingSSREnabled = !!val;
     if (this.raytracingSSREnabled) {
       if (!this.renderTarget.depthTexture) {
-        this.renderTarget.depthTexture = new THREE.DepthTexture();
-        this.renderTarget.depthTexture.type = THREE.UnsignedShortType;
+        const depthTexture = new THREE.DepthTexture();
+        depthTexture.type = THREE.UnsignedShortType;
+        this.renderTarget.depthTexture = depthTexture;
+        if (this.composer) {
+          this.composer.renderTarget1.depthTexture = depthTexture;
+          this.composer.renderTarget2.depthTexture = depthTexture;
+        }
       }
       this.postMaterial.uniforms.tDepth.value = this.renderTarget.depthTexture;
       this.postMaterial.uniforms.uRaytracingSSR.value = 1.0;
@@ -356,9 +419,36 @@ export class PostProcessing {
       if (this.renderTarget.depthTexture) {
         this.renderTarget.depthTexture.dispose();
         this.renderTarget.depthTexture = null;
+        if (this.composer) {
+          this.composer.renderTarget1.depthTexture = null;
+          this.composer.renderTarget2.depthTexture = null;
+        }
       }
       this.postMaterial.uniforms.tDepth.value = this.dummyDepthTexture;
       this.postMaterial.uniforms.uRaytracingSSR.value = 0.0;
+    }
+  }
+
+  update(dt = 0) {
+    if (this.raytracingSSREnabled && this.camera) {
+      this.camera.updateMatrixWorld?.();
+      this.camera.updateProjectionMatrix?.();
+      const depthTex = this.renderTarget.depthTexture || this.composer?.renderTarget1?.depthTexture || this.dummyDepthTexture;
+      this.postMaterial.uniforms.tDepth.value = depthTex;
+      this.postMaterial.uniforms.cameraNear.value = this.camera.near;
+      this.postMaterial.uniforms.cameraFar.value = this.camera.far;
+      this.postMaterial.uniforms.cameraProjectionMatrix.value.copy(this.camera.projectionMatrix);
+      const invProj = this.camera.projectionMatrixInverse || new THREE.Matrix4().copy(this.camera.projectionMatrix).invert();
+      this.postMaterial.uniforms.cameraInverseProjectionMatrix.value.copy(invProj);
+      if (this.postMaterial.uniforms.projectionMatrix) {
+        this.postMaterial.uniforms.projectionMatrix.value.copy(this.camera.projectionMatrix);
+      }
+      if (this.postMaterial.uniforms.inverseProjectionMatrix) {
+        this.postMaterial.uniforms.inverseProjectionMatrix.value.copy(invProj);
+      }
+      if (this.postMaterial.uniforms.cameraMatrixWorld) {
+        this.postMaterial.uniforms.cameraMatrixWorld.value.copy(this.camera.matrixWorld);
+      }
     }
   }
 
@@ -380,17 +470,8 @@ export class PostProcessing {
       return;
     }
 
-    // Sincronizza matriche camera per la ricostruzione view-space del raymarching
-    if (this.raytracingSSREnabled && this.camera) {
-      this.camera.updateMatrixWorld?.();
-      this.camera.updateProjectionMatrix?.();
-      this.postMaterial.uniforms.cameraNear.value = this.camera.near;
-      this.postMaterial.uniforms.cameraFar.value = this.camera.far;
-      this.postMaterial.uniforms.cameraProjectionMatrix.value.copy(this.camera.projectionMatrix);
-      if (this.camera.projectionMatrixInverse) {
-        this.postMaterial.uniforms.cameraInverseProjectionMatrix.value.copy(this.camera.projectionMatrixInverse);
-      }
-    }
+    // Sincronizza matrici e parametri camera per la ricostruzione view-space del raymarching
+    this.update(0);
 
     // 1. Render della scena 3D principale nel buffer texture (colore e profondità)
     const currentTarget = this.renderer.getRenderTarget();
@@ -409,6 +490,10 @@ export class PostProcessing {
     if (this.renderTarget.depthTexture) {
       this.renderTarget.depthTexture.dispose();
       this.renderTarget.depthTexture = null;
+      if (this.composer) {
+        this.composer.renderTarget1.depthTexture = null;
+        this.composer.renderTarget2.depthTexture = null;
+      }
     }
     this.dummyDepthTexture?.dispose();
     this.renderTarget?.dispose();
@@ -416,3 +501,5 @@ export class PostProcessing {
     this.postQuad?.geometry?.dispose();
   }
 }
+
+export { PostShader as SSRShader };

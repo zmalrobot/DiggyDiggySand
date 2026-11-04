@@ -83,7 +83,7 @@ async function boot() {
     scene = null;
   }
 
-  const settingsModal = new SettingsModal({ settings, modal, save, audio });
+  const settingsModal = new SettingsModal({ settings, modal, save, audio, scene });
   const cosmeticsManager = new CosmeticsManager(save);
   const wardrobeModal = new WardrobeModal(modal, cosmeticsManager, save, audio, null);
   const biomeManager = new BiomeManager(save, statsManager);
@@ -102,6 +102,7 @@ async function boot() {
     cosmeticsManager, wardrobeModal, biomeManager,
   });
   settingsModal.game = game;
+  menu.setGame?.(game);
 
   // Suite di Debug e Memory Audit (Fase 7)
   const debugTools = new DebugTools({ game, scene, state: game.state, save, audio });

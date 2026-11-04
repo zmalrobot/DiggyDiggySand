@@ -37,12 +37,13 @@ function getOptionLabel(key, val) {
 }
 
 export class SettingsModal {
-  constructor({ settings, modal, save, audio, game = null }) {
+  constructor({ settings, modal, save, audio, game = null, scene = null }) {
     this.settings = settings;
     this.modal = modal;
     this.save = save;
     this.audio = audio;
     this.game = game;
+    this.scene = scene;
     this.currentTab = 'audio';
     this.unsubs = [];
     this.modalRoot = null;
@@ -184,7 +185,15 @@ export class SettingsModal {
       span.textContent = v ? (i18n.t('settings.active') || 'Attivo') : (i18n.t('settings.inactive') || 'Disattivo');
     };
     this.unsubs.push(this.settings.subscribe(key, sync, { immediate: true }));
-    input.addEventListener('change', () => this.settings.set(key, input.checked));
+    input.addEventListener('change', () => {
+      this.settings.set(key, input.checked);
+      if (key === 'graphics.raytracingSSR' || key === 'raytracingSSR') {
+        const postProcessing = this.scene?.postProcessing || this.game?.sceneMgr?.postProcessing || window.__dds?.scene?.postProcessing;
+        if (postProcessing) {
+          postProcessing.setSSR?.(this.settings.raytracingSSR);
+        }
+      }
+    });
     label.append(input, track, span);
     label.setAttribute('aria-label', text);
     return label;

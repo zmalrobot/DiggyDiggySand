@@ -3,6 +3,7 @@
 import { i18n } from '../core/I18n.js';
 import { events } from '../core/Events.js';
 import { Overlay } from './Overlay.js';
+import { EndingManager } from '../endings/EndingManager.js';
 
 export const ENDINGS_CATALOG = {
   curse: {
@@ -64,7 +65,7 @@ export class EndingsModal {
     this._render();
 
     this.wrap.addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-replay-ending]');
+      const btn = e.target.closest('[data-replay-ending], .btn-replay-ending');
       if (!btn) return;
       const endingId = btn.dataset.replayEnding;
       this.replayEnding(endingId);
@@ -96,29 +97,81 @@ export class EndingsModal {
   replayEnding(endingId) {
     const ending = ENDINGS_CATALOG[endingId];
     if (!ending) return;
+    if (this._isReplaying) return;
+    this._isReplaying = true;
 
     this.audio?.playClick?.();
-    const overlay = this.game?.overlay || (this._overlayReplay ??= new Overlay());
 
-    overlay.show({
-      endingId,
-      badge: ending.badge,
-      title: ending.name,
-      text: ending.description,
-      stats: {
-        timeSeconds: 1240,
-        sandTotal: 1500000,
-        clicks: 450,
-        completion: 1.0,
-      },
-      onMenu: () => overlay.hide(),
-      onRestart: () => overlay.hide(),
-      onSandbox: () => overlay.hide(),
-    });
+    // 1. Chiudi e rimuovi immediatamente il modale della Galleria (EndingsModal.close())
+    this.close();
+
+    // Recupera referenze di game, menu ed endingManager
+    const game = this.game || window.__dds?.game;
+    const menu = game?.menu || window.__dds?.menu;
+    let endingManager = game?.endingManager || window.__dds?.game?.endingManager;
+
+    if (!endingManager && (game || window.__dds)) {
+      const g = game || window.__dds?.game;
+      const scene = g?.sceneMgr || window.__dds?.scene;
+      endingManager = new EndingManager({
+        scene,
+        terrain: g?.terrain,
+        state: g?.state,
+        audio: g?.audio || this.audio || window.__dds?.audio,
+        particles: g?.particles,
+        city: g?.city,
+        controls: g?.controls,
+        overlay: g?.overlay,
+        save: this.save || g?.save,
+        game: g,
+      });
+      if (g) g.endingManager = endingManager;
+    }
+
+    // 2. Chiudi il MainMenu (o la schermata corrente) applicando una dissolvenza a nero dello schermo (screen-fade)
+    let fadeEl = document.querySelector('.screen-fade');
+    if (!fadeEl) {
+      fadeEl = document.createElement('div');
+      fadeEl.className = 'screen-fade';
+      document.body.appendChild(fadeEl);
+    }
+    fadeEl.classList.add('on');
+
+    setTimeout(() => {
+      const menuWasVisible = menu && menu.root && !menu.root.classList.contains('hidden');
+      if (menu) {
+        menu.hide();
+      }
+
+      // 3. Invoca la regia 3D dedicata:
+      if (endingManager) {
+        endingManager.playCinematic(endingId, {
+          isReplay: true,
+          onComplete: () => {
+            this._isReplaying = false;
+            if (menuWasVisible && menu) {
+              menu.show();
+            }
+          },
+        });
+      } else {
+        this._isReplaying = false;
+      }
+
+      setTimeout(() => {
+        fadeEl.classList.remove('on');
+        setTimeout(() => {
+          if (!fadeEl.classList.contains('on')) {
+            fadeEl.remove();
+          }
+        }, 400);
+      }, 100);
+    }, 400);
   }
 
   _render() {
     if (!this.wrap) return;
+    this.wrap.innerHTML = '';
     const seen = new Set(this.save?.getEndingsSeen?.() ?? []);
     const count = seen.size;
     const total = 4;
@@ -137,19 +190,19 @@ export class EndingsModal {
         </div>
         <div class="gallery-stats muted">${collectorLabel}: <span class="accent">${count}/${total}</span> (${pct}%)</div>
       </div>
-      <div class="gallery-cards endings-grid">
+      <div class="gallery-cards endings-grid endings-gallery-list">
         ${Object.values(ENDINGS_CATALOG).map((info) => {
           const unlocked = seen.has(info.id);
           const rawDate = this.save?.getEndingUnlockDate?.(info.id);
           const dateStr = rawDate ? new Date(rawDate).toLocaleDateString() : '';
 
           return `
-            <div class="gallery-card ending-card ${unlocked ? 'unlocked' : 'locked'}" data-ending="${info.id}">
-              <div class="gallery-card-badge ${unlocked ? '' : 'badge-locked-orichalcum'}">
+            <div class="gallery-card ending-card ${unlocked ? 'unlocked' : 'locked is-locked'}" data-ending="${info.id}">
+              <div class="gallery-card-badge ending-watermark ${unlocked ? '' : 'badge-locked-orichalcum'}">
                 ${unlocked ? info.badge : '🔒'}
               </div>
               <div class="gallery-card-info">
-                <div class="gallery-card-title ${unlocked ? 'accent' : 'muted'}">
+                <div class="gallery-card-title ending-title ${unlocked ? 'accent' : 'muted'}">
                   ${unlocked ? info.name : dormantLabel}
                 </div>
                 <div class="gallery-card-desc">
@@ -160,7 +213,7 @@ export class EndingsModal {
                     ${unlocked ? unlockedStatus : lockedStatus} ${dateStr ? `· ${dateStr}` : ''}
                   </span>
                   ${unlocked ? `
-                    <button type="button" class="btn btn-secondary btn-replay" data-replay-ending="${info.id}">
+                    <button type="button" class="btn btn-secondary btn-replay btn-replay-ending" data-replay-ending="${info.id}">
                       ▶ ${replayLabel}
                     </button>
                   ` : ''}

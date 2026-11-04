@@ -56,6 +56,7 @@ export class Game {
     this.modal = modal;
     this.settingsModal = settingsModal;
     this.menu = menu;
+    if (this.menu) this.menu.setGame?.(this);
     this.canvas = canvas;
     this.assets = assets ?? scene?.assets ?? null;
 

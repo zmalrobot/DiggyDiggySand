@@ -1334,21 +1334,47 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
 .status-unlocked { color: var(--atlantis-teal); }
 .status-locked { color: var(--text-muted); }
 
-.endings-grid {
+.endings-grid,
+.endings-gallery-list {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  position: relative;
+  overflow-y: auto;
+  max-height: 60vh;
 }
 
-.gallery-card.ending-card {
+.gallery-card.ending-card,
+.ending-card {
   position: relative;
-  overflow: hidden;
+  overflow: hidden; /* Blocca il testo o effetti che strabordano */
+  background: rgba(3, 24, 38, 0.85);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.gallery-card.ending-card.locked,
+.ending-card.is-locked {
+  opacity: 0.55;
+  background: rgba(2, 15, 24, 0.9);
+  border-color: rgba(100, 115, 130, 0.3);
 }
 
 .badge-locked-orichalcum {
   color: var(--atlantis-teal);
   text-shadow: 0 0 10px rgba(15, 227, 193, 0.4);
   opacity: 0.7;
+}
+
+.ending-title,
+.ending-watermark {
+  position: relative;
+  overflow: hidden;
+  max-width: 100%;
 }
 
 .gallery-card-foot {
@@ -1359,7 +1385,8 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
   gap: 12px;
 }
 
-.btn-replay {
+.btn-replay,
+.btn-replay-ending {
   padding: 4px 10px;
   font-size: 0.75rem;
   font-family: var(--font-data);
@@ -1370,10 +1397,54 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
   transition: all 0.2s ease;
 }
 
-.btn-replay:hover {
+.btn-replay:hover,
+.btn-replay-ending:hover {
   background: rgba(245, 186, 35, 0.22);
   border-color: var(--gold-pharaoh);
   box-shadow: 0 0 10px rgba(245, 186, 35, 0.3);
+}
+
+/* Dissolvenza e Regia Cutscene 3D Rivivi Epilogo */
+.screen-fade {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+.screen-fade.on,
+.screen-fade.visible {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.btn-skip-cinematic {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 95;
+  background: rgba(3, 24, 38, 0.85);
+  border: 1px solid var(--atlantis-teal);
+  color: var(--atlantis-teal);
+  font-family: var(--font-data);
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: all 0.25s ease;
+  letter-spacing: 0.05em;
+}
+
+.btn-skip-cinematic:hover {
+  background: rgba(15, 227, 193, 0.2);
+  border-color: var(--atlantis-teal);
+  color: #fff;
+  box-shadow: 0 0 14px rgba(15, 227, 193, 0.4);
 }
 
 /* ==========================================================================

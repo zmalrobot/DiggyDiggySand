@@ -127,6 +127,14 @@ export class SettingsManager {
     return this.values[key];
   }
 
+  get raytracingSSR() {
+    return this.get('graphics.raytracingSSR');
+  }
+
+  set raytracingSSR(v) {
+    this.set('graphics.raytracingSSR', v);
+  }
+
   snapshot() { return { ...this.values }; }
 
   /** Imposta un valore, salva subito e notifica. Ritorna true se il valore è cambiato. */

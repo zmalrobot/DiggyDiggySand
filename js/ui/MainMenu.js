@@ -88,6 +88,11 @@ export class MainMenu {
 
   hide() { this.root.classList.add('hidden'); }
 
+  setGame(game) {
+    this.game = game;
+    if (this.endingsModal) this.endingsModal.game = game;
+  }
+
   /** Aggiorna lo stato di "Continua", finali scoperti e tavolette in base al salvataggio. */
   refresh() {
     i18n.updateDOM(this.root);
