@@ -52,7 +52,8 @@ export class ModalManager {
       for (const a of actions) {
         const b = document.createElement('button');
         b.type = 'button';
-        b.className = `btn${a.danger ? ' danger' : ''}`;
+        if (a.id) b.id = a.id;
+        b.className = `btn${a.danger ? ' danger' : ''}${a.className ? ` ${a.className}` : ''}`;
         b.textContent = a.label;
         b.addEventListener('click', () => {
           a.onClick?.();
@@ -103,8 +104,8 @@ export class ModalManager {
         title,
         content: message,
         actions: [
-          { label: cancelLabel, onClick: () => answer(false) },
-          { label: confirmLabel, danger, onClick: () => answer(true) },
+          { label: confirmLabel, danger, className: 'btn-confirm-action', id: 'btn-confirm-overwrite', onClick: () => answer(true) },
+          { label: cancelLabel, className: 'btn-secondary btn-cancel-action', id: 'btn-cancel-overwrite', onClick: () => answer(false) },
         ],
         onClose: () => { if (!answered) resolve(false); },
       });

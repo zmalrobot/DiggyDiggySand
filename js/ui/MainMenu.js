@@ -42,8 +42,11 @@ export class MainMenu {
     this.root.innerHTML = `
       <div class="menu-inner">
         <header class="menu-header">
-          <h1 class="display menu-title" data-i18n="menu.title">Diggy<br>Diggy Sand</h1>
-          <div class="menu-tag" data-i18n="menu.subtitle">Svuota il deserto. Scopri cosa dorme sotto.</div>
+          <h1 class="display main-title menu-title">
+            <span class="title-word title-gold">DIGGY</span>
+            <span class="title-word title-sand">DIGGY SAND</span>
+          </h1>
+          <div class="menu-tag" data-i18n="menu.subtitle">${i18n.t('menu.subtitle')}</div>
         </header>
         <nav class="panel menu-panel" aria-label="Menu principale">
           <button type="button" class="btn" data-act="new" data-i18n="menu.newGame">Nuova Spedizione</button>

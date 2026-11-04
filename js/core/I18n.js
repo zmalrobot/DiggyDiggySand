@@ -25,7 +25,7 @@ export const DICTIONARY = {
       reset: 'Ripristina',
     },
     menu: {
-      title: 'Diggy<br>Diggy Sand',
+      title: 'Diggy Diggy Sand',
       subtitle: 'Svuota il deserto. Scopri cosa dorme sotto.',
       newGame: 'Nuova Spedizione',
       continue: 'Continua',
@@ -668,7 +668,7 @@ export const DICTIONARY = {
       reset: 'Reset',
     },
     menu: {
-      title: 'Diggy<br>Diggy Sand',
+      title: 'Diggy Diggy Sand',
       subtitle: 'Clear the desert. Discover what sleeps below.',
       newGame: 'New Expedition',
       continue: 'Continue',

@@ -42,7 +42,7 @@ export class Shop {
     this.root.className = 'shop-container';
     this.root.innerHTML = `
       <div class="shop-backdrop"></div>
-      <aside class="panel shop-drawer" role="dialog" aria-label="${i18n.t('shop.title') || 'Officina degli Scavi'}">
+      <aside id="shop-drawer" class="panel shop-drawer" role="dialog" aria-label="${i18n.t('shop.title') || 'Officina degli Scavi'}">
         <div class="shop-drag-handle" aria-hidden="true"></div>
         <div class="shop-header">
           <div class="shop-title-wrap">
@@ -142,13 +142,23 @@ export class Shop {
   open() {
     this.isOpen = true;
     this.root.classList.remove('hidden');
-    this.root.classList.add('open');
-    this.render();
+    this.root.classList.add('open', 'is-open');
+    if (this.drawer) {
+      this.drawer.classList.add('is-open', 'active');
+    }
+    try {
+      this.render();
+    } catch (e) {
+      console.error('[Shop] Error during render:', e);
+    }
   }
 
   close(instant = false) {
     this.isOpen = false;
-    this.root.classList.remove('open');
+    this.root.classList.remove('open', 'is-open');
+    if (this.drawer) {
+      this.drawer.classList.remove('is-open', 'active');
+    }
     if (instant) {
       this.root.classList.add('hidden');
     } else {
