@@ -140,16 +140,36 @@ L'interfaccia deve sembrare una **lastra cerimoniale oracolare**: non un banale 
    - La barra non è una capsula liscia: è decorata come un **obelisco orizzontale graduato** o un glifo intarsiato.
    - Il riempimento si accende con una transizione da oro caldo (a inizio partita) a turchese radioattivo quando si scende verso la città sepolta.
 
+### 4.2 Standard UI Multi-Tier & Specifiche Mobile
+
+L'interfaccia rispetta rigorosamente tre tier hardware per garantire ergonomia perfetta su PC, tablet e telefoni:
+- **Dimensioni Minime Touch Target:** su tablet e smartphone qualsiasi elemento interattivo (pulsanti shop, tab, bottoni modali, toggle impostazioni) possiede dimensioni minime di **$44\text{px} \times 44\text{px}$** per evitare falsi tocchi.
+- **Specifiche Bottom Sheet per Smartphone ($\le 600\text{px}$):**
+  - **Bordi:** raggio di curvatura superiore di $20\text{px}$ (`border-radius: 20px 20px 0 0`) con bordo superiore in oro faraonico `#D4AF37`.
+  - **Drag Handle Tattile:** maniglia orizzontale centrata di $40\text{px} \times 4\text{px}$ in ottone satinato opaco per comunicare la possibilità di trascinamento e chiusura.
+  - **Safe Area Inset:** ancoraggio elastico al fondo con `padding-bottom: max(16px, env(safe-area-inset-bottom))` per rispettare la barra di navigazione iOS/Android.
+  - **Animazione di Comparsa:** scorrimento verticale fluido con curva di accelerazione `transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)`.
+
 ---
 
 ## 5. Direzione Artistica 3D (Three.js)
 
-### 5.1 Stile di Rendering: "Chiseled Low-Poly"
+### 5.1 Stile di Rendering: "Chiseled Low-Poly" & Parametri PBR
 - **Ombre e Shading:** Usa `flatShading: true` sui materiali standard per esaltare le facce triangolari delle dune e dei crateri scavati. L'estetica deve ricordare blocchi di pietra squadrati e sabbia grezza.
 - **Colorazione per Altezza del Terreno (Vertex Color Shader):**
   - Quota $Y > 8$: Gradiente sabbia chiara solare.
   - Quota $3 < Y \le 8$: Ocra compatta.
   - Quota $Y \le 3$: Pietra scura con venature di colore `0x0FE3C1` che emettono bagliori quando la luce solare cala.
+
+#### Specifiche Numeriche Materiali PBR (`MeshStandardMaterial`):
+
+| Elemento Architettonico | Roughness | Metalness | Colore Base (Albedo) | Emissività / Luce Intrinseca | Dettaglio Mappe Sobel / Normal |
+|---|---|---|---|---|---|
+| **Sabbia & Terreno** | $0.90$ | $0.00$ | Vertex Colors (gradienti Y) | Nessuna (`0x000000`) | Mappa Sobel procedurale 2048px (FBM 4 ottave) |
+| **Arenaria & Colonne** | $0.78$ | $0.05$ | `#8C5828` / `#4A4138` | Nessuna (`0x000000`) | Rilievo pietra scalpellata chiseled stone |
+| **Oricalco Metallico** | $0.25$ | $0.85$ | `#D87D38` (Rame Atlanteo) | Riflesso speculare metallico / SSR | Micro-striature metalliche anisotrope |
+| **Cristalli di Atlantide** | $0.10$ | $0.10$ | `#0FE3C1` (Turchese puro) | `0x0FE3C1` (intensità $0.85$, bloom attivo) | Trasparenza sfaccettata ad alto riflesso |
+| **Oro Solare (Monete/Capi)**| $0.20$ | $0.95$ | `#F5BA23` (Oro faraonico) | `0xFFE380` tenue (intensità $0.20$) | Finitura a specchio lucida ad alta riflettenza |
 
 ### 5.2 Aspetto della Città Sepolta
 Non semplici cubi generici, ma strutture che ricordano:
@@ -206,3 +226,38 @@ Ogni volta che Antigravity genera codice per questo progetto, deve rispettare ri
    - L'**Oro** rappresenta la *ricchezza immediata* e la *materia* (la sabbia scavata, il costo base, il sole).
    - Il **Ciano/Teal** rappresenta il *mistero*, la *tecnologia perduta*, il progresso magico e il completamento della percentuale.
 4. **Resa Low-Poly coerente:** Nelle geometrie Three.js non inserire smussature o suddivisioni eccessive; preservare spigoli netti, facce piane e giochi di luce calcolati per triangolo.
+
+---
+
+## 8. Linee Guida del Game Juice & Dinamica Cinetica
+
+Per garantire che ogni interazione fisica restituisca un feedback reattivo, gratificante e cinematografico, il motore visivo adotta le seguenti convenzioni:
+
+### 8.1 Floating Text (Cifre Fluttuanti 3D-to-2D)
+- **Tipografia:** Esclusivamente `Syne` ExtraBold (peso 800), mai font corsivi o leggeri.
+- **Colori & Effetti:**
+  - *Scavo Base:* Oro Faraonico `#F5BA23` con contorno drop-shadow scuro `#031826` ($2\text{px}$).
+  - *Colpo Critico:* Turchese Atlantideo luminescente `#0FE3C1` con neon glow `text-shadow: 0 0 10px rgba(15, 227, 193, 0.8)` e scala tipografica maggiorata ($1.35\times$).
+  - *Bonus / Taglie:* Oro solare ambrato `#FFE380` con icona ⟡.
+- **Cinematica:** Le coordinate 3D del punto di scavo vengono proiettate su schermo in pixel (`project(camera)`). Il testo fluttua verticalmente di $+35\text{px}$ per $750\text{ms}$ con easing quadratico out (`cubic-bezier(0.2, 0.8, 0.2, 1)`) e dissolvenza di opacità negli ultimi $200\text{ms}$.
+- **Performance:** Gestito tramite pool preallocato di elementi DOM per scongiurare garbage collection spikes.
+
+### 8.2 Camera Trauma & Shake
+- **Modello Matematico di Decadimento:** Il trauma della telecamera $T \in [0.0, 1.0]$ decade esponenzialmente con fattore di smorzamento $\lambda = 1.8$:
+  $$T(t + dt) = \max\left(0.0, T(t) - \lambda \cdot dt\right)$$
+  La magnitudo dello scotimento effettivo scala in modo quadratico rispetto al trauma per accentuare l'impatto degli eventi rari:
+  $$\text{Offset}_x = \text{maxOffset} \cdot T^2 \cdot \text{noise}_1(t)$$
+  $$\text{Offset}_y = \text{maxOffset} \cdot T^2 \cdot \text{noise}_2(t)$$
+  $$\text{Angle}_z = \text{maxAngle} \cdot T^2 \cdot \text{noise}_3(t)$$
+- **Eventi di Impatto:**
+  - *Colpo Critico Manuale:* $T = 0.22$.
+  - *Detonazione Dinamite:* $T = 0.65$.
+  - *Risveglio del Finale (Climax):* $T = 1.00$.
+- **Modalità Accessibilità (Reduced Motion):** Se l'opzione "Riduci Movimento" è abilitata nelle impostazioni, il trauma $T$ viene forzato a $0.0$, annullando qualsiasi scotimento per prevenire cinetosi.
+
+### 8.3 Feedback Tattile / Vibrazione (`Haptics.js`)
+Sui dispositivi mobili abilitati con `navigator.vibrate`, le azioni fisiche generano brevi impulsi aptici:
+- *Scavo ordinario:* singolo impulso micro-tattile da $8\text{ms}$.
+- *Colpo critico:* doppio battito ritmato ($15\text{ms}$ ON, $30\text{ms}$ pausa, $25\text{ms}$ ON).
+- *Dinamite / Esplosione:* scossa profonda da $60\text{ms}$.
+- Disattivabile istantaneamente dal pannello Impostazioni / Controlli.

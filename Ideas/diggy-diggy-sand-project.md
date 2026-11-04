@@ -221,24 +221,44 @@ The **Georadar** can give ambiguous readings such as "anomaly detected" or "weak
 - Sand particles on every hit.
 - Atmosphere changes during the endings (red sky, golden glow, etc.).
 
-### 6.2 Camera
+### 6.2 Camera & Interaction Controls
 
-- Tilted top-down view with limited **OrbitControls** (restricted zoom and rotation).
-- Clicking on the sand uses a **Raycaster** to find the dig point.
-- On mobile: one finger digs, two fingers rotate/zoom.
+- Tilted top-down view with dynamic vertical FOV compensation (`updateProjectionMatrix()`) to prevent side clipping on vertical smartphone screens ($9:16$ and $9:19.5$) and ultrawide desktop monitors ($21:9$).
+- Clicking on the terrain executes an analytical raycast on the active heightmap mesh to pinpoint exact crater coordinates.
+- **Adaptive Multi-Touch Controls:**
+  - *Single Touch / Click:* excavation with tactile haptic impulse (`Haptics.js`). Holding down triggers continuous excavation at kinetic rhythm rate.
+  - *Two Fingers:* multi-touch pinch-to-zoom (Euclidean finger distance calculation) and two-finger drag for orbiting camera angle and pan.
 
 ### 6.3 HUD
 
-- **Top:** Sand counter, desert completion bar.
-- **Right / bottom:** button to open the **Upgrade Shop**.
-- **Shop:** list of upgrades showing cost, current level, and effect; grayed-out button when not affordable.
-- **Menu:** new game, save, settings (audio, graphics quality), endings gallery.
+- **Top:** Sand counter, desert completion bar, SPS meter, and temporary storm/buff badges.
+- **Left:** Compact retractable Expedition Directives widget (`DirectivesWidget.js`) tracking active contracts and countdown timers.
+- **Right / Bottom:** Quick action buttons for **Officina (Shop)**, **Pause / Settings**, and **Help / Legend**.
+- **Shop:** multi-tab drawer with Multi-Buy toggle (`1x`, `10x`, `100x`, `MAX`), upgrade cards, and Relics threshold unlocking.
 
 ### 6.4 Audio
 
-- Digging sound with slight pitch variations to avoid repetition.
-- Relaxing ambient music that changes depending on the ending.
-- Effects for purchased upgrades, explosions, and for each plague/event in the endings.
+- Digging sound with procedural pitch modulation and depth low-pass filtering (`setDepth()`) as excavation approaches bedrock.
+- Dual-track sound engine: lightweight sampled OGG loops with instantaneous procedural fallback (`SoundSynth` via Web Audio API).
+- Relaxing ambient music that evolves dynamically with the diurnal cycle and climax endings.
+
+### 6.5 Responsive 3-Tier Architecture
+
+The entire interface dynamically conforms to three distinct hardware form factors without DOM element duplication:
+1. **Tier 1 — Desktop ($\ge 1025\text{px}$):**
+   - Full horizontal HUD topbar across the top edge.
+   - Lateral slide-out Shop drawer on the right side ($380\text{px}$ width).
+   - Fixed-width centered ceremonial glassmorphism modal dialogs ($680\text{px}$).
+   - Desktop shortcuts: `Space` (instant dig), `Q`/`E` (orbit camera), `F2` (debug console), `F3` (hardware profiler).
+2. **Tier 2 — Tablet ($601\text{px} - 1024\text{px}$):**
+   - Enlarged interactive touch targets ($\ge 44\text{px} \times 44\text{px}$) across all buttons, tabs, and toggles.
+   - Landscape orientation: lateral Shop drawer occupying $45\%$ of screen width.
+   - Portrait orientation: bottom sheet Shop extending to $55\%$ of screen height.
+   - Ergonomic lateral margins preventing accidental finger palm touches along the bezel.
+3. **Tier 3 — Smartphone ($\le 600\text{px}$):**
+   - **Safe Area Insets:** strict integration of `padding-top: max(10px, env(safe-area-inset-top))` and `padding-bottom: max(10px, env(safe-area-inset-bottom))` to respect camera notches, dynamic islands, and OS gesture bars.
+   - **Mobile Bottom Sheet:** the Shop transforms into an animated pull-up bottom drawer with rounded top corners ($20\text{px}$ radius) and a tactile visual drag handle.
+   - **Compact Mobile HUD:** grouped metrics (Sand, SPS, % completion) in a single-row centered glass bar with scaled typography (`Syne` numbers), maintaining an unobstructed excavation field.
 
 ---
 
@@ -258,21 +278,28 @@ The **Georadar** can give ambiguous readings such as "anomaly detected" or "weak
 /diggy-diggy-sand
 ├── index.html
 ├── manifest.json                // PWA Web App Manifest
+├── sw.js                        // Root PWA Service Worker (Cache-First + Network Fallback)
 ├── css/
-│   └── style.css                // Brand Book Atlantean-Kemet, Glassmorphism, Responsive UI
+│   └── style.css                // Brand Book Atlantean-Kemet, Glassmorphism, 3-Tier Responsive UI
 ├── js/
 │   ├── main.js                  // Entry point, initialization, window.__dds debug
 │   ├── core/
 │   │   ├── Game.js              // Game loop coordination & camera frustum
-│   │   ├── State.js             // Game state, cheatsEnabled flag, upgrade levels
+│   │   ├── State.js             // Game state, cheatsEnabled flag, upgrade levels, relic multipliers
 │   │   ├── Save.js              // LocalStorage persistence, backup restore & schema check
+│   │   ├── SaveSerializer.js    // Portable Save Import/Export (Base64 + CRC32 verification)
 │   │   ├── Events.js            // Event bus
 │   │   ├── SettingsManager.js   // Reactive settings, audio/graphics/cheats bindings
 │   │   ├── AudioEngine.js       // SoundSynth Web Audio & dual-path sampled audio loader
 │   │   ├── AssetLoader.js       // GLTF loading manager with procedural 3D fallbacks
-│   │   └── I18n.js              // Bilingual dictionary (IT / EN) & localization
+│   │   ├── I18n.js              // Bilingual dictionary (IT / EN) & localization
+│   │   ├── Haptics.js           // Tactile kinetic vibration engine for touch devices
+│   │   ├── Formatters.js        // Number notation (standard compact K/M/B/T vs scientific 1.25e6)
+│   │   ├── Accessibility.js     // Reduced motion dampening & smart tab pause with dt clamping
+│   │   └── Logger.js            // Production logger & styled Gold Master boot banner
 │   ├── world/
 │   │   ├── Terrain.js           // Heightmap, procedural dunes, O(k) sub-grid normals, biomes
+│   │   ├── TextureGenerator.js  // Procedural 2048px FBM & analytical Sobel normal maps
 │   │   ├── City.js              // Procedural buried city & ending architectural variants
 │   │   ├── SceneManager.js      // 3D scene, responsive camera FOV, lighting & shadows
 │   │   ├── BiomeManager.js      // Expedition biomes (Desert, Ocean, Glacier, Jungle)
@@ -280,14 +307,17 @@ The **Georadar** can give ambiguous readings such as "anomaly detected" or "weak
 │   │   ├── Sky.js               // Procedural starfield dome & celestial moon
 │   │   ├── Torches.js           // Ruin torches with night flicker PointLights
 │   │   ├── Atmosphere.js        // Floating dust motes (InstancedMesh)
-│   │   ├── PostProcessing.js    // MSAA 4x, FXAA, Selective Bloom, Tone Mapping & Vignette
+│   │   ├── PostProcessing.js    // MSAA 4x, FXAA, Selective Bloom, DepthTexture, SSR & SSAO
+│   │   ├── DisposeUtils.js      // Recursive GPU memory disposal (geometries, materials, textures)
 │   │   └── ProceduralFactory.js // Mathematical low-poly fallback 3D meshes
 │   ├── systems/
 │   │   ├── Digging.js           // Raycasting, anti-tunneling clamp Y>=0, dynamic bounds
-│   │   ├── Economy.js           // Offline progression & decoupled performance.now() ticks
-│   │   ├── Upgrades.js          // Upgrade scaling & Fleet SPS calculations
+│   │   ├── Economy.js           // Offline progression, decoupled ticks & simulateProgression()
+│   │   ├── Upgrades.js          // Multi-buy math, geometric cost scaling & SPS calculations
 │   │   ├── Workers.js           // 3D workers & excavator fleet synchronization
 │   │   ├── Particles.js         // 300-capacity instanced particle pool
+│   │   ├── Directives.js        // Dynamic expedition bounties with rotating objectives & buffs
+│   │   ├── Profiler.js          // F3 WebGL runtime telemetry, framerate & memory profiler
 │   │   ├── Achievements.js      // Trophy unlock manager & cheats lockout guard
 │   │   ├── StatsManager.js      // Expedition metrics, clicks, playtime & records
 │   │   ├── CosmeticsManager.js  // Wardrobe skins catalog (shovels, sands, automatons)
@@ -302,13 +332,18 @@ The **Georadar** can give ambiguous readings such as "anomaly detected" or "weak
 │   │   └── SecretEnding.js      // Awakening of Atlantis & ascending monoliths
 │   └── ui/
 │       ├── Hud.js               // Topbar, cheats badge, SPS & completion meters
-│       ├── Shop.js              // Upgrades drawer modal
+│       ├── Shop.js              // Upgrades drawer, Multi-Buy selector (1x/10x/100x/MAX) & Relics tab
+│       ├── DirectivesWidget.js  // Compact HUD widget with contract progress & countdown
+│       ├── FloatingText.js      // 3D-to-2D pooled floating damage & sand acquisition numbers
 │       ├── Modal.js             // ModalManager dialogs & toast notifications
 │       ├── SettingsModal.js     // Audio, Graphics, Controls, Language & Cheats tabs
 │       ├── StatsModal.js        // Statistics overview & Trophies screen with lockout banner
 │       ├── BiomeSelectModal.js  // Expedition destination picker
 │       ├── GalleryModal.js      // Endings discovery showcase
 │       ├── WardrobeModal.js     // Cosmetic customization interface
+│       ├── HelpModal.js         // Contextual controls legend & gameplay guide
+│       ├── CreditsModal.js      // Open source software attributions & legal licenses
+│       ├── ProfilerOverlay.js   // Real-time canvas sparklines & hardware stats overlay
 │       ├── PauseMenu.js         // In-game pause overlay
 │       ├── LoadingScreen.js     // Monotonic loading bar & lore quotes
 │       └── MainMenu.js          // Title screen & 3D background view
@@ -333,32 +368,46 @@ The terrain is built on a high-performance $256 \times 256$ heightmap deformed i
 - **Sub-Grid Normal Recalculation $O(k)$:** Eliminates costly global `geometry.computeVertexNormals()` calls across all $65,536$ vertices on every click. Only the vertices within the localized bounding box `[dirtyIxMin, dirtyIzMin]` to `[dirtyIxMax, dirtyIzMax]` have their normal vectors analytically updated via `computeSubGridNormals()`, maintaining a rock-solid 60 FPS even during continuous rapid-fire excavation or dynamite blasts.
 - **Anti-Tunneling & Bounding Box:** Vertex clamping guarantees $Y \ge 0$ (bedrock level), preventing the shovel from creating holes in the mesh. `updateBounds()` keeps raycaster intersections accurate even in the deepest excavation trenches.
 
-### 7.4 Rendering Pipeline, Lighting & Post-Processing
+### 7.4 Rendering Pipeline, Lighting, PBR & Post-Processing
 
 - **Photometric Safety Floor (Ambient Floor):**
   - To prevent black screen rendering bugs on high settings or during the night cycle, an ambient base light `THREE.AmbientLight(0x0D131A, 0.15)` (`ambientFloor`) is permanently active in the scene.
   - Night sky hemispheric illumination is clamped to a minimum intensity $\ge 0.25$ with celestial blue `#1B2A40`, ensuring the terrain silhouette is always crisp and visible.
-- **Tone Mapping:**
+- **Tone Mapping & Anisotropy:**
   ```javascript
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.0;
+  // Anisotropia al massimo livello supportato dalla GPU fisica
+  const maxAniso = renderer.capabilities.getMaxAnisotropy();
+  texture.anisotropy = Math.min(maxAniso, 16);
   ```
-- **Post-Processing & Antialiasing (High Graphics):**
-  - Managed by `PostProcessing.js` with an offscreen `THREE.WebGLRenderTarget`.
+- **Procedural PBR Material Engine (`TextureGenerator.js`):**
+  - Generates high-definition $2048 \times 2048\text{px}$ seamless procedural noise textures directly on the client without external network latency.
+  - Multi-octave Fractional Brownian Motion (FBM) with 4 octaves, persistence $0.5$, and lacunarity $2.0$.
+  - Analytical Sobel Normal Map filtering computing tangent-space surface gradients ($dX, dY$) to produce tactile chiseled sandstone relief.
+- **Post-Processing & Antialiasing (`PostProcessing.js`):**
+  - Managed with an offscreen `THREE.WebGLRenderTarget` paired with a native `THREE.DepthTexture`.
   - **Hardware MSAA 4x:** configured with `samples: 4` on WebGL2 to eliminate geometric aliasing in offscreen passes.
   - **FXAA Shader Integration:** integrated Fast Approximate Anti-Aliasing pass based on luminance contrast, smoothing low-poly silhouette edges.
   - **Selective Bloom:** multi-tap radial bloom extracting only high-luminance emissive highlights (`uBloomThreshold: 0.85, uBloomIntensity: 0.4, uBloomRadius: 0.5`) such as Atlantean turquoise crystals and golden artifacts without darkening or overexposing the surrounding dunes.
+  - **Screen-Space Reflections (SSR) & Ambient Occlusion (SSAO):**
+    - Experimental optical pass using view-space depth reconstruction via `tDepth` buffer and inverse projection matrices.
+    - Simulates specular raymarching reflections on polished metals (orichalcum, gold) and contact ambient occlusion in excavated craters and around ruin colonnades.
+    - **Zero-Cost Bypass:** disabled by default in Settings (`graphics.ssrEnabled: false`); when turned off, the shader acts as an instantaneous zero-cost passthrough with zero GPU raymarching overhead.
   - **Opaque Buffer Output:** `gl_FragColor = vec4(finalColor, 1.0)` prevents zero-alpha canvas blackouts.
   - Disables completely with zero runtime overhead on Low/Mobile graphics settings.
+- **Hardware Telemetry & Runtime Profiler (`Profiler.js` / `ProfilerOverlay.js`):**
+  - Activated by pressing `F3` or via the Graphics Settings panel.
+  - Real-time Canvas 2D sparkline monitoring instantaneous FPS, rolling 60-frame min/max frame time in milliseconds, GPU draw calls, rendered triangles, and VRAM texture memory consumption.
 
-### 7.4 The Buried City
+### 7.5 The Buried City
 
 - A group of simple meshes (cube buildings, columns, a central area) placed **below** the initial sand level.
 - As the terrain lowers, the buildings naturally emerge from the sand, with no special effects needed.
 - For the **Business** ending the city **is not created**: only the flat floor remains (plus the bucket gag).
 - For the **Curse** ending, a central element (seal / obelisk) is added. For the **Treasure** ending, scattered coins and gems and a chest are added.
 
-### 7.5 State and Saving
+### 7.6 State and Saving
 
 ```js
 // js/core/State.js
@@ -519,6 +568,48 @@ The project has fully executed all planned developmental milestones, verified wi
 - [x] Standardized tone mapping (`ACESFilmicToneMapping`, exposure 1.0) and opaque alpha buffer output.
 - [x] Antialiasing on all tiers: Hardware MSAA 4x in WebGLRenderTarget plus luminance FXAA shader pass.
 - [x] Natural procedural dune elevation (`getInitialBiomeHeightOffset`) replacing flat initial planes, with exact initial volume conservation.
+
+### Phase 16 — Hardware Diagnostics, WebGL Profiler & Sparkline Overlay
+- [x] Telemetry monitor (`Profiler.js`) tracking FPS, frame time distribution (min/avg/max), draw calls, geometry triangles, and VRAM texture memory.
+- [x] Real-time Canvas 2D overlay (`ProfilerOverlay.js`) with dynamic 60-sample sparkline and Atlantean glassmorphism styling.
+- [x] Keyboard toggle shortcut (`F3`) and Settings integration with immediate observer persistence.
+
+### Phase 17 — Raytracing Simulation (SSR & SSAO Raymarching Pass)
+- [x] Native `THREE.DepthTexture` integration in WebGLRenderTarget for linear view-space depth reconstruction.
+- [x] Screen-Space Reflections (SSR) raymarching shader pass simulating specular reflections on orichalcum, gold, and submerged ruins.
+- [x] Screen-Space Ambient Occlusion (SSAO) contact shadows emphasizing depth in excavated trenches and around monument pillars.
+- [x] Zero-cost pass-through bypass when disabled in settings (`graphics.ssrEnabled: false`) to safeguard mobile and low-end hardware.
+
+### Phase 18 — Quality of Life & Game Juice
+- [x] Multi-Buy selector (`1x`, `10x`, `100x`, `MAX`) with exact analytical geometric series cost summation and max affordable level calculations.
+- [x] Numeric notation toggle between Standard Compact (`K, M, B, T, Qa`) and Scientific Notation (`1.25e6`).
+- [x] Portable Save Import/Export (`SaveSerializer.js`) via Base64 serialization and CRC32 integrity validation.
+- [x] Floating Text system (`FloatingText.js`) with lightweight DOM/Canvas pool projecting 3D crater hits to 2D screen coordinates.
+- [x] Exponential decay camera trauma shake (`Camera.js`) and tactile haptic vibration pulses (`Haptics.js`).
+
+### Phase 18.1 — Adaptive 3-Tier Architecture & Multi-Touch Gestures
+- [x] 3-Tier CSS responsive layout: Desktop ($\ge 1025\text{px}$), Tablet ($601 - 1024\text{px}$), and Smartphone ($\le 600\text{px}$).
+- [x] Touch target enlargement ($\ge 44\text{px} \times 44\text{px}$) and Safe Area insets (`env(safe-area-inset-top)`, `env(safe-area-inset-bottom)`).
+- [x] Mobile pull-up Bottom Sheet for the Shop with rounded top corners ($20\text{px}$) and tactile drag handle.
+- [x] Multi-finger touch gesture handling: 1 finger excavation, 2 fingers pinch-zoom and orbital rotation.
+- [x] Dynamic vertical FOV compensation for tall mobile screens ($9:16$, $9:19.5$) and ultrawide monitors ($21:9$).
+
+### Phase 19 — Dynamic Expedition Directives, Accessibility & Legal Transparency
+- [x] Dynamic Directives system (`Directives.js` & `DirectivesWidget.js`) generating rotating procedural bounties with instant sand rewards and temporary buffs (shop discount, SPS surge).
+- [x] Accessibility suite (`Accessibility.js`) with native *Reduced Motion* support (dampening particle counts, camera shake, and floating numbers) and *Smart Pause* clamping delta time ($dt$) on background tab switching.
+- [x] Contextual Help Modal (`HelpModal.js`) with responsive controls legend adapted for mouse/keyboard and mobile touch.
+- [x] Official Credits Modal (`CreditsModal.js`) detailing open source attributions (Three.js MIT, Google Fonts SIL OFL, Kenney/Quaternius CC0).
+
+### Phase 20 — Mathematical Economic Balancing, Stability Audit, Offline PWA & Gold Master v1.0.0
+- [x] Fine-tuned economic balance: $1.15$ cost multiplier for clicks, $1.16 - 1.18$ for autonomous fleet, and 5 Relics of Resonance unlocked at excavation thresholds ($15\%, 25\%, 50\%, 65\%, 80\%$).
+- [x] Analytical progression simulator (`window.__DDS_DEBUG.simulateProgression()`) executing in $< 20\text{ms}$ and validating the target completion curve of $30 - 35$ minutes.
+- [x] Production logger (`Logger.js`) suppressing debug overhead and printing the official Gold Master ASCII/CSS banner at boot.
+- [x] Comprehensive GPU memory recycling (`DisposeUtils.js`) deeply traversing geometries, materials, textures, and depth render targets on expedition teardown.
+- [x] Root Service Worker (`sw.js`) with `dds_cache_v1.0.0` providing 100% offline standalone PWA playability via Cache-First + Network Fallback.
+- [x] Release v1.0.0 Gold Master bump across all files and 100% pass on 92+ unit tests and headless Chrome CDP browser QA suite (0 console errors, 0 page exceptions).
+
+### Phase 20.5 — Global Specification & Documentation Synchronization
+- [x] Full synchronization of all project markdown documentation (`diggy-diggy-sand-project.md`, `upgrade_tree_specification.md`, `brand_book_art_bible.md`, `asset_manifest_download_guide.md`, `README.md`) reflecting the complete codebase architecture at v1.0.0 Gold Master.
 
 ---
 

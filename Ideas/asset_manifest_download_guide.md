@@ -281,3 +281,53 @@ export class SoundSynth {
   }
 }
 ```
+
+### 6.5 Architettura PWA Offline & Caching Service Worker (`sw.js`)
+
+Per garantire un'esperienza nativa da Progressive Web App (PWA) giocabile anche in totale assenza di connettività internet (es. in aereo o su dispositivi mobili disconnessi), il file di root [sw.js](file:///home/simone/Desktop/Repos/DiggyDiggySand/sw.js) implementa una strategia di caching rigorosa:
+
+- **Nome Cache Versionata:** `dds_cache_v1.0.0`.
+- **Pre-Caching di Avvio:** Durante la fase di `install`, il Service Worker memorizza nella cache tutti i file statici vitali:
+  - `index.html`, `manifest.json`, `css/style.css`
+  - Tutti i moduli JavaScript (`js/main.js`, `js/core/*.js`, `js/world/*.js`, `js/systems/*.js`, `js/endings/*.js`, `js/ui/*.js`)
+  - Three.js r160 locale e componenti addon (`vendor/three/three.module.js`, `vendor/three/addons/*`)
+  - Icone vettoriali (`assets/icons/icon.svg`)
+- **Strategia Cache-First con Network Fallback:**
+  - Qualsiasi richiesta di risorsa statica locale viene prima cercata nella cache. Se presente, viene servita a latenza zero ($< 2\text{ms}$).
+  - In caso di cache miss, viene effettuata la fetch di rete e la risposta valida viene salvata nella cache per i successivi utilizzi offline.
+- **Pulizia del Ciclo Vitale (`activate`):**
+  - All'attivazione di una nuova versione di `sw.js`, tutte le cache obsolete con prefisso `dds_cache_v` diverso da quello corrente vengono eliminate atomicamente (`caches.delete()`), prevenendo lo spreco di memoria locale sul dispositivo.
+
+### 6.6 Registro Texture Procedurali ad Alta Definizione (`TextureGenerator.js`)
+
+Per evitare il download di texture bitmap pesanti (che rallenterebbero l'avvio su rete mobile), `TextureGenerator.js` genera in memoria texture PBR a $2048 \times 2048\text{px}$ in meno di $40\text{ms}$:
+
+1. **Rumore Multi-Ottava FBM (Fractional Brownian Motion):**
+   - 4 ottave di rumore continuo Perlin 2D:
+     $$\text{FBM}(x, y) = \sum_{o=0}^{3} \text{amplitude}_o \cdot \text{noise}(x \cdot \text{frequency}_o, y \cdot \text{frequency}_o)$$
+   - Persistenza: $0.5$ (dimezzamento dell'ampiezza per ottava).
+   - Lacunarità: $2.0$ (raddoppio della frequenza per ottava).
+2. **Normal Map Sobel Analitica:**
+   - Applica un filtro convolutivo Sobel $3 \times 3$ per estrarre la derivata parziale dell'altezza lungo $X$ e $Y$:
+     $$dX = (h_{x+1, y-1} + 2h_{x+1, y} + h_{x+1, y+1}) - (h_{x-1, y-1} + 2h_{x-1, y} + h_{x-1, y+1})$$
+     $$dY = (h_{x-1, y+1} + 2h_{x, y+1} + h_{x+1, y+1}) - (h_{x-1, y-1} + 2h_{x, y-1} + h_{x+1, y-1})$$
+   - Il vettore normale $\vec{N} = \text{normalize}(-dX \cdot \text{scale}, -dY \cdot \text{scale}, 1.0)$ viene codificato nello spazio colore RGB $[0, 255]$:
+     $$R = \lfloor (N_x \cdot 0.5 + 0.5) \cdot 255 \rfloor, \quad G = \lfloor (N_y \cdot 0.5 + 0.5) \cdot 255 \rfloor, \quad B = \lfloor (N_z \cdot 0.5 + 0.5) \cdot 255 \rfloor$$
+3. **Mappa di Ruvidezza (Roughness Map):**
+   - Mappa speculare correlata inversamente ai gradienti di pendenza, restituendo zone sabbiose opache ($0.90$) e creste di pietra scura levigata ($0.75$).
+
+---
+
+## 7. Riconoscimenti Ufficiali e Licenze Open Source
+
+Tutti i componenti software, font, librerie e risorse multimediali adottati in *Diggy Diggy Sand* rispettano standard open source permissivi, garantendo piena conformità legale:
+
+| Componente | Autore / Fonte | Licenza | Utilizzo nel Progetto |
+|---|---|---|---|
+| **Three.js (r160)** | mrdoob & Three.js Authors | **MIT License** | Motore di rendering 3D, camera, scenografia e WebGL pipeline |
+| **Cinzel Decorative** | Natanael Gama | **SIL OFL 1.1** | Tipografia display: logo, schermata titolo e intestazioni finali |
+| **Cinzel** | Natanael Gama | **SIL OFL 1.1** | Tipografia primaria UI: pulsanti, tab del negozio, titoli modali |
+| **Syne** | Bonjour Monde, Lucas Descroix | **SIL OFL 1.1** | Tipografia dati e corpo: cifre, contatore sabbia, floating text |
+| **Kenney Game Assets** | Kenney (Asset Jesus) | **CC0 1.0 Universal** | Asset 3D di cantiere, modelli pirati, effetti sonori UI e impatto |
+| **Quaternius Modular Kits** | Quaternius | **CC0 1.0 Universal** | Figure low-poly per la flotta lavoratori e modelli veicoli |
+| **OpenGameArt Desert Props** | iPoly3D / Contributori OGA | **CC0 / CC-BY** | Texture e modelli rovine egizie, obelischi e colonne antiche |

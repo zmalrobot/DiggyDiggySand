@@ -12,17 +12,47 @@ For any upgrade at level $n$ (where $n$ is current owned level, starting at 0 fo
 $$\text{Cost}(n) = \text{round}\left( \text{BaseCost} \times (\text{Multiplier})^n \right)$$
 
 * Standard linear upgrades use $\text{Multiplier} = 1.15$
-* High-impact/automation upgrades use $\text{Multiplier} = 1.18$ to $1.22$
-* Unique one-off unlocks have fixed costs with no scaling.
+* High-impact/automation upgrades use $\text{Multiplier} = 1.16$ to $1.18$
+* Unique one-off unlocks and Relics of Resonance have fixed threshold costs.
 
-### 1.2 Target Progression Timeline (30–40 Minutes Total)
+### 1.2 Target Progression Timeline (30–35 Minutes Calibrated Window)
+Validated by the analytical game progression simulator (`simulateProgression()`), a standard playthrough targeting 100% completion runs in **32.5 – 33.5 minutes**:
 
 | Phase | Time Window | Target Sand Dig Rate | Sand Cleared % | Visual Stage |
 |---|---|---|---|---|
-| **Early Game (Manual Focus)** | 0 – 5 min | $1 - 25 \text{ sand/s}$ | $0\% - 10\%$ | Dune surface, rusted tools, basic workers |
-| **Mid Game (Industrial Transition)** | 5 – 18 min | $25 - 600 \text{ sand/s}$ | $10\% - 45\%$ | Excavators, dust storms, stone ruin tips visible |
-| **Late Game (Atlantean Magic)** | 18 – 30 min | $600 - 15,000 \text{ sand/s}$ | $45\% - 85\%$ | Resonators, beam conduits, monoliths emerging |
-| **Endgame (Mythic Excavation)** | 30 – 40 min | $15,000 - 80,000+ \text{ sand/s}$ | $85\% - 100\%$ | Sky warp, abyss cracks, ending trigger |
+| **Early Game (Manual Focus)** | 0 – 5 min | $1 - 35 \text{ sand/s}$ | $0\% - 15\%$ | Dune surface, rusted tools, basic workers, first Relic ($15\%$) |
+| **Mid Game (Industrial Fleet)** | 5 – 15 min | $35 - 800 \text{ sand/s}$ | $15\% - 45\%$ | Excavators, dust storms, stone ruin tips, telluric leylines ($25\%$) |
+| **Late Game (Atlantean Magic)** | 15 – 25 min | $800 - 20,000 \text{ sand/s}$ | $45\% - 75\%$ | Archaic gears ($50\%$), anomaly matrix ($65\%$), dredges grinding |
+| **Endgame (Mythic Excavation)** | 25 – 34 min | $20,000 - 90,000+ \text{ sand/s}$ | $75\% - 100\%$ | Crown of the Abyss ($80\%$), abyss cracks, ending climax |
+
+### 1.3 Multi-Buy Math & Bulk Acquisition Formulas
+
+The Shop features a 4-state quantity selector (`1x`, `10x`, `100x`, `MAX`) utilizing exact analytical series summation:
+
+1. **Cumulative Cost of Geometric Series ($k$ Levels):**
+   For an upgrade with base cost $B$, multiplier $r > 1$, and current level $n$, purchasing $k$ consecutive levels costs:
+   $$\text{Cost}_{\text{total}}(k) = \sum_{j=0}^{k-1} B \cdot r^{n+j} = B \cdot r^n \cdot \frac{r^k - 1}{r - 1}$$
+   With shop discount factor $d \in [0, 0.25]$:
+   $$\text{Cost}_{\text{discounted}}(k) = \left\lfloor \text{Cost}_{\text{total}}(k) \times (1 - d) \right\rfloor$$
+
+2. **Analytical Maximum Affordable Level Calculation (`MAX` Mode):**
+   To determine the maximum integer $k_{\text{max}}$ affordable with available sand $S$, the series inequality is solved logarithmically:
+   $$B \cdot r^n \cdot \frac{r^{k_{\text{max}}} - 1}{r - 1} \le \frac{S}{1 - d}$$
+   $$r^{k_{\text{max}}} - 1 \le \frac{S \cdot (r - 1)}{B \cdot r^n \cdot (1 - d)}$$
+   $$k_{\text{max}} = \left\lfloor \frac{\ln\left(1 + \frac{S \cdot (r - 1)}{B \cdot r^n \cdot (1 - d)}\right)}{\ln(r)} \right\rfloor$$
+   Clamped to remaining levels: $k_{\text{effective}} = \min(k_{\text{max}}, \text{maxLevel} - n)$.
+
+### 1.4 Number Formatting & Scale Conversion
+
+The engine supports dual notation toggled in the Settings modal:
+
+| Raw Number | Standard Compact Notation | Scientific Notation | Game Milestone Reference |
+|---|---|---|---|
+| $1,000$ | `1.00 K` | `1.00e3` | First tool upgrades and speed boosts |
+| $1,000,000$ | `1.00 M` | `1.00e6` | First Steam Excavator purchase |
+| $1,000,000,000$ | `1.00 B` | `1.00e9` | High-level Dredges & Archaic Gears |
+| $1,000,000,000,000$ | `1.00 T` | `1.00e12` | Crown of the Abyss & 80% Ruin Excavation |
+| $1,000,000,000,000,000$ | `1.00 Qa` | `1.00e15` | Endgame Business Tycoon & Sandbox runs |
 
 ---
 
@@ -203,14 +233,36 @@ These abilities sit on the main HUD as circular stone medallions with cooldown s
 
 ---
 
-## 7. Replayability, Sanctuary Meta-Progression & Cosmetic Wardrobe
+## 7. Dynamic Expedition Directives & Ephemeral Bounties
+
+Managed by `Directives.js` and displayed in the compact lateral HUD widget (`DirectivesWidget.js`), the expedition syndicate offers short-term rolling contracts to provide immediate pacing hooks and tactical micro-goals:
+
+### 7.1 Contract Types & Generation Logic
+
+| Contract Key | Type Name | Target Objective | Time Limit | Reward Payout |
+|---|---|---|---|---|
+| `directive_extract` | **Estrazione Locale** | Dig $[X]\text{ m}^3$ in the targeted desert quadrant | $90\text{ s}$ | $1.5\times$ target volume in Sand currency |
+| `directive_sustain` | **Costanza di Scavo** | Maintain unbroken continuous digging for $[S]\text{ s}$ | $60\text{ s}$ | Instant payout $+ 2\times$ Excavation Surge for $30\text{ s}$ |
+| `directive_archaeology`| **Ricerca Archeologica** | Completely unearth the summit of an emerging column | No timer | High flat Sand bounty $+ 15\%$ Shop Discount for $45\text{ s}$ |
+| `directive_invest` | **Investimento Cantiere** | Purchase $[N]$ levels of any upgrade before time expires | $60\text{ s}$ | $20\%$ partial cashback on sand invested |
+
+### 7.2 Temporary Buff Mechanics
+
+When a contract awards a temporary boost, it applies directly to the state machine and visual meters:
+- **Bottega Discount Buff (`temporaryDiscount: 0.15`):** Stacks additively with Ancestral Sanctuary tablet discounts up to an absolute cap of $80\%$ total discount:
+  $$\text{EffectiveDiscount} = \min\left(0.80, \text{TabletDiscount} + \text{DirectiveDiscount}\right)$$
+- **Extraction Surge Buff (`sandMultiplier: 2.0`):** Doubles all sand collected from manual hits, explosions, and autonomous fleet excavation for $30\text{ seconds}$. Displayed with a pulsing golden icon in the HUD.
+
+---
+
+## 8. Replayability, Sanctuary Meta-Progression & Cosmetic Wardrobe
 
 When an expedition reaches its climax, the player earns **Ancient Tablets** ($\tau$) based on total sand excavated and run performance:
 $$\tau = \left\lfloor \sqrt{\frac{\text{TotalSand}}{100,000}} \right\rfloor + 5$$
 
 Tablets are stored persistently across all runs (`dds_save_v1`) and never reset upon starting a new expedition.
 
-### 7.1 Ancestral Sanctuary (Persistent Meta-Upgrades)
+### 8.1 Ancestral Sanctuary (Persistent Meta-Upgrades)
 
 The Ancestral Sanctuary can be accessed from the Main Menu or pause screen to permanently enhance future expeditions:
 
@@ -220,7 +272,7 @@ The Ancestral Sanctuary can be accessed from the Main Menu or pause screen to pe
 | `excavatorBlueprint` | **Progetto Escavatore (Excavator Blueprint)** | $5\ \tau$ | $2.0$ | 5 | Start every future expedition with active Beetle Automata digging from frame 1. |
 | `tabletMagnetism` | **Magnetismo Tavolette (Tablet Magnetism)** | $4\ \tau$ | $1.8$ | 5 | Ancient favor: $-5\%$ discount per level on all workshop sand costs (up to $-25\%$). |
 
-### 7.2 Dune Wardrobe (Cosmetics & Custom Skins)
+### 8.2 Dune Wardrobe (Cosmetics & Custom Skins)
 
 Players can spend Ancient Tablets ($\tau$) in the **Dune Wardrobe** modal (`WardrobeModal.js` / `CosmeticsManager.js`) to personalize the visual look of their excavation tools, terrain particles, and machinery without altering physical hitboxes:
 
@@ -247,7 +299,7 @@ Players can spend Ancient Tablets ($\tau$) in the **Dune Wardrobe** modal (`Ward
 | `machinery_royal_gold` | **Flotta Aureo-Reale** | $30\ \tau$ | Polished ceremonial gold armor and solar insignias (`#F5BA23`). |
 | `machinery_atlantis_teal` | **Flotta d'Oricalco Celestiale** | $50\ \tau$ | Levitation conduits and pulsating turquoise energy cores (`#00F2FF`). |
 
-### 7.3 Expedition Biome Unlock Matrix
+### 8.3 Expedition Biome Unlock Matrix
 
 In addition to cosmetics, Ancient Tablets or expedition victories unlock new geological destinations:
 
@@ -260,7 +312,7 @@ In addition to cosmetics, Ancient Tablets or expedition victories unlock new geo
 
 ---
 
-## 8. Low-Poly Free Asset Requirements (For Next Step)
+## 9. Low-Poly Free Asset Requirements (For Next Step)
 
 Every upgrade in this tree is mapped to simple 3D asset archetypes that can be downloaded from free repositories (Kenney, Poly Pizza, Quaternius) or easily composed using Three.js CSG/primitives:
 
