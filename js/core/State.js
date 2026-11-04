@@ -20,6 +20,7 @@ export class State {
     this.seed = data.seed ?? 0;
     this.endingId = data.endingId ?? 'curse';
     this.currentBiome = data.currentBiome ?? 'desert';
+    this.debugMode = (typeof window !== 'undefined' && new URLSearchParams(window.location?.search || '').get('debug') === '1') || !!data.debugMode;
     this.cheatsEnabled = !!data.cheatsEnabled;
     this.godMode = !!data.godMode;
     this.sand = Number.isFinite(data.sand) ? Math.max(0, data.sand) : 0;

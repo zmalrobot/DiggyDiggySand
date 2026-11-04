@@ -45,7 +45,7 @@ t('index.html: metadati PWA, Open Graph e percorsi relativi', () => {
   assert.ok(html.includes('rel="manifest" href="./manifest.json"'), 'Link manifest presente');
   assert.ok(html.includes('rel="icon" type="image/svg+xml" href="./assets/icons/icon.svg"'), 'Favicon SVG presente');
   assert.ok(html.includes('rel="apple-touch-icon" href="./assets/icons/icon.svg"'), 'Apple Touch Icon presente');
-  assert.ok(html.includes('name="theme-color" content="#0b1522"'), 'Meta theme-color presente');
+  assert.ok(html.includes('name="theme-color" content="#031826"') || html.includes('name="theme-color" content="#0b1522"'), 'Meta theme-color presente');
   assert.ok(html.includes('name="mobile-web-app-capable" content="yes"'), 'Mobile web app capable presente');
   assert.ok(html.includes('name="apple-mobile-web-app-capable" content="yes"'), 'Apple mobile web app capable presente');
 

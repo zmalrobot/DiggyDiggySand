@@ -29,6 +29,7 @@ const CORE_ASSETS = [
   './js/core/Haptics.js',
   './js/core/I18n.js',
   './js/core/Logger.js',
+  './js/core/SanityAudit.js',
   './js/core/Save.js',
   './js/core/SaveSerializer.js',
   './js/core/SettingsManager.js',
@@ -49,9 +50,11 @@ const CORE_ASSETS = [
   './js/systems/WorldEvents.js',
 
   // Interfaccia UI
+  './js/ui/AchievementToast.js',
   './js/ui/BiomeSelectModal.js',
   './js/ui/CreditsModal.js',
   './js/ui/DirectivesWidget.js',
+  './js/ui/EndingsModal.js',
   './js/ui/EventBanner.js',
   './js/ui/FloatingText.js',
   './js/ui/GalleryModal.js',
@@ -64,6 +67,7 @@ const CORE_ASSETS = [
   './js/ui/PauseMenu.js',
   './js/ui/PrestigeModal.js',
   './js/ui/ProfilerOverlay.js',
+  './js/ui/SanctuaryModal.js',
   './js/ui/SettingsModal.js',
   './js/ui/Shop.js',
   './js/ui/StatsModal.js',
@@ -123,13 +127,13 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// 2. Attivazione e pulizia delle cache obsolete (dds_cache_v*)
+// 2. Attivazione e pulizia di tutte le versioni cache precedenti (dds_cache_v0.* o temporanee)
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
         keys
-          .filter((k) => k.startsWith('dds_cache_') && k !== CACHE_NAME)
+          .filter((k) => k !== CACHE_NAME)
           .map((k) => caches.delete(k))
       );
     }).then(() => self.clients.claim())

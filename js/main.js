@@ -23,6 +23,7 @@ import { Profiler } from './systems/Profiler.js';
 import { ProfilerOverlay } from './ui/ProfilerOverlay.js';
 import { Accessibility } from './core/Accessibility.js';
 import { simulateProgression } from './systems/Economy.js';
+import { SanityAudit } from './core/SanityAudit.js';
 
 window.addEventListener('error', (e) => console.error('[DDS] errore non gestito', e.error ?? e.message));
 window.addEventListener('unhandledrejection', (e) => console.error('[DDS] promise rifiutata', e.reason));
@@ -30,9 +31,12 @@ window.addEventListener('unhandledrejection', (e) => console.error('[DDS] promis
 async function boot() {
   Logger.init();
 
-  if ('serviceWorker' in navigator && (window.location.protocol === 'http:' || window.location.protocol === 'https:')) {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
-  }
+  try {
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator &&
+        (window.location.protocol === 'http:' || window.location.protocol === 'https:')) {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    }
+  } catch {}
 
   const settings = new SettingsManager();
   const audio = new AudioEngine(settings);
@@ -120,10 +124,11 @@ async function boot() {
     }
   });
 
-  // Hook di debug per i test.
-  window.__dds = { settings, settingsModal, audio, save, scene, assets, menu, game, debugTools, statsManager, achievements, cosmeticsManager, wardrobeModal, biomeManager, biomeSelectModal, i18n, profiler, profilerOverlay, accessibility, simulateProgression };
+  // Hook di debug e release gate per i test e console DevTools.
+  window.__dds = { settings, settingsModal, audio, save, scene, assets, menu, game, debugTools, statsManager, achievements, cosmeticsManager, wardrobeModal, biomeManager, biomeSelectModal, i18n, profiler, profilerOverlay, accessibility, simulateProgression, sanityAudit: SanityAudit };
   window.__DDS_DEBUG = window.__DDS_DEBUG || {};
   window.__DDS_DEBUG.simulateProgression = simulateProgression;
+  window.__DDS_AUDIT = window.__DDS_AUDIT || { run: (opts) => SanityAudit.run(opts), SanityAudit };
 
   await startClicked;
   menu.show();

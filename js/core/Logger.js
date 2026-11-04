@@ -26,19 +26,17 @@ export class Logger {
       };
     }
 
-    // Banner elegante iniziale con stile Atlantean-Kemet
-    const titleStyle = 'color: #0FE3C1; background: #031826; font-family: "Cinzel", serif; font-size: 13px; font-weight: bold; padding: 4px 8px; border: 1px solid #C89849; border-radius: 3px;';
-    const subStyle = 'color: #E4C580; font-family: "Syne", sans-serif; font-size: 11px; font-weight: 600; padding: 2px 4px;';
+    // Banner ufficiale di rilascio Gold Master v1.0.0 formattato con CSS
+    const bannerStyle = 'color: #F5BA23; background: #031826; font-family: "Cinzel", serif; font-size: 13px; font-weight: bold; padding: 4px 10px; border: 1px solid #0FE3C1; border-radius: 4px;';
 
     try {
       (originalLog || console.log)(
-        '%c⛏️ Diggy Diggy Sand — v1.0.0 (Gold Master)%c [Three.js r160 / Standalone PWA]',
-        titleStyle,
-        subStyle
+        '%c[DDS] Diggy Diggy Sand — v1.0.0 (Gold Master) Ready.',
+        bannerStyle
       );
     } catch {
       // Fallback in ambienti senza supporto %c
-      (originalLog || console.log)('⛏️ Diggy Diggy Sand — v1.0.0 (Gold Master) [Three.js r160 / Standalone PWA]');
+      (originalLog || console.log)('[DDS] Diggy Diggy Sand — v1.0.0 (Gold Master) Ready.');
     }
   }
 }

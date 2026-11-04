@@ -7,7 +7,7 @@ export const SETTINGS_VERSION = 1;
 /** Schema: tipo, default e vincoli di ogni impostazione (chiavi piatte "gruppo.nome"). */
 export const SCHEMA = {
   'audio.master':        { type: 'range', def: 80, min: 0, max: 100, step: 1 },
-  'audio.music':         { type: 'range', def: 60, min: 0, max: 100, step: 1 },
+  'audio.music':         { type: 'range', def: 70, min: 0, max: 100, step: 1 },
   'audio.sfx':           { type: 'range', def: 80, min: 0, max: 100, step: 1 },
   'audio.mute':          { type: 'bool',  def: false },
   'graphics.renderScale':{ type: 'enum',  def: 1, values: [0.5, 0.75, 1] },
