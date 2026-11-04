@@ -66,7 +66,7 @@ export class SceneManager {
     this.maxAnisotropy = this.renderer.capabilities?.getMaxAnisotropy?.() ?? 16;
 
     this.scene = new THREE.Scene();
-    this.camera = new THREE.PerspectiveCamera(50, 1, 0.5, 400);
+    this.camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
 
     this._buildSky();
     this._buildLights();
@@ -265,8 +265,12 @@ export class SceneManager {
   }
 
   applyRenderScale() {
-    const base = Math.min(window.devicePixelRatio || 1, 2);
-    this.renderer.setPixelRatio(base * this.settings.get('graphics.renderScale'));
+    const isMobile = (typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) ||
+      (typeof window !== 'undefined' && window.innerWidth <= 1024);
+    const dpr = typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1;
+    const maxDpr = isMobile ? Math.min(dpr, 1.75) : Math.min(dpr, 2.0);
+    const scale = this.settings?.get?.('graphics.renderScale') ?? 1;
+    this.renderer.setPixelRatio(maxDpr * scale);
     this.resize();
   }
 
@@ -297,20 +301,18 @@ export class SceneManager {
     if (!this.renderer) return;
     const w = window.innerWidth, h = window.innerHeight;
     this.renderer.setSize(w, h, false);
-    this.camera.aspect = w / h;
-
-    // Compensazione adattiva del FOV per schermi verticali (portrait / mobile con notch) e ultra-wide (21:9 / 32:9)
-    const baseFov = 50;
     const aspect = w / h;
+    this.camera.aspect = aspect;
+
+    // Compensazione adattiva del FOV per schermi verticali (portrait / smartphone)
     if (aspect < 1.0) {
-      // Schermo portrait / mobile: allarga progressivamente il FOV per mantenere duna e HUD visibili
-      this.camera.fov = Math.min(78, Math.max(50, baseFov / Math.pow(aspect, 0.65)));
-    } else if (aspect > 2.05) {
-      // Display ultra-wide (21:9 e 32:9): calibra il FOV per evitare distorsioni da lente ai margini
-      this.camera.fov = Math.max(42, Math.min(baseFov, baseFov * (1.78 / aspect) * 1.05));
+      // Schermo verticale (smartphone): compensa il FOV orizzontale
+      this.camera.fov = 45 + (1.0 - aspect) * 25; // scala morbida tra 45° e ~65°
     } else {
-      this.camera.fov = baseFov;
+      this.camera.fov = 45; // standard desktop/tablet landscape
     }
+    this.camera.near = 0.1;
+    this.camera.far = 1000;
     this.camera.updateProjectionMatrix();
     this.postProcessing?.setSize?.(w, h);
   }

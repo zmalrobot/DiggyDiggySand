@@ -31,9 +31,11 @@ export class Shop {
       events.on('language:changed', () => this.refresh()),
     ];
 
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && this.isOpen) this.close();
-    });
+    if (typeof document !== 'undefined' && document.addEventListener) {
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && this.isOpen) this.close();
+      });
+    }
   }
 
   _build() {
@@ -41,6 +43,7 @@ export class Shop {
     this.root.innerHTML = `
       <div class="shop-backdrop"></div>
       <aside class="panel shop-drawer" role="dialog" aria-label="${i18n.t('shop.title') || 'Officina degli Scavi'}">
+        <div class="shop-drag-handle" aria-hidden="true"></div>
         <div class="shop-header">
           <div class="shop-title-wrap">
             <h2 class="shop-title" data-i18n="shop.title">${i18n.t('shop.title') || 'Officina delle Dune'}</h2>
@@ -101,6 +104,35 @@ export class Shop {
       const id = btn.dataset.buy;
       buyMultiUpgrade(id, this.multiBuy, this.state, this.audio);
     });
+
+    // Supporto Touch Swipe-down per chiusura Bottom Sheet su Tablet Portrait e Smartphone
+    let touchStartY = 0;
+    let touchCurrentY = 0;
+    let isSwiping = false;
+
+    this.drawer.addEventListener('touchstart', (e) => {
+      if (e.touches && e.touches.length === 1) {
+        touchStartY = e.touches[0].clientY;
+        touchCurrentY = touchStartY;
+        if ((this.content && this.content.scrollTop <= 5) || e.target.closest?.('.shop-header, .shop-drag-handle')) {
+          isSwiping = true;
+        }
+      }
+    }, { passive: true });
+
+    this.drawer.addEventListener('touchmove', (e) => {
+      if (!isSwiping || !e.touches || e.touches.length !== 1) return;
+      touchCurrentY = e.touches[0].clientY;
+    }, { passive: true });
+
+    this.drawer.addEventListener('touchend', () => {
+      if (!isSwiping) return;
+      isSwiping = false;
+      const diffY = touchCurrentY - touchStartY;
+      if (diffY > 60) {
+        this.close();
+      }
+    }, { passive: true });
 
     this.render();
     this.close(true);

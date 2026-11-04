@@ -115,8 +115,14 @@ export class Hud {
           <div class="obelisk-bar glow" data-el="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="fill"></div></div>
         </div>
         <div class="hud-actions">
-          <button type="button" class="btn hud-btn hud-shop-btn" data-act="shop" data-el="shop" data-i18n="hud.workshop">${i18n.t('hud.workshop')}</button>
-          <button type="button" class="btn hud-btn hud-menu-btn" data-act="menu" data-el="menu" data-i18n="hud.pause" data-i18n-title="hud.pauseTitle" data-i18n-aria-label="hud.pauseTitle" title="${i18n.t('hud.pauseTitle')}" aria-label="${i18n.t('hud.pauseTitle')}">${i18n.t('hud.pause')}</button>
+          <button type="button" class="btn hud-btn hud-shop-btn" data-act="shop" data-el="shop" data-i18n-title="hud.workshop" data-i18n-aria-label="hud.workshop" title="${i18n.t('hud.workshop')}" aria-label="${i18n.t('hud.workshop')}">
+            <svg class="hud-btn-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+            <span class="hud-btn-text" data-i18n="hud.workshop">${i18n.t('hud.workshop')}</span>
+          </button>
+          <button type="button" class="btn hud-btn hud-menu-btn" data-act="menu" data-el="menu" data-i18n-title="hud.pauseTitle" data-i18n-aria-label="hud.pauseTitle" title="${i18n.t('hud.pauseTitle')}" aria-label="${i18n.t('hud.pauseTitle')}">
+            <svg class="hud-btn-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span class="hud-btn-text" data-i18n="hud.pause">${i18n.t('hud.pause')}</span>
+          </button>
         </div>
       </div>
 

@@ -58,6 +58,9 @@ async function boot() {
   try {
     scene = new SceneManager(document.getElementById('game'), settings, assets);
     if (scene.ok) {
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (window.innerWidth <= 1024);
+      const maxDpr = isMobile ? Math.min(window.devicePixelRatio, 1.75) : Math.min(window.devicePixelRatio, 2.0);
+      scene.renderer.setPixelRatio(maxDpr * (settings.get('graphics.renderScale') || 1));
       if (scene.maxAnisotropy) assets.setMaxAnisotropy(scene.maxAnisotropy);
       scene.start();
     }

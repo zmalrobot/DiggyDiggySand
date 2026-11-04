@@ -447,6 +447,23 @@ Verifiche manuali da fare: valori persistiti dopo il ricaricamento; `localStorag
     - Supporto per formattazione `standard` (1.2k, 1.5M), `scientific` (1.20e3) ed `engineering` (multipli di 3 esponenti).
   - Verificata con suite di test unitari completa (`tests/phase18_qol.test.mjs`, 6 verifiche superate al 100%, oltre 125 test totali del progetto) e Browser QA automation headless Chrome CDP (`tests/phase18_qol_browser_qa.mjs`, 0 errori console, 0 eccezioni runtime, screenshot `dds_qa_qol_multibuy_shop.png`, `dds_qa_qol_floating_text.png` e `dds_qa_qol_save_export_import.png`).
 
+- **Milestone 23 (Fase 18.1: Architettura Adattiva a 3 Tier, Controlli Touch Multi-Dito e Ottimizzazione DPI): COMPLETATA E VERIFICATA.**
+  - Architettura CSS a 3 Livelli Reattivi (`css/style.css`):
+    - Tier 1 — Desktop (`min-width: 1025px`): topbar HUD orizzontale (720px), cassetto Negozio laterale (380px), modali centrate a larghezza fissa.
+    - Tier 2 — Tablet (`min-width: 601px` e `max-width: 1024px`): target touch minimi di 44x44px; HUD compatto con margini laterali per la presa; Negozio laterale al 45% larghezza in landscape; cassetto inferiore estensibile al 55% altezza in portrait con drag handle.
+    - Tier 3 — Smartphone (`max-width: 600px`): supporto nativo Safe Area insets (`env(safe-area-inset-*)`), HUD compatto con icone stilizzate SVG (officina/pausa) senza etichette estese; Negozio Bottom Sheet all'85vh con angoli arrotondati (`border-radius: 20px 20px 0 0`), drag handle orizzontale e gesture swipe-down per chiusura; modali full-screen (95vw / 90vh) con scroll touch fluido (`overscroll-behavior: contain`).
+  - Compensazione Dinamica Telecamera & FOV Verticale (`js/world/Camera.js` & `js/world/SceneManager.js`):
+    - Calcolo adattivo del FOV orizzontale per schermi portrait (`aspect < 1.0`): $FOV = 45 + (1.0 - aspect) \times 25$, garantendo visibilità ottimale di duna ed elementi di scavo tra 45° e ~65°.
+    - Piani di clipping calibrati (`near: 0.1`, `far: 1000`) per prevenire compenetrazioni durante lo zoom ravvicinato.
+  - Unificazione Input & Gesture Touch Multi-Dito (`js/systems/Digging.js`):
+    - Rimozione interferenze browser: `touch-action: none` e `overscroll-behavior: none` sul canvas `#game` e sull'interfaccia.
+    - 1 Dito (Tap o Pressione Continua): raycast immediato e scavo continuo con colpi cadenzati e supporto critici.
+    - 2 Dita (Pinch-to-Zoom & Orbit): blocco automatico dello scavo; calcolo della distanza euclidea tra le dita per lo zoom cinematico smorzato con lerp; calcolo della traslazione media per la rotazione orbitale azimutale e zenitale (tilt) attorno alla duna.
+    - Protezione anti ghost-tap al rilascio parziale delle dita.
+  - Ottimizzazione DPI e Thermal Throttling Mobile (`js/main.js` & `js/world/SceneManager.js`):
+    - Calibrazione dinamica protettiva del `devicePixelRatio`: capping a `1.75` su smartphone e tablet per prevenire surriscaldamento della GPU su schermi OLED/Retina ad alta densità (3x o 3.5x), e a `2.0` su desktop.
+  - Verificata con suite di test unitari (`tests/phase18_1_responsive_touch.test.mjs`, 5/5 verifiche passate con successo, 20 test suite totali del progetto) e Browser QA automatizzato CDP (`tests/phase18_1_browser_qa.mjs`, 0 errori console, 0 eccezioni runtime, screenshot `dds_qa_responsive_tier1_desktop.png`, `dds_qa_responsive_tier2_tablet_landscape.png`, `dds_qa_responsive_tier2_tablet_portrait.png`, `dds_qa_responsive_tier3_smartphone_hud.png`, `dds_qa_responsive_tier3_smartphone_bottom_sheet.png`, `dds_qa_responsive_tier3_smartphone_modal.png`).
+
 Piano dettagliato con codice e verifiche: vedi la sezione "Roadmap" sopra e le formule in `Ideas/upgrade_tree_specification.md`.
 
 ## 6. Convenzioni

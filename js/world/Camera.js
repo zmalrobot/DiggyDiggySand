@@ -8,6 +8,20 @@ export const CAMERA_LIMITS = {
   maxPolarAngle: 1.20, // Mai sotto l'orizzonte (previene visuale da sotto il terreno)
 };
 
+/**
+ * Calcola l'allargamento adattivo del FOV per schermi verticali (portrait / smartphone)
+ * evitando che la duna risulti tagliata lateralmente.
+ * @param {number} aspect w / h
+ * @returns {number} FOV in gradi
+ */
+export function computeAdaptiveFov(aspect) {
+  if (aspect < 1.0) {
+    // Schermo verticale (smartphone): compensa il FOV orizzontale
+    return 45 + (1.0 - aspect) * 25; // scala morbida tra 45° e ~65°
+  }
+  return 45; // standard desktop/tablet landscape
+}
+
 export class CameraController {
   /**
    * @param {THREE.PerspectiveCamera} camera
@@ -132,9 +146,37 @@ export class CameraController {
    * @param {number} deltaAngle Radianti
    */
   rotate(deltaAngle) {
-    this._syncFromCamera();
     this._spherical.theta += deltaAngle;
     this._applyToCamera();
+  }
+
+  /**
+   * Modifica l'inclinazione zenitale (polar / pitch) in radianti con clamping rigoroso.
+   * @param {number} deltaAngle Radianti
+   */
+  tilt(deltaAngle) {
+    this._spherical.phi = THREE.MathUtils.clamp(
+      this._spherical.phi + deltaAngle,
+      this.minPolarAngle,
+      this.maxPolarAngle
+    );
+    this._applyToCamera();
+  }
+
+  /**
+   * Aggiorna FOV, aspect ratio e piani di clipping della telecamera.
+   * Piani near (0.1) e far (1000) prevengono il clipping durante lo zoom ravvicinato.
+   * @param {number} [width]
+   * @param {number} [height]
+   */
+  updateProjection(width = (typeof window !== 'undefined' ? window.innerWidth : 800), height = (typeof window !== 'undefined' ? window.innerHeight : 600)) {
+    if (!this.camera) return;
+    const aspect = width / height;
+    this.camera.aspect = aspect;
+    this.camera.fov = computeAdaptiveFov(aspect);
+    this.camera.near = 0.1;
+    this.camera.far = 1000;
+    this.camera.updateProjectionMatrix();
   }
 
   /**

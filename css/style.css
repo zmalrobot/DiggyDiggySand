@@ -57,6 +57,8 @@ html, body {
   width: 100%;
   height: 100%;
   display: block;
+  touch-action: none;
+  overscroll-behavior: none;
 }
 
 h1, h2, h3 { font-family: var(--font-heading); font-weight: 700; margin: 0; }
@@ -298,7 +300,10 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
 .hud-progress-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
 .hud-percent { font-family: var(--font-data); font-weight: 700; font-size: 0.95rem; color: var(--atlantis-teal); font-variant-numeric: tabular-nums; }
 .hud-actions { display: flex; align-items: center; gap: 10px; }
-.hud-btn { padding: 9px 14px; font-size: 0.78rem; white-space: nowrap; }
+.hud-btn { padding: 9px 14px; font-size: 0.78rem; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.hud-btn-icon { display: none; }
+.hud-btn-text { display: inline; }
+.shop-drag-handle { display: none; }
 .hud-shop-btn { border-color: var(--gold-pharaoh); box-shadow: inset 0 0 0 1.5px var(--gold-pharaoh), 0 0 10px rgba(245, 186, 35, 0.35); }
 @keyframes hudIn { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: none; } }
 @keyframes numPop { 0% { transform: scale(1); } 40% { transform: scale(1.12); } 100% { transform: scale(1); } }
@@ -417,18 +422,7 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
 .radar-status { font-family: var(--font-data); font-size: 0.68rem; font-weight: 800; }
 .radar-reading { font-family: var(--font-data); font-size: 0.78rem; line-height: 1.35; color: var(--text-main); }
 
-@media (max-width: 640px) {
-  #hud { padding: calc(8px + env(safe-area-inset-top, 0px)) calc(8px + env(safe-area-inset-right, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) calc(8px + env(safe-area-inset-left, 0px)); }
-  #hud .hud-top { gap: 10px; padding: 10px 12px; flex-wrap: wrap; }
-  .hud-num { font-size: 1.5rem; }
-  .hud-sand { min-width: 90px; }
-  .hud-btn { padding: 7px 10px; font-size: 0.7rem; }
-  .hud-radar-wrap { bottom: 12px; left: 12px; right: 12px; }
-  .hud-radar-card { max-width: 100%; min-width: 0; }
-  .main-menu { padding-left: 20px; }
-  .row { flex-direction: column; align-items: stretch; gap: 8px; }
-  .ctl { width: 100%; }
-}
+
 
 @media (min-aspect-ratio: 21/9) {
   #hud .hud-top { width: min(1080px, 80vw); }
@@ -923,65 +917,368 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
 }
 
 /* ==========================================================================
-   Mobile & Touch Screen Adaptations (Portrait / Smartphone)
+   Milestone 18.1: Architettura Adattiva a 3 Tier (Desktop, Tablet, Smartphone)
    ========================================================================== */
 
-@media (max-width: 640px) {
-  /* Safe touch zones */
-  .hud-btn {
-    min-height: 44px;
-    padding: 8px 14px;
-    font-size: 0.8rem;
-  }
-  .hud-actions {
-    display: flex;
-    gap: 8px;
+/* --------------------------------------------------------------------------
+   Tier 1 — Desktop (@media (min-width: 1025px))
+   Assetto nativo: topbar orizzontale in alto, cassetto Negozio laterale (380px),
+   modali centrate a larghezza fissa.
+   -------------------------------------------------------------------------- */
+@media (min-width: 1025px) {
+  #hud .hud-top {
+    width: min(720px, 94vw);
+    left: 50%;
+    transform: translateX(-50%);
   }
 
-  /* Cassetto Shop Mobile: quasi a schermo intero per facile lettura */
   #shop, #shop-root .shop-drawer, .shop-drawer {
-    width: 100vw !important;
-    max-width: 100vw !important;
-    padding: 16px 14px 24px;
+    width: 380px;
+    max-width: 380px;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: auto;
+    height: 100%;
+    transform: translateX(100%);
   }
-  .shop-header {
-    margin-bottom: 12px;
+  .shop-container.open .shop-drawer {
+    transform: translateX(0);
   }
-  .shop-title {
-    font-size: 1.25rem;
+
+  .shop-drag-handle {
+    display: none !important;
   }
-  .upgrade-card {
-    padding: 12px 14px;
-    gap: 8px;
+  .hud-btn-icon {
+    display: none;
+  }
+  .hud-btn-text {
+    display: inline;
+  }
+
+  .modal {
+    width: min(460px, 94vw);
+  }
+  .modal.wide {
+    width: min(640px, 94vw);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Tier 2 — Tablet (@media (min-width: 601px) and (max-width: 1024px))
+   Touch target min 44px, HUD compatto con margini per la presa delle dita,
+   Negozio differenziato tra landscape (45% W) e portrait (55% H).
+   -------------------------------------------------------------------------- */
+@media (min-width: 601px) and (max-width: 1024px) {
+  /* Safe touch target min 44x44px */
+  .btn, .tab, .hud-btn, .multibuy-btn, .shop-close-btn {
+    min-height: 44px;
+    min-width: 44px;
   }
   .btn-buy, .upgrade-buy-btn {
     min-height: 44px;
     min-width: 90px;
     padding: 10px 14px;
+  }
+  .upgrade-card {
+    min-height: 64px;
+    padding: 12px 14px;
+  }
+
+  /* HUD Tablet compatto con margini laterali protettivi */
+  #hud .hud-top {
+    width: calc(100vw - 64px);
+    max-width: 760px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px 20px;
+    box-sizing: border-box;
+  }
+
+  .hud-btn-icon {
+    display: none;
+  }
+  .hud-btn-text {
+    display: inline;
+  }
+}
+
+/* Tier 2 Tablet Landscape */
+@media (min-width: 601px) and (max-width: 1024px) and (orientation: landscape) {
+  #shop, #shop-root .shop-drawer, .shop-drawer {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: auto;
+    width: 45vw;
+    max-width: 45vw;
+    height: 100%;
+    transform: translateX(100%);
+  }
+  .shop-container.open .shop-drawer {
+    transform: translateX(0);
+  }
+  .shop-drag-handle {
+    display: none !important;
+  }
+}
+
+/* Tier 2 Tablet Portrait */
+@media (min-width: 601px) and (max-width: 1024px) and (orientation: portrait) {
+  #shop, #shop-root .shop-drawer, .shop-drawer {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100vw;
+    max-width: 100vw;
+    height: 55vh;
+    max-height: 55vh;
+    border-radius: 20px 20px 0 0;
+    transform: translateY(100%);
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  .shop-container.open .shop-drawer {
+    transform: translateY(0);
+  }
+  .shop-drag-handle {
+    display: block;
+    width: 48px;
+    height: 5px;
+    border-radius: 3px;
+    background: rgba(212, 175, 55, 0.45);
+    margin: 0 auto 10px;
+    cursor: grab;
+    flex-shrink: 0;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Tier 3 — Smartphone (@media (max-width: 600px))
+   Safe Area insets, HUD minimalista con icone SVG stilizzate, Bottom Sheet (85vh)
+   con drag handle e gesture swipe down, modali quasi full-screen (95vw / 90vh).
+   -------------------------------------------------------------------------- */
+@media (max-width: 600px) {
+  :root {
+    --safe-top: max(10px, env(safe-area-inset-top, 0px));
+    --safe-bottom: max(10px, env(safe-area-inset-bottom, 0px));
+    --safe-left: max(8px, env(safe-area-inset-left, 0px));
+    --safe-right: max(8px, env(safe-area-inset-right, 0px));
+  }
+
+  /* Safe Area Insets per viewport mobile */
+  #hud {
+    padding-top: var(--safe-top);
+    padding-bottom: var(--safe-bottom);
+    padding-left: var(--safe-left);
+    padding-right: var(--safe-right);
+  }
+
+  /* HUD Mobile Compatto: sabbia, sps e completamento raggruppati */
+  #hud .hud-top {
+    position: fixed;
+    top: var(--safe-top);
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100vw - 16px);
+    max-width: 100vw;
+    padding: 6px 10px;
+    gap: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-sizing: border-box;
+  }
+
+  .hud-block.hud-sand {
+    min-width: 0;
+    flex: 0 1 auto;
+  }
+  .hud-sand-row {
+    gap: 4px;
+    align-items: baseline;
+  }
+  .hud-num {
+    font-size: 1.25rem;
+  }
+  .hud-sps {
+    font-size: 0.72rem;
+  }
+  .hud-block.hud-progress {
+    flex: 1 1 auto;
+    min-width: 80px;
+    margin: 0 4px;
+  }
+  .hud-progress-head {
+    gap: 4px;
+  }
+  .hud-label {
+    display: none; /* Iconografia e numeri parlanti, elimina testo esteso per densità */
+  }
+
+  .hud-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .hud-btn {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .hud-btn-text {
+    display: none;
+  }
+  .hud-btn-icon {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+  }
+
+  /* Negozio Bottom Sheet */
+  #shop, #shop-root .shop-drawer, .shop-drawer {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 85vh;
+    height: 85dvh;
+    max-height: 85dvh;
+    border-radius: 20px 20px 0 0;
+    padding: 12px 14px 20px !important;
+    box-sizing: border-box;
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 -8px 32px rgba(3, 24, 38, 0.95), inset 0 0 0 1.5px var(--ui-border-gold);
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  .shop-container.open .shop-drawer {
+    transform: translateY(0);
+  }
+
+  .shop-drag-handle {
+    display: block;
+    width: 44px;
+    height: 5px;
+    border-radius: 3px;
+    background: rgba(212, 175, 55, 0.5);
+    margin: 0 auto 10px;
+    cursor: grab;
+    flex-shrink: 0;
+  }
+  .shop-header {
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+  }
+  .shop-title {
+    font-size: 1.15rem;
+  }
+  .shop-subtitle {
+    display: none;
+  }
+  .shop-close-btn {
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 1.5rem;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .upgrade-card {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+  .btn-buy, .upgrade-buy-btn {
+    min-height: 44px;
+    min-width: 80px;
+    padding: 8px 12px;
     font-size: 0.85rem;
   }
 
-  /* Tooltip posizionati in modo reattivo su schermi verticali */
+  /* Modali Full-Screen su Smartphone */
+  .modal-backdrop {
+    padding: var(--safe-top) var(--safe-left) var(--safe-bottom) var(--safe-right);
+    box-sizing: border-box;
+  }
+  .modal, .modal.wide {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    height: 90vh !important;
+    height: 90dvh !important;
+    max-height: 90dvh !important;
+    margin: auto;
+    padding: 16px 14px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  .modal-body {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  .modal-actions {
+    flex-shrink: 0;
+    padding-top: 10px;
+  }
+  .modal-actions .btn {
+    min-height: 44px;
+    padding: 10px 16px;
+  }
+
+  /* Tooltip ed Elementi Fluttuanti su Schermo Verticale */
   .tooltip-sand {
-    top: 92px;
-    left: 12px;
+    top: calc(var(--safe-top) + 68px);
+    left: var(--safe-left);
   }
   .tooltip-shop {
-    top: 92px;
-    right: 12px;
+    top: calc(var(--safe-top) + 68px);
+    right: var(--safe-right);
+  }
+  .event-banner {
+    top: calc(var(--safe-top) + 64px);
+    width: calc(100% - 20px);
+  }
+  .hud-radar-wrap {
+    bottom: calc(var(--safe-bottom) + 8px);
+    left: var(--safe-left);
+    right: var(--safe-right);
   }
 
   /* Overlay epilogo compatto */
   .overlay-card {
-    padding: 24px 18px 20px;
-    gap: 12px;
+    padding: 20px 16px;
+    gap: 10px;
   }
   .epilogue-title {
-    font-size: 1.45rem;
+    font-size: 1.35rem;
   }
   .stats-grid {
     grid-template-columns: 1fr;
     gap: 8px;
+  }
+  .main-menu {
+    padding-left: 20px;
+  }
+  .row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .ctl {
+    width: 100%;
   }
 }
 

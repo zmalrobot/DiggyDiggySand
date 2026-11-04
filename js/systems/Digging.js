@@ -28,6 +28,7 @@ export class Digging {
     this.primaryId = null;
     this.holding = false;
     this.multi = false;          // gesto a più dita in corso
+    this._twoFingerPrev = null;  // coordinate/distanza gesto pinch & orbit
     this.cooldown = 0;
     this.lastHit = 0;
     this.hoverDirty = false;
@@ -78,7 +79,10 @@ export class Digging {
 
   _bind() {
     const c = this.canvas;
-    if (c) c.style.touchAction = 'none';
+    if (c) {
+      c.style.touchAction = 'none';
+      c.style.overscrollBehavior = 'none';
+    }
 
     this._onDown = (e) => {
       if (!this.enabled) return;
@@ -86,7 +90,21 @@ export class Digging {
       if (e.pointerType === 'touch') e.preventDefault?.();
       this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
       this.pointer = { x: e.clientX, y: e.clientY, inside: true };
-      if (this.pointers.size > 1) { this.multi = true; this._cancel(); return; }
+      if (this.pointers.size > 1) {
+        this.multi = true;
+        this._cancel();
+        if (this.pointers.size === 2) {
+          const pts = Array.from(this.pointers.values());
+          const dx = pts[1].x - pts[0].x;
+          const dy = pts[1].y - pts[0].y;
+          this._twoFingerPrev = {
+            distance: Math.hypot(dx, dy),
+            midX: (pts[0].x + pts[1].x) / 2,
+            midY: (pts[0].y + pts[1].y) / 2,
+          };
+        }
+        return;
+      }
       this.primaryId = e.pointerId;
       this.holding = true;
       this.cooldown = 1 / Math.max(0.1, this.state.stats.digRate);
@@ -97,16 +115,64 @@ export class Digging {
       this.pointer = { x: e.clientX, y: e.clientY, inside: true };
       const p = this.pointers.get(e.pointerId);
       if (p) { p.x = e.clientX; p.y = e.clientY; }
+
+      // Gesto a Due Dita: Pinch-to-Zoom e Orbit/Rotazione
+      if (this.pointers.size === 2 && this.multi) {
+        const pts = Array.from(this.pointers.values());
+        const dx = pts[1].x - pts[0].x;
+        const dy = pts[1].y - pts[0].y;
+        const currentDist = Math.hypot(dx, dy);
+        const currentMidX = (pts[0].x + pts[1].x) / 2;
+        const currentMidY = (pts[0].y + pts[1].y) / 2;
+
+        if (this._twoFingerPrev) {
+          const deltaDist = currentDist - this._twoFingerPrev.distance;
+          const deltaMidX = currentMidX - this._twoFingerPrev.midX;
+          const deltaMidY = currentMidY - this._twoFingerPrev.midY;
+
+          const camCtrl = this.scene?.cameraController;
+          if (camCtrl) {
+            // Pinch-to-Zoom: dita che si allontanano (deltaDist > 0) -> zoom ravvicinato (-distance)
+            if (Math.abs(deltaDist) > 0.5) {
+              const zoomSens = 0.12;
+              camCtrl.zoom(-deltaDist * zoomSens);
+            }
+            // Orbit/Rotazione: traslazione orizzontale media -> rotazione azimutale attorno alla duna
+            if (Math.abs(deltaMidX) > 0.5) {
+              const rotSens = 0.006;
+              camCtrl.rotate(-deltaMidX * rotSens);
+            }
+            // Orbit/Pitch: traslazione verticale media -> inclinazione zenitale
+            if (Math.abs(deltaMidY) > 0.5 && typeof camCtrl.tilt === 'function') {
+              const pitchSens = 0.005;
+              camCtrl.tilt(deltaMidY * pitchSens);
+            }
+          }
+        }
+
+        this._twoFingerPrev = {
+          distance: currentDist,
+          midX: currentMidX,
+          midY: currentMidY,
+        };
+        return;
+      }
+
       this.hoverDirty = true;
     };
     this._onUp = (e) => {
       this.pointers.delete(e.pointerId);
       if (e.pointerId === this.primaryId) this._cancel();
       if (e.pointerType !== 'mouse') this.pointer.inside = false;
-      if (this.pointers.size === 0) this.multi = false;
+      if (this.pointers.size === 0) {
+        this.multi = false;
+        this._twoFingerPrev = null;
+      } else if (this.pointers.size < 2) {
+        this._twoFingerPrev = null;
+      }
     };
     this._onLeave = () => { this.pointer.inside = false; this.reticle.visible = false; };
-    this._onBlur = () => { this.pointers.clear(); this.multi = false; this._cancel(); };
+    this._onBlur = () => { this.pointers.clear(); this.multi = false; this._twoFingerPrev = null; this._cancel(); };
     this._onCtx = (e) => e.preventDefault();
     this._onGesture = (e) => e.preventDefault();
 
