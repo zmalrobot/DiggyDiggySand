@@ -26,6 +26,9 @@ const VISUAL_CAPS = {
   dredge: 2,
 };
 
+export const TERRAIN_SIZE = 200;
+export const BOUNDARY_LIMIT = (TERRAIN_SIZE / 2) - 2.5;
+
 /** Crea il modello 3D dello Scarafaggio Meccanico. */
 export function createScarabModel() {
   const root = new THREE.Group();
@@ -342,27 +345,40 @@ export class Workers {
 
     const angle = Math.random() * Math.PI * 2;
     const r = distMin + Math.random() * (distMax - distMin);
-    const x = Math.cos(angle) * r;
-    const z = Math.sin(angle) * r;
+    const rawX = Math.cos(angle) * r;
+    const rawZ = Math.sin(angle) * r;
+    const x = Math.max(-BOUNDARY_LIMIT, Math.min(BOUNDARY_LIMIT, rawX));
+    const z = Math.max(-BOUNDARY_LIMIT, Math.min(BOUNDARY_LIMIT, rawZ));
     const y = this.terrain ? this.terrain.heightAt(x, z) : 12;
 
     m.position.set(x, y, z);
     m.rotation.y = Math.random() * Math.PI * 2;
     this.group.add(m);
 
+    const targetPos = this.getNewTargetPosition(x, z, 8);
     const worker = {
       type,
       mesh: m,
+      get position() { return m.position; },
       timer: def.cycleTime * 0.85, // scava quasi subito dopo l'acquisto
       cycleTime: def.cycleTime,
       digRadius: def.digRadius,
       powerPerHit: def.dpsPerLevel * def.cycleTime,
       x, z,
-      targetX: x + (Math.random() - 0.5) * 8,
-      targetZ: z + (Math.random() - 0.5) * 8,
+      targetX: targetPos.x,
+      targetZ: targetPos.z,
       animPhase: Math.random() * 6.28,
     };
     return worker;
+  }
+
+  getNewTargetPosition(fromX = 0, fromZ = 0, range = 12) {
+    const rawX = fromX + (Math.random() - 0.5) * range;
+    const rawZ = fromZ + (Math.random() - 0.5) * range;
+    return {
+      x: Math.max(-BOUNDARY_LIMIT, Math.min(BOUNDARY_LIMIT, rawX)),
+      z: Math.max(-BOUNDARY_LIMIT, Math.min(BOUNDARY_LIMIT, rawZ)),
+    };
   }
 
   update(renderDt) {
@@ -376,10 +392,26 @@ export class Workers {
       : Math.min(0.5, Math.max(renderDt || 0.001, (now - this._lastUpdate) / 1000));
     this._lastUpdate = now;
 
-
     for (const w of this.workers) {
       w.timer += realDt;
       w.animPhase += realDt;
+
+      // Clamping immediato su coordinate e mesh del lavoratore / escavatore
+      const worker = w.mesh;
+      worker.position.x = Math.max(-BOUNDARY_LIMIT, Math.min(BOUNDARY_LIMIT, worker.position.x));
+      worker.position.z = Math.max(-BOUNDARY_LIMIT, Math.min(BOUNDARY_LIMIT, worker.position.z));
+      w.x = worker.position.x;
+      w.z = worker.position.z;
+
+      // Se un mezzo tocca il perimetro di sicurezza, inverti il vettore di direzione verso il centro della duna (0, 0, 0)
+      if (Math.abs(w.x) >= BOUNDARY_LIMIT || Math.abs(w.z) >= BOUNDARY_LIMIT) {
+        const toCenterX = -w.x;
+        const toCenterZ = -w.z;
+        const len = Math.hypot(toCenterX, toCenterZ) || 1;
+        const nudge = 12 + Math.random() * 8;
+        w.targetX = Math.max(-BOUNDARY_LIMIT, Math.min(BOUNDARY_LIMIT, w.x + (toCenterX / len) * nudge));
+        w.targetZ = Math.max(-BOUNDARY_LIMIT, Math.min(BOUNDARY_LIMIT, w.z + (toCenterZ / len) * nudge));
+      }
 
       // Aggiornamento posizioni e animazioni procedurali
       if (w.type === 'scarab') {
@@ -398,7 +430,6 @@ export class Workers {
     }
   }
 
-
   _updateScarab(w, dt) {
     // Muove lentamente verso il bersaglio
     const dx = w.targetX - w.x;
@@ -409,14 +440,19 @@ export class Workers {
       const speed = 1.6;
       w.x += (dx / dist) * speed * dt;
       w.z += (dz / dist) * speed * dt;
+      w.x = Math.max(-BOUNDARY_LIMIT, Math.min(BOUNDARY_LIMIT, w.x));
+      w.z = Math.max(-BOUNDARY_LIMIT, Math.min(BOUNDARY_LIMIT, w.z));
       w.mesh.rotation.y = Math.atan2(dx, dz);
     } else {
-      // Sceglie un nuovo punto vicino dove c'è ancora sabbia
-      w.targetX = w.x + (Math.random() - 0.5) * 12;
-      w.targetZ = w.z + (Math.random() - 0.5) * 12;
+      // Sceglie un nuovo punto vicino strettamente interno al perimetro
+      const nextTarget = this.getNewTargetPosition(w.x, w.z, 12);
+      w.targetX = nextTarget.x;
+      w.targetZ = nextTarget.z;
     }
 
     // Assicura quota sempre sulla superficie del terreno
+    w.x = Math.max(-BOUNDARY_LIMIT, Math.min(BOUNDARY_LIMIT, w.x));
+    w.z = Math.max(-BOUNDARY_LIMIT, Math.min(BOUNDARY_LIMIT, w.z));
     w.mesh.position.set(w.x, this.terrain.heightAt(w.x, w.z), w.z);
 
     // Movimento oscillatorio delle zampette
@@ -426,8 +462,12 @@ export class Workers {
   }
 
   _updateExcavator(w, dt) {
-    // Posizionato stabilmente sulle dune
-    w.mesh.position.y = this.terrain.heightAt(w.mesh.position.x, w.mesh.position.z);
+    // Posizionato stabilmente sulle dune con confinamento perimetrale
+    w.mesh.position.x = Math.max(-BOUNDARY_LIMIT, Math.min(BOUNDARY_LIMIT, w.mesh.position.x));
+    w.mesh.position.z = Math.max(-BOUNDARY_LIMIT, Math.min(BOUNDARY_LIMIT, w.mesh.position.z));
+    w.x = w.mesh.position.x;
+    w.z = w.mesh.position.z;
+    w.mesh.position.y = this.terrain.heightAt(w.x, w.z);
 
     // Animazione braccio: si alza e si prepara a colpire
     if (w.mesh.userData.armPivot) {
@@ -443,7 +483,11 @@ export class Workers {
   }
 
   _updateDredge(w, dt) {
-    w.mesh.position.y = this.terrain.heightAt(w.mesh.position.x, w.mesh.position.z);
+    w.mesh.position.x = Math.max(-BOUNDARY_LIMIT, Math.min(BOUNDARY_LIMIT, w.mesh.position.x));
+    w.mesh.position.z = Math.max(-BOUNDARY_LIMIT, Math.min(BOUNDARY_LIMIT, w.mesh.position.z));
+    w.x = w.mesh.position.x;
+    w.z = w.mesh.position.z;
+    w.mesh.position.y = this.terrain.heightAt(w.x, w.z);
 
     // Rotazione continua della grande ruota a tazze
     if (w.mesh.userData.wheelPivot) {
@@ -463,14 +507,17 @@ export class Workers {
     const radius = w.digRadius;
     const power = w.powerPerHit;
 
-    // Se il terreno in quel punto è già a livello bedrock, sposta leggermente il lavoratore
+    // Se il terreno in quel punto è già a livello bedrock, sposta leggermente il lavoratore verso l'interno
     if (y <= this.terrain.floor + 0.05) {
       const a = Math.random() * Math.PI * 2;
       const r = 8 + Math.random() * 12;
-      w.x += Math.cos(a) * r;
-      w.z += Math.sin(a) * r;
-      w.targetX = w.x;
-      w.targetZ = w.z;
+      const rawX = w.x + Math.cos(a) * r;
+      const rawZ = w.z + Math.sin(a) * r;
+      w.x = Math.max(-BOUNDARY_LIMIT, Math.min(BOUNDARY_LIMIT, rawX));
+      w.z = Math.max(-BOUNDARY_LIMIT, Math.min(BOUNDARY_LIMIT, rawZ));
+      const nextTarget = this.getNewTargetPosition(w.x, w.z, 8);
+      w.targetX = nextTarget.x;
+      w.targetZ = nextTarget.z;
       w.mesh.position.set(w.x, this.terrain.heightAt(w.x, w.z), w.z);
       return;
     }

@@ -4,6 +4,14 @@ import { events } from '../core/Events.js';
 import { toast } from '../ui/Modal.js';
 import { i18n } from '../core/I18n.js';
 
+function getEventTranslation(key, fallback = '') {
+  const text = i18n.t(key);
+  if (!text || text === key) {
+    return fallback || key;
+  }
+  return text;
+}
+
 export class WorldEvents {
   constructor({ scene, terrain, state, audio, particles, banner, modal }) {
     this.scene = scene;
@@ -93,6 +101,10 @@ export class WorldEvents {
       this._startSandstorm();
     } else if (type === 'merchant') {
       this._startMerchant();
+    } else if (type === 'solar_flare') {
+      this._startSolarFlare();
+    } else if (type === 'earthquake') {
+      this._startEarthquake();
     }
   }
 
@@ -108,13 +120,39 @@ export class WorldEvents {
     }
 
     this.state.sandMultiplier = 1.5;
-    const boostLabel = i18n.t('events.sandstorm.boost') || '⚡ Tempesta: +50% Sabbia (30s)';
+    const boostLabel = getEventTranslation('events.sandstorm.boost', '⚡ Tempesta: +50% Sabbia (30s)');
     events.emit('event:boost', { active: true, label: boostLabel });
 
     this.banner?.show({
       icon: '🌪️',
-      title: i18n.t('events.sandstorm.title') || 'Tempesta di Sabbia!',
-      message: i18n.t('events.sandstorm.message') || 'Un vento impetuoso solleva la duna: +50% Sabbia per ogni colpo (30s)!',
+      title: getEventTranslation('events.active_banner', 'EVENTO ATTIVO'),
+      message: getEventTranslation('events.sandstorm.started', 'Tempesta di Sabbia: Visibilità ridotta, scavo rallentato!'),
+      duration: 6000,
+    });
+  }
+
+  _startSolarFlare() {
+    this.activeEvent = 'solar_flare';
+    this.eventDuration = 30;
+    this.state.orichalcumMultiplier = 2.0;
+
+    this.banner?.show({
+      icon: '☀️',
+      title: getEventTranslation('events.active_banner', 'EVENTO ATTIVO'),
+      message: getEventTranslation('events.solar_flare.started', 'Eruzione Solare: Produzione oricalco raddoppiata!'),
+      duration: 6000,
+    });
+  }
+
+  _startEarthquake() {
+    this.activeEvent = 'earthquake';
+    this.eventDuration = 20;
+    this.scene?.shake?.(0.08);
+
+    this.banner?.show({
+      icon: '🌋',
+      title: getEventTranslation('events.active_banner', 'EVENTO ATTIVO'),
+      message: getEventTranslation('events.earthquake.started', 'Scossa Tettonica: Crolli di sabbia nel cratere!'),
       duration: 6000,
     });
   }
@@ -126,9 +164,9 @@ export class WorldEvents {
 
     this.banner?.show({
       icon: '🐪',
-      title: i18n.t('events.merchant.title') || 'Carovana Nomade',
-      message: i18n.t('events.merchant.message') || 'Un mercante del deserto si è accampato ai margini dello scavo!',
-      actionLabel: i18n.t('events.merchant.trade') || 'Commercia',
+      title: getEventTranslation('events.merchant.title', 'Carovana Nomade'),
+      message: getEventTranslation('events.merchant.message', 'Un mercante del deserto si è accampato ai margini dello scavo!'),
+      actionLabel: getEventTranslation('events.merchant.trade', 'Commercia'),
       duration: 10000,
       onAction: () => this.openMerchantOffer(),
     });
@@ -233,7 +271,20 @@ export class WorldEvents {
     this.stormTransition = 0;
     this.stormFactor = 0;
     events.emit('event:boost', { active: false, label: '' });
-    toast(i18n.t('events.sandstorm.ended') || 'La tempesta di sabbia si è placata.');
+    toast(getEventTranslation('events.sandstorm.ended', 'La tempesta di sabbia si è placata.'));
+    this.banner?.hide?.();
+  }
+
+  _finalizeSolarFlareEnd() {
+    this.state.orichalcumMultiplier = 1.0;
+    this.activeEvent = null;
+    toast(getEventTranslation('events.solar_flare.ended', "L'eruzione solare è terminata."));
+    this.banner?.hide?.();
+  }
+
+  _finalizeEarthquakeEnd() {
+    this.activeEvent = null;
+    toast(getEventTranslation('events.earthquake.ended', 'I movimenti tettonici sono cessati.'));
     this.banner?.hide?.();
   }
 
@@ -242,10 +293,14 @@ export class WorldEvents {
       this._finalizeStormEnd();
     } else if (this.activeEvent === 'merchant') {
       this._removeMerchantCamp();
-      toast(i18n.t('events.merchant.departed') || 'La carovana nomade è ripartita per le dune.');
+      toast(getEventTranslation('events.merchant.departed', 'La carovana nomade è ripartita per le dune.'));
       this.activeEvent = null;
       this.eventDuration = 0;
       this.banner?.hide?.();
+    } else if (this.activeEvent === 'solar_flare') {
+      this._finalizeSolarFlareEnd();
+    } else if (this.activeEvent === 'earthquake') {
+      this._finalizeEarthquakeEnd();
     }
   }
 

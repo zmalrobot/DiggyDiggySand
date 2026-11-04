@@ -32,10 +32,30 @@ const mesh = (geo, material, pos = [0, 0, 0]) => {
 export const FallbackMeshes = {
   createWorker() {
     const g = new THREE.Group();
-    const body = mesh(new THREE.CylinderGeometry(0.25, 0.35, 1.1, 6), mat(PALETTE_3D.sandMid, { roughness: 0.88, metalness: 0.02 }));
-    const head = mesh(new THREE.SphereGeometry(0.2, 5, 5), mat(PALETTE_3D.sandTop, { roughness: 0.88, metalness: 0.02 }), [0, 0.75, 0]);
-    const shovel = mesh(new THREE.BoxGeometry(0.08, 0.9, 0.2), mat(PALETTE_3D.sandBedrock, { roughness: 0.88, metalness: 0.02 }), [0.45, 0.2, 0]);
-    g.add(body, head, shovel);
+    // Tronco conico con tunica chiara (chiseled low-poly 6 facce)
+    const robe = mesh(
+      new THREE.CylinderGeometry(0.22, 0.45, 1.2, 6),
+      mat(PALETTE_3D.sandTop, { roughness: 0.85, metalness: 0.05 }),
+      [0, 0.6, 0]
+    );
+    // Testa stilizzata
+    const head = mesh(
+      new THREE.SphereGeometry(0.2, 6, 5),
+      mat(PALETTE_3D.sandMid, { roughness: 0.85, metalness: 0.05 }),
+      [0, 1.3, 0]
+    );
+    // Pala in mano: manico lungo in legno/pietra e lama metallica dorata/oricalco
+    const handle = mesh(
+      new THREE.BoxGeometry(0.06, 1.25, 0.06),
+      mat(PALETTE_3D.sandBedrock, { roughness: 0.85, metalness: 0.1 }),
+      [0.38, 0.55, 0.15]
+    );
+    const blade = mesh(
+      new THREE.BoxGeometry(0.26, 0.35, 0.05),
+      mat(PALETTE_3D.orichalcum, { metalness: 0.8, roughness: 0.3 }),
+      [0.38, -0.05, 0.15]
+    );
+    g.add(robe, head, handle, blade);
     return g;
   },
 
@@ -53,11 +73,39 @@ export const FallbackMeshes = {
 
   createExcavator() {
     const g = new THREE.Group();
-    g.add(mesh(new THREE.BoxGeometry(1.6, 0.8, 2.2), mat(PALETTE_3D.orichalcum, { metalness: 0.85, roughness: 0.22 })));
-    g.add(mesh(new THREE.BoxGeometry(0.9, 0.9, 1.1), mat(PALETTE_3D.abyss, { roughness: 0.88, metalness: 0.02 }), [0.2, 0.8, 0.2]));
-    const arm = mesh(new THREE.BoxGeometry(0.2, 0.2, 1.8), mat(PALETTE_3D.ruinsGoldInlay, { metalness: 0.85, roughness: 0.22 }), [0, 0.9, -1.4]);
-    arm.rotation.x = 0.5;
-    g.add(arm);
+    // Chassis squadrato marrone/ocra
+    const chassis = mesh(
+      new THREE.BoxGeometry(1.8, 0.65, 2.4),
+      mat(PALETTE_3D.sandBedrock, { roughness: 0.75, metalness: 0.2 }),
+      [0, 0.35, 0]
+    );
+    // Cingoli pesanti ai due lati
+    const trackL = mesh(new THREE.BoxGeometry(0.42, 0.45, 2.6), mat(PALETTE_3D.ruinsStone, { roughness: 0.85, metalness: 0.1 }), [-0.85, 0.22, 0]);
+    const trackR = mesh(new THREE.BoxGeometry(0.42, 0.45, 2.6), mat(PALETTE_3D.ruinsStone, { roughness: 0.85, metalness: 0.1 }), [0.85, 0.22, 0]);
+
+    // Cabina dorata rialzata
+    const cab = mesh(
+      new THREE.BoxGeometry(0.95, 0.85, 1.1),
+      mat(PALETTE_3D.ruinsGoldInlay, { metalness: 0.85, roughness: 0.22 }),
+      [0.35, 0.95, 0.15]
+    );
+
+    // Braccio con benna grigia metallica inclinata
+    const arm = mesh(
+      new THREE.BoxGeometry(0.24, 0.24, 2.2),
+      mat(PALETTE_3D.orichalcum, { metalness: 0.85, roughness: 0.22 }),
+      [-0.25, 1.1, -1.0]
+    );
+    arm.rotation.x = 0.55;
+
+    const bucket = mesh(
+      new THREE.BoxGeometry(0.85, 0.55, 0.65),
+      mat(PALETTE_3D.ruinsStone, { metalness: 0.8, roughness: 0.35 }),
+      [-0.25, 0.45, -2.0]
+    );
+    bucket.rotation.x = -0.35;
+
+    g.add(chassis, trackL, trackR, cab, arm, bucket);
     return g;
   },
 

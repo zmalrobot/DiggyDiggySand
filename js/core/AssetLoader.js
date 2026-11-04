@@ -10,21 +10,21 @@ const FONT_SPECS = ['700 1em "Cinzel Decorative"', '700 1em "Cinzel"', '500 1em 
 
 export const MODEL_REGISTRY = {
   // Tools
-  'tools/shovel.glb': { id: 'MODEL_SHOVEL', file: 'assets/models/tools/shovel.glb', fallback: 'createShovel' },
-  'tools/shovel_basic.glb': { id: 'TOOL_SHOVEL', file: 'assets/models/tools/shovel_basic.glb', fallback: 'createShovel' },
-  'tools/shovel_atlantean.glb': { id: 'TOOL_SHOVEL_ATLANTEAN', file: 'assets/models/tools/shovel_atlantean.glb', fallback: 'createShovel' },
+  'tools/shovel.glb': { id: 'MODEL_SHOVEL', file: './assets/models/tools/shovel.glb', fallback: 'createShovel' },
+  'tools/shovel_basic.glb': { id: 'TOOL_SHOVEL', file: './assets/models/tools/shovel_basic.glb', fallback: 'createShovel' },
+  'tools/shovel_atlantean.glb': { id: 'TOOL_SHOVEL_ATLANTEAN', file: './assets/models/tools/shovel_atlantean.glb', fallback: 'createShovel' },
   // Machinery & Fleet
-  'fleet/worker.glb': { id: 'MODEL_WORKER', file: 'assets/models/fleet/worker.glb', fallback: 'createWorker' },
-  'fleet/excavator.glb': { id: 'MODEL_EXCAVATOR', file: 'assets/models/fleet/excavator.glb', fallback: 'createExcavator' },
-  'machinery/worker_scarab.glb': { id: 'UNIT_SCARAB', file: 'assets/models/machinery/worker_scarab.glb', fallback: 'createWorker' },
-  'machinery/excavator_steam.glb': { id: 'UNIT_EXCAVATOR', file: 'assets/models/machinery/excavator_steam.glb', fallback: 'createExcavator' },
-  'machinery/dredge.glb': { id: 'UNIT_DREDGE', file: 'assets/models/machinery/dredge.glb', fallback: 'createMonolith' },
+  'fleet/worker.glb': { id: 'MODEL_WORKER', file: './assets/models/fleet/worker.glb', fallback: 'createWorker' },
+  'fleet/excavator.glb': { id: 'MODEL_EXCAVATOR', file: './assets/models/fleet/excavator.glb', fallback: 'createExcavator' },
+  'machinery/worker_scarab.glb': { id: 'UNIT_SCARAB', file: './assets/models/machinery/worker_scarab.glb', fallback: 'createWorker' },
+  'machinery/excavator_steam.glb': { id: 'UNIT_EXCAVATOR', file: './assets/models/machinery/excavator_steam.glb', fallback: 'createExcavator' },
+  'machinery/dredge.glb': { id: 'UNIT_DREDGE', file: './assets/models/machinery/dredge.glb', fallback: 'createMonolith' },
   // Ruins & City
-  'city/obelisk.glb': { id: 'MODEL_OBELISK', file: 'assets/models/city/obelisk.glb', fallback: 'createObelisk' },
-  'city/chest.glb': { id: 'MODEL_CHEST', file: 'assets/models/city/chest.glb', fallback: 'createChest' },
-  'ruins/column.glb': { id: 'RUIN_COLUMN', file: 'assets/models/ruins/column.glb', fallback: 'createPillar' },
-  'ruins/temple_center.glb': { id: 'RUIN_TEMPLE', file: 'assets/models/ruins/temple_center.glb', fallback: 'createObelisk' },
-  'ruins/chest.glb': { id: 'RUIN_CHEST', file: 'assets/models/ruins/chest.glb', fallback: 'createChest' },
+  'city/obelisk.glb': { id: 'MODEL_OBELISK', file: './assets/models/city/obelisk.glb', fallback: 'createObelisk' },
+  'city/chest.glb': { id: 'MODEL_CHEST', file: './assets/models/city/chest.glb', fallback: 'createChest' },
+  'ruins/column.glb': { id: 'RUIN_COLUMN', file: './assets/models/ruins/column.glb', fallback: 'createPillar' },
+  'ruins/temple_center.glb': { id: 'RUIN_TEMPLE', file: './assets/models/ruins/temple_center.glb', fallback: 'createObelisk' },
+  'ruins/chest.glb': { id: 'RUIN_CHEST', file: './assets/models/ruins/chest.glb', fallback: 'createChest' },
 };
 
 const withTimeout = (promise, ms, label) => new Promise((resolve, reject) => {
@@ -91,7 +91,7 @@ export class AssetLoader {
     });
 
     const manifest = await this._track('manifest', async () => {
-      const res = await fetch('assets/manifest.json', { cache: 'no-cache' });
+      const res = await fetch('./assets/manifest.json', { cache: 'no-cache' });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return res.json();
     });
@@ -110,10 +110,12 @@ export class AssetLoader {
 
     const models = entries.map((m) => this._track(`model:${m.id}`, async () => {
       if (!loader) throw new Error('GLTFLoader assente');
-      const gltf = await loader.loadAsync(m.file);
+      const filePath = m.file.startsWith('./') ? m.file : `./${m.file}`;
+      const gltf = await loader.loadAsync(filePath);
       this._prepareMesh(gltf.scene);
       this.models.set(m.id, gltf.scene);
       this.models.set(m.file, gltf.scene);
+      this.models.set(filePath, gltf.scene);
       this.report.loaded.push(m.id);
     }));
 
@@ -161,19 +163,24 @@ export class AssetLoader {
     }
 
     const reg = MODEL_REGISTRY[id] || Object.values(MODEL_REGISTRY).find((r) => r.id === id);
-    const file = reg?.file || (id.endsWith('.glb') ? `assets/models/${id}` : null);
+    const rawFile = reg?.file || (id.endsWith('.glb') ? (id.startsWith('./') ? id : (id.startsWith('assets/') ? `./${id}` : `./assets/models/${id}`)) : null);
+    const file = rawFile ? (rawFile.startsWith('./') ? rawFile : `./${rawFile}`) : null;
 
     if (file && typeof window !== 'undefined' && window.fetch) {
       try {
         const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
         const loader = new GLTFLoader(this.manager);
         const gltf = await loader.loadAsync(file);
-        this._prepareMesh(gltf.scene);
-        this.models.set(id, gltf.scene);
-        if (reg?.id) this.models.set(reg.id, gltf.scene);
-        this.report.loaded.push(id);
-        return gltf.scene.clone(true);
-      } catch {
+        if (gltf && gltf.scene) {
+          this._prepareMesh(gltf.scene);
+          this.models.set(id, gltf.scene);
+          if (reg?.id) this.models.set(reg.id, gltf.scene);
+          this.models.set(file, gltf.scene);
+          this.report.loaded.push(id);
+          return gltf.scene.clone(true);
+        }
+      } catch (err) {
+        console.warn(`[Assets] Caricamento GLTF per "${id}" (${file}) fallito, fallback procedurale:`, err?.message || err);
         this.report.fallback.push(id);
       }
     }
@@ -192,7 +199,9 @@ export class AssetLoader {
       let src = this.models.get(id);
       if (!src) {
         const reg = MODEL_REGISTRY[id] || Object.values(MODEL_REGISTRY).find((r) => r.id === id);
-        if (reg) src = this.models.get(reg.id) || this.models.get(reg.file);
+        if (reg) {
+          src = this.models.get(reg.id) || this.models.get(reg.file) || (reg.file ? this.models.get(reg.file.replace(/^\.\//, '')) : null);
+        }
       }
       if (src) {
         const clone = src.clone(true);
@@ -201,7 +210,13 @@ export class AssetLoader {
       }
     }
 
-    if (fallbackGenerator) return fallbackGenerator();
+    if (fallbackGenerator) {
+      try {
+        return fallbackGenerator();
+      } catch (e) {
+        console.warn(`[Assets] fallbackGenerator fallito per "${id}":`, e);
+      }
+    }
     return createMesh(id);
   }
 }

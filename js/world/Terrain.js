@@ -10,6 +10,7 @@ import { BIOME_CATALOG } from './BiomeManager.js';
 import { generateSandPbrSet } from './TextureGenerator.js';
 
 export const CHUNK = 8;                 // vertici per lato del chunk
+export const TERRAIN_SIZE = 200;       // dimensione del piano di gioco
 
 export const BIOME_PALETTES = {
   sand_classic: {

@@ -306,25 +306,27 @@ export class Hud {
 
   refreshRadar(justBought = false) {
     const hasRadar = (this.state.upgrades.georadar ?? 0) >= 1;
-    if (hasRadar) {
-      this.el.radar.classList.remove('hidden');
-      if (justBought) {
-        this.audio?.playRadarPing?.();
+    if (this.el?.radar) {
+      if (hasRadar) {
+        this.el.radar.classList.remove('hidden');
+        if (justBought) {
+          this.audio?.playRadarPing?.();
+        }
+      } else {
+        this.el.radar.classList.add('hidden');
       }
-    } else {
-      this.el.radar.classList.add('hidden');
     }
   }
 
   refresh() {
     this.shownSand = this.targetSand = this.state.sand;
-    this.el.sand.textContent = formatNumber(this.shownSand);
+    if (this.el?.sand) this.el.sand.textContent = formatNumber(this.shownSand);
     this._setCompletion(this.state.completion);
     if (this.economy) this.setSps(this.economy.sps);
     this.refreshRadar();
     this.refreshAbilities();
     const cheatsActive = !!this.state.cheatsEnabled;
-    if (this.el.cheatsToggle) {
+    if (this.el?.cheatsToggle) {
       this.el.cheatsToggle.classList.toggle('cheats-active', cheatsActive);
       this.el.cheatsToggle.classList.toggle('is-active', cheatsActive);
       if (cheatsActive) {
@@ -333,20 +335,40 @@ export class Hud {
         this.el.cheatsToggle.setAttribute('title', i18n.t('settings.tabCheats') || 'Trucchi / Sandbox');
       }
     }
-    if (this.el.cheatsBadge) {
+    if (this.el?.cheatsBadge) {
       this.el.cheatsBadge.classList.toggle('hidden', !cheatsActive);
     }
   }
 
   _setCompletion(c) {
     const p = Math.min(100, Math.max(0, c * 100));
-    this.el.percent.textContent = formatPercent(c);
-    this.el.bar.style.setProperty('--p', p.toFixed(3));
-    this.el.bar.setAttribute('aria-valuenow', p.toFixed(1));
+    if (this.el?.percent) {
+      this.el.percent.textContent = formatPercent(c);
+    }
+    if (this.el?.bar) {
+      this.el.bar.style.setProperty('--p', p.toFixed(3));
+      this.el.bar.setAttribute('aria-valuenow', p.toFixed(1));
+    }
+    this.updateExcavationProgress(p);
+  }
+
+  updateExcavationProgress(percentage) {
+    const clamped = Math.max(0, Math.min(100, Number(percentage) || 0));
+
+    const pctEl = (typeof document !== 'undefined' ? document.getElementById('completion-pct') : null) || this.el?.percent;
+    if (pctEl) {
+      pctEl.textContent = clamped.toFixed(1) + '%';
+    }
+
+    const barFill = (typeof document !== 'undefined' ? (document.getElementById('completion-bar') || document.querySelector('.progress-bar-fill')) : null) || this.root?.querySelector?.('.progress-bar-fill');
+    if (barFill && barFill.style) {
+      barFill.style.width = `${clamped}%`;
+    }
   }
 
   _pop() {
-    const n = this.el.sand;
+    const n = this.el?.sand;
+    if (!n) return;
     n.classList.remove('pop');
     void n.offsetWidth;
     n.classList.add('pop');
@@ -357,7 +379,7 @@ export class Hud {
     const diff = this.targetSand - this.shownSand;
     const step = diff * Math.min(1, dt * 12);
     this.shownSand = Math.abs(diff) < 0.05 ? this.targetSand : this.shownSand + step;
-    this.el.sand.textContent = formatNumber(this.shownSand);
+    if (this.el?.sand) this.el.sand.textContent = formatNumber(this.shownSand);
   }
 
   dispose() { this._unsubs.forEach((u) => u()); }

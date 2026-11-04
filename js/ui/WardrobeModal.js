@@ -109,9 +109,9 @@ export class WardrobeModal {
       const desc = i18n.t(`wardrobe.skins.${item.id}.desc`) || '';
 
       card.innerHTML = `
-        <div class="wardrobe-preview" style="border-color: ${item.color};">
+        <div class="wardrobe-preview-box wardrobe-preview" style="border-color: ${item.color};">
           <div class="wardrobe-preview-circle" style="background: radial-gradient(circle, ${item.color} 30%, transparent 75%);"></div>
-          <span class="wardrobe-icon">${item.icon}</span>
+          <span class="wardrobe-preview-icon wardrobe-icon">${item.icon}</span>
         </div>
         <div class="wardrobe-info wardrobe-card-info">
           <div class="wardrobe-name wardrobe-card-name">${name}</div>
