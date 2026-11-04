@@ -360,6 +360,26 @@ Verifiche manuali da fare: valori persistiti dopo il ricaricamento; `localStorag
     - Tutti i componenti e modali aperti si aggiornano istantaneamente sul posto senza richiedere il refresh del browser (`location.reload()`).
   - Verificata con 101 test unitari complessivi (5 suite specifiche M18 in `tests/phase14_i18n.test.mjs`, 100% superati) e browser QA headless Chrome (`tests/phase14_i18n_browser_qa.mjs`, 0 errori console, 0 eccezioni, screenshot `dds_qa_i18n_menu_it.png`, `dds_qa_i18n_settings_en.png`, `dds_qa_i18n_hud_en.png`, `dds_qa_i18n_shop_en.png`, `dds_qa_i18n_hud_re_it.png`).
 
+- [x] **M19** Texture Procedurali PBR ad Alta Risoluzione (2048px FBM), Normal Maps Analitiche e Materiali Fisici (Fase 15):
+  - Generatore Texture PBR Procedurali (`js/world/TextureGenerator.js`):
+    - Offscreen canvas generator per texture ad altissima risoluzione ($2048 \times 2048$):
+      - Noise generator Perlin 2D e Fractional Brownian Motion (FBM multi-ottava, 5 ottave) per grana fine della sabbia e increspature eoliche.
+      - Normal map analitica calcolata con kernel gradiente di Sobel 3x3 e normalizzazione vettoriale RGB tangent space `(-dx*s, -dy*s, 1.0)`.
+      - Roughness map differenziata (sabbia asciutta e polverosa ad elevata rugosità 0.78-0.95 vs glint lucidi di quarzo/silice 0.35-0.55).
+      - Normal map per arenaria scalpellata (`generateChiseledStoneNormalMap`, 1024x1024) per monoliti, colonne e piramidi.
+    - Gestione VRAM e Canvas GC: deallocazione immediata dei canvas intermedi (`width=1, height=1`) e cache singleton globale (`PBR_CACHE`, `disposePbrTextures()`).
+    - Configurazione anisotropia massima (`renderer.capabilities.getMaxAnisotropy()`), `RepeatWrapping`, `LinearMipmapLinearFilter`, e repeat a 32x32 sul terreno.
+  - Materiali Fisici e Normal Mapping sul Terreno (`js/world/Terrain.js`):
+    - Collegamento di `normalMap` con `normalScale: Vector2(0.6, 0.6)`, `roughnessMap`, `roughness: 0.85` e `metalness: 0.05` per una resa fotometrica asciutta e realistica.
+    - Conservazione di `flatShading: true` per il caratteristico look low-poly sfaccettato unito alla micro-rugosità PBR.
+    - Mantenimento di `vertexColors: true` per la stratificazione geologica altimetrica.
+  - Calibrazione Materiali PBR su Edifici, Asset 3D e Ombre (`js/world/ProceduralFactory.js` & `js/world/City.js`):
+    - Pietra e arenaria delle rovine: `roughness: 0.88`, `metalness: 0.02` con normal map scalpellata.
+    - Oricalco e oro atlantideo: `roughness: 0.22`, `metalness: 0.85` per riflessi metallici nitidi su `#D87D38` e `#F5BA23`.
+    - Cristalli ed energia: `emissive: 0x00F2FF`, `emissiveIntensity: 0.9`, `roughness: 0.1` per accendere il bloom pass.
+    - Configurazione tassativa di `castShadow = true` e `receiveShadow = true` su tutti i mesh generati (126 mesh nella città sepolta).
+  - Verificata con test unitari dedicati (`tests/phase15_pbr.test.mjs`, 6 suite 100% passate, oltre 107 test totali nel repository) e Browser QA automation headless Chrome (`tests/phase15_pbr_browser_qa.mjs`, 0 errori console, 0 eccezioni runtime, screenshot `dds_qa_pbr_terrain.png` e `dds_qa_pbr_ruins.png`).
+
 Piano dettagliato con codice e verifiche: vedi la sezione "Roadmap" sopra e le formule in `Ideas/upgrade_tree_specification.md`.
 
 ## 6. Convenzioni

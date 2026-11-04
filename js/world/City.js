@@ -2,6 +2,7 @@
 // Collocata interamente sotto la sabbia superficiale (Y da 0 a 8.8), emerge naturalmente con lo scavo.
 import * as THREE from 'three';
 import { PALETTE_3D } from './ProceduralFactory.js';
+import { generateChiseledStoneNormalMap } from './TextureGenerator.js';
 
 const mat = (color, extra = {}) =>
   new THREE.MeshStandardMaterial({ color, flatShading: true, roughness: 0.85, ...extra });
@@ -28,58 +29,84 @@ export class City {
   }
 
   _initMaterials() {
+    const stoneNormal = generateChiseledStoneNormalMap();
+
     this.mats = {
-      stone: mat(PALETTE_3D.ruinsStone),
-      bedrock: mat(PALETTE_3D.sandBedrock),
-      darkStone: mat(0x352B24),
-      gold: mat(PALETTE_3D.ruinsGoldInlay, { metalness: 0.8, roughness: 0.2 }),
+      stone: mat(PALETTE_3D.ruinsStone, {
+        roughness: 0.88,
+        metalness: 0.02,
+        normalMap: stoneNormal,
+      }),
+      bedrock: mat(PALETTE_3D.sandBedrock, {
+        roughness: 0.88,
+        metalness: 0.02,
+        normalMap: stoneNormal,
+      }),
+      darkStone: mat(0x352B24, {
+        roughness: 0.88,
+        metalness: 0.02,
+        normalMap: stoneNormal,
+      }),
+      gold: mat(PALETTE_3D.ruinsGoldInlay, {
+        metalness: 0.85,
+        roughness: 0.22,
+      }),
+      orichalcum: mat(PALETTE_3D.orichalcum, {
+        metalness: 0.85,
+        roughness: 0.22,
+      }),
       tealGlow: mat(PALETTE_3D.abyss, {
-        emissive: PALETTE_3D.atlantisCoreTeal,
-        emissiveIntensity: 1.4,
+        emissive: 0x00F2FF,
+        emissiveIntensity: 0.9,
+        roughness: 0.1,
       }),
       cyanGlow: mat(0x00F2FF, {
         emissive: 0x00F2FF,
-        emissiveIntensity: 1.2,
+        emissiveIntensity: 0.9,
+        roughness: 0.1,
       }),
       curseAltar: mat(0x100A0A, {
         emissive: 0x8B0000,
         emissiveIntensity: 0.9,
+        roughness: 0.5,
       }),
-      treasureGold: mat(0xFFDF00, {
-        metalness: 0.9,
-        roughness: 0.15,
+      treasureGold: mat(PALETTE_3D.ruinsGoldInlay, {
+        metalness: 0.85,
+        roughness: 0.22,
         emissive: 0x443300,
+        emissiveIntensity: 0.3,
       }),
       // Materiali Oceano Prosciugato
-      shipWood: mat(0x4A3222, { roughness: 0.92 }),
-      shipDarkWood: mat(0x2D1E14, { roughness: 0.95 }),
-      coralStone: mat(0xD8C3A5, { roughness: 0.85 }),
-      coralPink: mat(0xE07A5F, { roughness: 0.75 }),
+      shipWood: mat(0x4A3222, { roughness: 0.92, metalness: 0.02 }),
+      shipDarkWood: mat(0x2D1E14, { roughness: 0.95, metalness: 0.02 }),
+      coralStone: mat(0xD8C3A5, { roughness: 0.88, metalness: 0.02, normalMap: stoneNormal }),
+      coralPink: mat(0xE07A5F, { roughness: 0.75, metalness: 0.05 }),
       marineCrystal: mat(0x00F2FF, {
-        emissive: 0x0FE3C1,
-        emissiveIntensity: 1.35,
-        roughness: 0.25,
+        emissive: 0x00F2FF,
+        emissiveIntensity: 0.9,
+        roughness: 0.1,
       }),
       // Materiali Ghiacciaio Arcaico
       glacierIce: mat(0xA8D8EA, {
-        roughness: 0.25,
-        metalness: 0.15,
+        roughness: 0.15,
+        metalness: 0.1,
         transparent: true,
         opacity: 0.88,
       }),
-      permafrostStone: mat(0x2A3B45, { roughness: 0.85 }),
+      permafrostStone: mat(0x2A3B45, { roughness: 0.88, metalness: 0.02, normalMap: stoneNormal }),
       sapphireGlow: mat(0x00B4D8, {
         emissive: 0x00F2FF,
-        emissiveIntensity: 1.4,
-        roughness: 0.2,
+        emissiveIntensity: 0.9,
+        roughness: 0.1,
       }),
       // Materiali Giungla Sepolta
-      jungleStone: mat(0x4A5240, { roughness: 0.9 }),
-      mossStone: mat(0x2F4F2F, { roughness: 0.92 }),
-      rootWood: mat(0x4E3524, { roughness: 0.95 }),
+      jungleStone: mat(0x4A5240, { roughness: 0.88, metalness: 0.02, normalMap: stoneNormal }),
+      mossStone: mat(0x2F4F2F, { roughness: 0.92, metalness: 0.02 }),
+      rootWood: mat(0x4E3524, { roughness: 0.95, metalness: 0.02 }),
       emeraldGlow: mat(0x1B4332, {
-        emissive: 0x2ECC71,
-        emissiveIntensity: 1.35,
+        emissive: 0x00F2FF,
+        emissiveIntensity: 0.9,
+        roughness: 0.1,
       }),
     };
   }

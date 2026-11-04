@@ -7,6 +7,7 @@
 import * as THREE from 'three';
 import { PALETTE_3D } from './ProceduralFactory.js';
 import { BIOME_CATALOG } from './BiomeManager.js';
+import { generateSandPbrSet } from './TextureGenerator.js';
 
 export const CHUNK = 8;                 // vertici per lato del chunk
 
@@ -294,19 +295,22 @@ export class Terrain {
     this.geometry.computeBoundingSphere();
     this.geometry.computeBoundingBox();
 
-    this.sandGrainTexture = createSandMicroTexture({ size: 2048, maxAnisotropy });
-    const matConfig = {
+    const pbr = generateSandPbrSet({ size: 2048, repeat: 32, maxAnisotropy });
+    this.pbrTextures = pbr;
+    this.sandGrainTexture = pbr.roughnessMap;
+    this.sandNormalMap = pbr.normalMap;
+
+    this.material = new THREE.MeshStandardMaterial({
       vertexColors: true,
       flatShading: true,
-      roughness: 0.94,
-      metalness: 0.04,
-    };
-    if (this.sandGrainTexture) {
-      matConfig.roughnessMap = this.sandGrainTexture;
-      matConfig.bumpMap = this.sandGrainTexture;
-      matConfig.bumpScale = 0.04;
-    }
-    this.material = new THREE.MeshStandardMaterial(matConfig);
+      normalMap: pbr.normalMap,
+      normalScale: new THREE.Vector2(0.6, 0.6),
+      bumpMap: pbr.roughnessMap,
+      bumpScale: 0.04,
+      roughnessMap: pbr.roughnessMap,
+      roughness: 0.85,
+      metalness: 0.05,
+    });
     this.mesh = new THREE.Mesh(this.geometry, this.material);
     this.mesh.receiveShadow = true;
     this.mesh.castShadow = true;
@@ -620,13 +624,12 @@ export class Terrain {
   }
 
   dispose() {
-    if (this.sandGrainTexture) {
-      this.sandGrainTexture.dispose();
-      this.sandGrainTexture = null;
-    }
     this.geometry.dispose();
     this.material.dispose();
     this.group.traverse((o) => { if (o !== this.mesh && o.isMesh) { o.geometry?.dispose(); o.material?.dispose?.(); } });
+    this.sandGrainTexture = null;
+    this.sandNormalMap = null;
+    this.pbrTextures = null;
   }
 }
 
