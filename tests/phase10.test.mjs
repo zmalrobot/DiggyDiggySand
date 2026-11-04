@@ -43,7 +43,7 @@ t('I18n: traduzione t(), interpolazione e cambio lingua', () => {
   i18n.setLanguage('it');
 
   assert.equal(i18n.t('menu.newGame'), 'Nuova Spedizione');
-  assert.equal(i18n.t('achievements.FIRST_DIG.title'), 'Primo Colpo d\'Oro');
+  assert.equal(i18n.t('achievements.first_strike.title'), 'Primo Granello');
 
   // Test interpolazione
   DICTIONARY.it.test = { greet: 'Ciao {name}, hai {amount} sabbia!' };
@@ -53,7 +53,7 @@ t('I18n: traduzione t(), interpolazione e cambio lingua', () => {
   i18n.setLanguage('en');
   assert.equal(i18n.getLanguage(), 'en');
   assert.equal(i18n.t('menu.newGame'), 'New Expedition');
-  assert.equal(i18n.t('achievements.FIRST_DIG.title'), 'First Golden Strike');
+  assert.equal(i18n.t('achievements.first_strike.title'), 'First Grain');
 
   // Fallback per chiave mancante
   assert.equal(i18n.t('chiave.inesistente'), 'chiave.inesistente');
@@ -109,7 +109,10 @@ t('Achievements: verifica definizioni e condizioni di sblocco', () => {
   const save = new Save(storage);
 
   let chimePlayed = false;
-  const audio = { playAchievementChime: () => { chimePlayed = true; } };
+  const audio = {
+    playAchievementChime: () => { chimePlayed = true; },
+    playSfx: (sfx) => { if (sfx === 'achievement') chimePlayed = true; }
+  };
 
   const ach = new Achievements({ state, statsManager, save, audio });
   ach.storage = storage;
@@ -117,68 +120,69 @@ t('Achievements: verifica definizioni e condizioni di sblocco', () => {
   assert.equal(ach.getUnlockedCount(), 0);
   assert.equal(ach.getTotalCount(), 12);
 
-  // 1. FIRST_DIG
+  // 1. first_strike
   statsManager.increment('totalClicks', 1);
   ach.check();
-  assert.ok(ach.isUnlocked('FIRST_DIG'), 'FIRST_DIG deve essere sbloccato dopo 1 colpo');
-  assert.ok(chimePlayed, 'playAchievementChime deve essere invocato');
+  assert.ok(ach.isUnlocked('first_strike'), 'first_strike deve essere sbloccato dopo 1 colpo');
+  assert.ok(chimePlayed, 'playSfx/chime deve essere invocato');
 
-  // 2. DUNE_BREAKER
-  state.addSand(100000);
+  // 2. sand_millionaire
+  state.sand = 1000000;
   ach.check();
-  assert.ok(ach.isUnlocked('DUNE_BREAKER'), 'DUNE_BREAKER deve sbloccarsi a 100.000 sand');
+  assert.ok(ach.isUnlocked('sand_millionaire'), 'sand_millionaire deve sbloccarsi a 1.000.000 sand');
 
-  // 3. MACHINE_LORD
-  state.upgrades = { scarab: 3, excavator: 2 };
+  // 3. explosive_temper
+  statsManager.increment('dynamiteUsed', 10);
   ach.check();
-  assert.ok(ach.isUnlocked('MACHINE_LORD'), 'MACHINE_LORD sblocca con 5 macchinari');
+  assert.ok(ach.isUnlocked('explosive_temper'), 'explosive_temper deve sbloccarsi con 10 dinamiti');
 
-  // 4. ECHOES_PAST
-  state.completion = 0.55;
+  // 4. automation_age
+  state.upgrades = { scarab: 15, excavator: 10 };
   ach.check();
-  assert.ok(ach.isUnlocked('ECHOES_PAST'), 'ECHOES_PAST sblocca a >= 50% completion');
+  assert.ok(ach.isUnlocked('automation_age'), 'automation_age sblocca con 25 macchinari');
 
-  // 5. TRINITY
+  // 5. relic_resonance
+  state.upgrades = { relic_resonance: 1 };
+  ach.check();
+  assert.ok(ach.isUnlocked('relic_resonance'), 'relic_resonance sblocca con 1 reliquia');
+
+  // 6. first_epilogue
   save.recordEnding('curse');
+  ach.check();
+  assert.ok(ach.isUnlocked('first_epilogue'), 'first_epilogue sblocca con 1 finale visto');
+
+  // 7. pantheon_master
   save.recordEnding('treasure');
   save.recordEnding('business');
-  ach.check();
-  assert.ok(ach.isUnlocked('TRINITY'), 'TRINITY sblocca con tutti i 3 finali base');
-
-  // 6. AWAKENING
   save.recordEnding('secret');
   ach.check();
-  assert.ok(ach.isUnlocked('AWAKENING'), 'AWAKENING sblocca con finale segreto');
+  assert.ok(ach.isUnlocked('pantheon_master'), 'pantheon_master sblocca con tutti i 4 finali');
 
-  // 7. SPEEDRUNNER
-  statsManager.recordRunCompletion(1150); // < 1200s (20 minuti)
+  // 8. deep_diver
+  save.recordCompletedBiome('ocean');
   ach.check();
-  assert.ok(ach.isUnlocked('SPEEDRUNNER'), 'SPEEDRUNNER sblocca sotto i 20 minuti');
+  assert.ok(ach.isUnlocked('deep_diver'), 'deep_diver sblocca completando il bioma Oceano');
 
-  // 8. SAND_HOARDER
-  statsManager.increment('totalSandLifetime', 1000000);
+  // 9. frost_breaker
+  save.recordCompletedBiome('glacier');
   ach.check();
-  assert.ok(ach.isUnlocked('SAND_HOARDER'), 'SAND_HOARDER sblocca a 1.000.000 lifetime sand');
+  assert.ok(ach.isUnlocked('frost_breaker'), 'frost_breaker sblocca completando il Ghiacciaio');
 
-  // 9. ANCIENT_WISDOM
-  save.addTablets(10);
+  // 10. jungle_pioneer
+  save.recordCompletedBiome('jungle');
   ach.check();
-  assert.ok(ach.isUnlocked('ANCIENT_WISDOM'), 'ANCIENT_WISDOM sblocca con tavolette');
+  assert.ok(ach.isUnlocked('jungle_pioneer'), 'jungle_pioneer sblocca completando la Giungla');
 
-  // 10. STORM_SURVIVOR
-  ach._flags.eventDiggingInStorm = true;
+  // 11. speed_demon
+  statsManager.recordRunCompletion(1150); // < 1500s (25 minuti)
   ach.check();
-  assert.ok(ach.isUnlocked('STORM_SURVIVOR'), 'STORM_SURVIVOR sblocca durante la tempesta');
+  assert.ok(ach.isUnlocked('speed_demon'), 'speed_demon sblocca sotto i 25 minuti');
 
-  // 11. NOMAD_PARTNER
-  ach._flags.eventNomadTraded = true;
+  // 12. sanctuary_ascendant
+  save.addTablets(50);
+  save.spendTablets(50);
   ach.check();
-  assert.ok(ach.isUnlocked('NOMAD_PARTNER'), 'NOMAD_PARTNER sblocca dopo scambio mercante');
-
-  // 12. COMPLETIONIST
-  state.completion = 1.0;
-  ach.check();
-  assert.ok(ach.isUnlocked('COMPLETIONIST'), 'COMPLETIONIST sblocca al 100% di scavo');
+  assert.ok(ach.isUnlocked('sanctuary_ascendant'), 'sanctuary_ascendant sblocca con 50 tavolette spese');
 
   assert.equal(ach.getUnlockedCount(), 12, 'Tutti i 12 achievement devono risultare sbloccati');
 

@@ -98,8 +98,10 @@ export class EndingManager {
     this.audio?.fadeBgm?.(0.12, 1.5);
 
     this.activeEnding?.trigger?.((result) => {
+      const currentBiome = this.state?.currentBiome || 'desert';
+
       // Registra l'ending scoperto tra i trofei
-      this.save?.recordEnding?.(result.endingId);
+      this.save?.recordEnding?.(result.endingId, currentBiome);
 
       // Assegna Tavolette Antiche τ calcolate sulla sabbia totale estratta
       const tabletsEarned = calculateTabletsEarned(this.state?.totalSand ?? 0);
@@ -110,7 +112,9 @@ export class EndingManager {
       this.save?.save?.();
 
       const elapsed = this.state?.elapsedSeconds ?? 0;
-      this.game?.statsManager?.recordRunCompletion?.(elapsed);
+      this.game?.statsManager?.recordRunCompletion?.(elapsed, currentBiome);
+      this.game?.statsManager?.increment?.('tabletsEarned', tabletsEarned);
+      this.game?.achievements?.check();
 
       // Presenta l'epilogo a tutto schermo con Tavolette Antiche
       this.overlay?.show({

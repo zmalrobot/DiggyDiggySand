@@ -846,6 +846,21 @@ export class AudioEngine {
     });
   }
 
+  /** Riproduce un effetto sonoro per nome logico (es. 'achievement', 'click', 'dynamite'). */
+  playSfx(name) {
+    if (name === 'achievement') {
+      this.playAchievementChime();
+    } else if (name === 'click') {
+      this.playClick();
+    } else if (name === 'purchase') {
+      this.playPurchaseSound();
+    } else if (name === 'dynamite') {
+      this.playDynamite();
+    } else if (name === 'warn') {
+      this.playWarn();
+    }
+  }
+
   /** Tintinnio trionfale di sblocco obiettivo / achievement (Fase 10). */
   playAchievementChime() {
     if (!this._ok()) return;

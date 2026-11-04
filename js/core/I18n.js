@@ -440,53 +440,53 @@ export const DICTIONARY = {
       },
     },
     achievements: {
-      FIRST_DIG: {
-        title: 'Primo Colpo d\'Oro',
-        desc: 'Effettua il tuo primo colpo di pala nella duna.',
+      first_strike: {
+        title: 'Primo Granello',
+        desc: 'Esegui il tuo primo scavo manuale.',
       },
-      DUNE_BREAKER: {
-        title: 'Dune Breaker',
-        desc: 'Accumula 100.000 unità di sabbia in una singola spedizione.',
+      sand_millionaire: {
+        title: 'Ricchezza della Duna',
+        desc: 'Accumula 1.000.000 di sabbia.',
       },
-      MACHINE_LORD: {
-        title: 'Signore delle Macchine',
-        desc: 'Schiera almeno 5 lavoratori o escavatori contemporaneamente.',
+      explosive_temper: {
+        title: 'Geologia d\'Urto',
+        desc: 'Fai esplodere 10 cariche di Dinamite.',
       },
-      ECHOES_PAST: {
-        title: 'Echi del Passato',
-        desc: 'Riporta alla luce il santuario centrale dell\'obelisco sotto le dune.',
+      automation_age: {
+        title: 'Flotta Operativa',
+        desc: 'Raggiungi 25 lavoratori o escavatori attivi.',
       },
-      TRINITY: {
-        title: 'Trinità della Sabbia',
-        desc: 'Scopri tutti e tre i finali base (Maledizione, Tesoro, Impresa).',
+      relic_resonance: {
+        title: 'Sussurri del Passato',
+        desc: 'Attiva la prima Reliquia di Risonanza.',
       },
-      AWAKENING: {
-        title: 'Il Risveglio',
-        desc: 'Assisti all\'Ascensione di Atlantide nel Finale Segreto.',
+      first_epilogue: {
+        title: 'Archeologo Compiuto',
+        desc: 'Raggiungi il fondo e scopri il primo finale.',
       },
-      SPEEDRUNNER: {
-        title: 'Corsa contro il Tempo',
-        desc: 'Completa una spedizione in meno di 20 minuti.',
+      pantheon_master: {
+        title: 'Maestro del Fato',
+        desc: 'Sblocca tutti e 4 i finali differenti.',
       },
-      SAND_HOARDER: {
-        title: 'Custode dell\'Oro',
-        desc: 'Accumula 1.000.000 di sabbia totale nella tua carriera.',
+      deep_diver: {
+        title: 'Abisso Marino',
+        desc: 'Completa una spedizione nell\'Oceano Prosciugato.',
       },
-      ANCIENT_WISDOM: {
-        title: 'Saggezza Antica',
-        desc: 'Accumula le tue prime Tavolette Antiche τ dal Santuario.',
+      frost_breaker: {
+        title: 'Disgelo Eterno',
+        desc: 'Completa una spedizione nel Ghiacciaio Arcaico.',
       },
-      STORM_SURVIVOR: {
-        title: 'Cavalcatempeste',
-        desc: 'Scava durante una Tempesta di Sabbia attiva.',
+      jungle_pioneer: {
+        title: 'Sentiero Perduto',
+        desc: 'Completa una spedizione nella Giungla Sepolta.',
       },
-      NOMAD_PARTNER: {
-        title: 'Affare nel Deserto',
-        desc: 'Concludi uno scambio commerciale con il Mercante Nomade.',
+      speed_demon: {
+        title: 'Corsa all\'Oro',
+        desc: 'Completa una spedizione in meno di 25 minuti.',
       },
-      COMPLETIONIST: {
-        title: 'Archeologo Supremo',
-        desc: 'Raggiungi il 100% di scavo di una duna.',
+      sanctuary_ascendant: {
+        title: 'Erede di Atlantide',
+        desc: 'Spendi un totale di 50 τ nel Santuario.',
       },
     },
     tutorial: {
@@ -621,9 +621,15 @@ export const DICTIONARY = {
     gallery: {
       title: 'Galleria dei Finali',
       progress: 'Progresso Collezionista: {count}/{total} ({pct}%)',
-      sealedTitle: '??? Sigillo Dormiente',
+      collectorProgress: 'Progresso Collezionista',
+      dormantSeal: '??? Sigillo Dormiente',
       unlockedStatus: '✓ Epilogo Sbloccato',
       lockedStatus: 'Non ancora scoperto',
+      replayBtn: 'Rivivi Epilogo',
+      curseHint: 'Rompi il sigillo ancestrale dormiente sotto l\'obelisco centrale.',
+      treasureHint: 'Svela la cripta dei sovrani sepolta nella roccia.',
+      businessHint: 'Raggiungi il fondo sterile per un anticlimax memorabile.',
+      secretHint: 'Scopri prima tutti e 3 i destini della duna per risvegliare l\'antico cuore d\'Oricalco.',
     },
     pause: {
       title: 'Spedizione in Pausa',
@@ -645,14 +651,18 @@ export const DICTIONARY = {
       tabTrophies: 'Obiettivi',
       totalClicks: 'Colpi di Pala Manuali',
       totalSandLifetime: 'Sabbia Storica Totale',
+      dynamiteUsed: 'Cariche di Dinamite Innescate',
       totalPlaytime: 'Tempo di Gioco Totale',
       ruinsUncovered: 'Rovine Disseppellite',
       runsCompleted: 'Spedizioni Concluse',
       bestRunTime: 'Miglior Tempo di Scavo',
+      tabletsAccumulated: 'Tavolette Antiche (τ) Accumulate',
+      tabletsEarned: 'Tavolette Antiche (τ) Accumulate',
+      tabletsSpent: 'Tavolette Antiche (τ) Spese',
       noRecord: 'Nessun record',
       trophiesUnlocked: 'Obiettivi Sbloccati',
       dateUnlocked: 'Sbloccato il',
-      cheatsWarning: 'Obiettivi disabilitati: sono stati utilizzati trucchi in questa partita',
+      cheatsWarning: '[ ⚠ MODALITÀ TRUCCHI ATTIVA — TROFEI DISABILITATI PER QUESTA SPEDIZIONE ]',
     },
     loading: {
       title: 'Diggy Diggy Sand',
@@ -1176,53 +1186,53 @@ export const DICTIONARY = {
       },
     },
     achievements: {
-      FIRST_DIG: {
-        title: 'First Golden Strike',
-        desc: 'Execute your very first manual shovel strike into the great dune.',
+      first_strike: {
+        title: 'First Grain',
+        desc: 'Execute your very first manual shovel dig.',
       },
-      DUNE_BREAKER: {
-        title: 'Dune Breaker',
-        desc: 'Accumulate 100,000 units of sand in a single expedition.',
+      sand_millionaire: {
+        title: 'Wealth of the Dunes',
+        desc: 'Accumulate 1,000,000 units of sand.',
       },
-      MACHINE_LORD: {
-        title: 'Lord of the Machines',
-        desc: 'Deploy at least 5 autonomous workers or excavators simultaneously.',
+      explosive_temper: {
+        title: 'Impact Geology',
+        desc: 'Detonate 10 Dynamite charges.',
       },
-      ECHOES_PAST: {
-        title: 'Echoes of the Past',
-        desc: 'Unearth the central obelisk sanctuary slumbering under the sands.',
+      automation_age: {
+        title: 'Operational Fleet',
+        desc: 'Reach 25 active autonomous workers or excavators.',
       },
-      TRINITY: {
-        title: 'Trinity of the Sand',
-        desc: 'Discover all three core endings (Curse, Treasure, Business).',
+      relic_resonance: {
+        title: 'Whispers of the Past',
+        desc: 'Activate your first Resonance Relic.',
       },
-      AWAKENING: {
-        title: 'The Awakening',
-        desc: 'Witness the Ascension of Atlantis in the Secret Ending.',
+      first_epilogue: {
+        title: 'Accomplished Archaeologist',
+        desc: 'Reach the bottom and uncover your first ending.',
       },
-      SPEEDRUNNER: {
-        title: 'Race Against Time',
-        desc: 'Complete an entire expedition in under 20 minutes.',
+      pantheon_master: {
+        title: 'Master of Fate',
+        desc: 'Unlock all 4 different expedition endings.',
       },
-      SAND_HOARDER: {
-        title: 'Gold Keeper',
-        desc: 'Accumulate a lifetime career total of 1,000,000 sand.',
+      deep_diver: {
+        title: 'Deep Sea Abyss',
+        desc: 'Complete an expedition in the Sunken Ocean.',
       },
-      ANCIENT_WISDOM: {
-        title: 'Ancient Wisdom',
-        desc: 'Earn your first Ancient Tablets τ from the Sanctuary.',
+      frost_breaker: {
+        title: 'Eternal Thaw',
+        desc: 'Complete an expedition in the Archaic Glacier.',
       },
-      STORM_SURVIVOR: {
-        title: 'Storm Rider',
-        desc: 'Dig actively while a wild Sandstorm is ravaging the dune.',
+      jungle_pioneer: {
+        title: 'Lost Path',
+        desc: 'Complete an expedition in the Buried Jungle.',
       },
-      NOMAD_PARTNER: {
-        title: 'Desert Deal',
-        desc: 'Strike a trade bargain with the Nomad Merchant caravan.',
+      speed_demon: {
+        title: 'Gold Rush',
+        desc: 'Complete an expedition in under 25 minutes.',
       },
-      COMPLETIONIST: {
-        title: 'Supreme Archaeologist',
-        desc: 'Reach 100% full excavation of an entire desert crater.',
+      sanctuary_ascendant: {
+        title: 'Heir of Atlantis',
+        desc: 'Spend a total of 50 τ in the Ancestral Sanctuary.',
       },
     },
     tutorial: {
@@ -1357,9 +1367,15 @@ export const DICTIONARY = {
     gallery: {
       title: 'Endings Gallery',
       progress: 'Collector Progress: {count}/{total} ({pct}%)',
-      sealedTitle: '??? Slumbering Seal',
+      collectorProgress: 'Collector Progress',
+      dormantSeal: '??? Slumbering Seal',
       unlockedStatus: '✓ Epilogue Unlocked',
       lockedStatus: 'Not yet discovered',
+      replayBtn: 'Replay Epilogue',
+      curseHint: 'Break the slumbering ancient seal beneath the central obelisk.',
+      treasureHint: 'Unveil the vault of kings buried within the bedrock.',
+      businessHint: 'Reach the barren bedrock for a memorable anticlimax.',
+      secretHint: 'Discover all 3 dune destinies first to awaken the ancient heart of Orichalcum.',
     },
     pause: {
       title: 'Expedition Paused',
@@ -1381,14 +1397,18 @@ export const DICTIONARY = {
       tabTrophies: 'Achievements',
       totalClicks: 'Manual Shovel Strikes',
       totalSandLifetime: 'Lifetime Total Sand',
+      dynamiteUsed: 'Dynamite Charges Detonated',
       totalPlaytime: 'Total Playtime',
       ruinsUncovered: 'Unearthed Ruins',
       runsCompleted: 'Completed Expeditions',
       bestRunTime: 'Best Dig Record',
+      tabletsAccumulated: 'Ancient Tablets (τ) Accumulated',
+      tabletsEarned: 'Ancient Tablets (τ) Accumulated',
+      tabletsSpent: 'Ancient Tablets (τ) Spent',
       noRecord: 'No record',
       trophiesUnlocked: 'Achievements Unlocked',
       dateUnlocked: 'Unlocked on',
-      cheatsWarning: 'Achievements disabled: cheats have been enabled during this run',
+      cheatsWarning: '[ ⚠ CHEATS ACTIVE — TROPHIES DISABLED FOR THIS RUN ]',
     },
     loading: {
       title: 'Diggy Diggy Sand',

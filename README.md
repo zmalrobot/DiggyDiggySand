@@ -129,6 +129,9 @@ Installa l'estensione **Live Server**, fai clic destro su `index.html` e selezio
 ### Installazione come PWA Offline:
 Su Chrome o Edge (Desktop/Android), fai clic sull'icona **"Installa app"** nella barra degli indirizzi; su Safari iOS, tocca il pulsante Condividi e seleziona **"Aggiungi alla schermata Home"**. Il gioco funzionerà al 100% anche senza connessione internet.
 
+### Deployment su GitHub Pages:
+Il repository include un workflow GitHub Actions in `.github/workflows/deploy.yml` per la pubblicazione automatica su **GitHub Pages** a ogni push sul branch `master`.
+
 ---
 
 ## 🧪 Suite di Test Automatizzati

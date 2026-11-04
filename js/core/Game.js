@@ -163,6 +163,14 @@ export class Game {
       events.emit('merchant:traded');
     });
 
+    events.on('ability:used', ({ id }) => {
+      if (id === 'dynamite') {
+        this.statsManager?.increment?.('dynamiteUsed', 1);
+        if (this.state) this.state.dynamiteUsed = (this.state.dynamiteUsed || 0) + 1;
+      }
+      this.achievements?.check();
+    });
+
     events.on('cosmetics:equipped', ({ category, id }) => {
       if (category === 'sand') this.terrain?.setBiomePalette?.(id);
       if (category === 'machinery') this.workers?.setSkin?.(id);

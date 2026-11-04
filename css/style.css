@@ -1333,6 +1333,48 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
 .status-unlocked { color: var(--atlantis-teal); }
 .status-locked { color: var(--text-muted); }
 
+.endings-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.gallery-card.ending-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.badge-locked-orichalcum {
+  color: var(--atlantis-teal);
+  text-shadow: 0 0 10px rgba(15, 227, 193, 0.4);
+  opacity: 0.7;
+}
+
+.gallery-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+  gap: 12px;
+}
+
+.btn-replay {
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-family: var(--font-data);
+  font-weight: 700;
+  color: var(--gold-pharaoh);
+  border-color: rgba(245, 186, 35, 0.4);
+  background: rgba(245, 186, 35, 0.1);
+  transition: all 0.2s ease;
+}
+
+.btn-replay:hover {
+  background: rgba(245, 186, 35, 0.22);
+  border-color: var(--gold-pharaoh);
+  box-shadow: 0 0 10px rgba(245, 186, 35, 0.3);
+}
+
 /* ==========================================================================
    Fase 5: Polish Generale, Tutorial Contestuale, Pause Menu & Mobile Touch
    ========================================================================== */
@@ -2480,6 +2522,31 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
   inset: 0;
   background: radial-gradient(circle at 15% 50%, rgba(15, 227, 193, 0.18), transparent 70%);
   pointer-events: none;
+}
+
+.achievement-sparkles-container {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  pointer-events: none;
+  display: flex;
+  gap: 6px;
+}
+
+.achievement-sparkles-container .sparkle {
+  font-size: 0.85rem;
+  color: var(--gold-pharaoh);
+  text-shadow: 0 0 8px rgba(245, 186, 35, 0.8);
+  animation: toastSparklePulse 1.4s infinite alternate ease-in-out;
+}
+
+.sparkle-1 { animation-delay: 0s; }
+.sparkle-2 { animation-delay: 0.3s; }
+.sparkle-3 { animation-delay: 0.6s; }
+
+@keyframes toastSparklePulse {
+  0% { transform: scale(0.7) rotate(0deg); opacity: 0.4; }
+  100% { transform: scale(1.25) rotate(25deg); opacity: 1; }
 }
 
 .achievement-toast-badge {

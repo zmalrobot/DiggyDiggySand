@@ -141,17 +141,62 @@ export class Save {
     return [];
   }
 
-  recordEnding(id) {
+  recordEnding(id, biome = null) {
     if (!id) return this.getEndingsSeen();
     const seen = new Set(this.getEndingsSeen());
     seen.add(id);
     const arr = Array.from(seen);
     try { this.storage?.setItem('dds_endings_seen', JSON.stringify(arr)); } catch {}
+
+    try {
+      const datesRaw = this.storage?.getItem('dds_endings_dates');
+      const dates = datesRaw ? JSON.parse(datesRaw) : {};
+      if (!dates[id]) {
+        dates[id] = Date.now();
+        this.storage?.setItem('dds_endings_dates', JSON.stringify(dates));
+      }
+    } catch {}
+
+    if (biome) {
+      this.recordCompletedBiome(biome);
+    }
+
     const cur = this.load();
     if (cur) {
       cur.endingsSeen = arr;
       this.write(cur);
     }
+    return arr;
+  }
+
+  getEndingUnlockDate(id) {
+    try {
+      const datesRaw = this.storage?.getItem('dds_endings_dates');
+      if (datesRaw) {
+        const dates = JSON.parse(datesRaw);
+        return dates[id] ?? null;
+      }
+    } catch {}
+    return null;
+  }
+
+  getCompletedBiomes() {
+    try {
+      const raw = this.storage?.getItem('dds_biomes_completed');
+      if (raw) {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr)) return arr;
+      }
+    } catch {}
+    return [];
+  }
+
+  recordCompletedBiome(biome) {
+    if (!biome) return this.getCompletedBiomes();
+    const completed = new Set(this.getCompletedBiomes());
+    completed.add(biome);
+    const arr = Array.from(completed);
+    try { this.storage?.setItem('dds_biomes_completed', JSON.stringify(arr)); } catch {}
     return arr;
   }
 
@@ -182,13 +227,28 @@ export class Save {
     const cur = this.getTablets();
     if (amount > cur) return false;
     const next = cur - amount;
-    try { this.storage?.setItem('dds_tablets_v1', String(next)); } catch {}
+    try {
+      this.storage?.setItem('dds_tablets_v1', String(next));
+      const spent = (Number(this.storage?.getItem('dds_tablets_spent')) || 0) + amount;
+      this.storage?.setItem('dds_tablets_spent', String(spent));
+    } catch {}
     const s = this.load();
     if (s) {
       s.tablets = next;
       this.write(s);
     }
     return true;
+  }
+
+  getTabletsSpent() {
+    try {
+      const raw = this.storage?.getItem('dds_tablets_spent');
+      if (raw !== null && raw !== undefined) {
+        const n = Number(raw);
+        if (Number.isFinite(n)) return n;
+      }
+    } catch {}
+    return 0;
   }
 
   getMetaUpgrades() {

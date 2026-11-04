@@ -19,6 +19,10 @@ export class StatsManager {
       ruinsUncovered: 0,
       runsCompleted: 0,
       bestRunTime: null,
+      dynamiteUsed: 0,
+      tabletsEarned: 0,
+      tabletsSpent: 0,
+      completedBiomes: [],
     };
 
     this.load();
@@ -38,6 +42,10 @@ export class StatsManager {
             ruinsUncovered: Number.isFinite(parsed.ruinsUncovered) ? parsed.ruinsUncovered : 0,
             runsCompleted: Number.isFinite(parsed.runsCompleted) ? parsed.runsCompleted : 0,
             bestRunTime: Number.isFinite(parsed.bestRunTime) ? parsed.bestRunTime : null,
+            dynamiteUsed: Number.isFinite(parsed.dynamiteUsed) ? parsed.dynamiteUsed : 0,
+            tabletsEarned: Number.isFinite(parsed.tabletsEarned) ? parsed.tabletsEarned : 0,
+            tabletsSpent: Number.isFinite(parsed.tabletsSpent) ? parsed.tabletsSpent : 0,
+            completedBiomes: Array.isArray(parsed.completedBiomes) ? parsed.completedBiomes : [],
           };
         }
       }
@@ -70,12 +78,15 @@ export class StatsManager {
     }
   }
 
-  recordRunCompletion(timeSeconds) {
+  recordRunCompletion(timeSeconds, biome = null) {
     this.stats.runsCompleted++;
     if (Number.isFinite(timeSeconds) && timeSeconds > 0) {
       if (this.stats.bestRunTime === null || timeSeconds < this.stats.bestRunTime) {
         this.stats.bestRunTime = Math.floor(timeSeconds);
       }
+    }
+    if (biome && !this.stats.completedBiomes.includes(biome)) {
+      this.stats.completedBiomes.push(biome);
     }
     this.save();
     events.emit('stats:changed', { statName: 'runsCompleted', value: this.stats.runsCompleted, stats: this.stats });
@@ -89,6 +100,10 @@ export class StatsManager {
       ruinsUncovered: 0,
       runsCompleted: 0,
       bestRunTime: null,
+      dynamiteUsed: 0,
+      tabletsEarned: 0,
+      tabletsSpent: 0,
+      completedBiomes: [],
     };
     this.save();
     events.emit('stats:changed', { stats: this.stats });

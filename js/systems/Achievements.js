@@ -1,84 +1,98 @@
-// Sistema Obiettivi & Trofei di Carriera.
-// Verifica continua e su eventi delle condizioni di sblocco con notifica toast ed audio.
+// Sistema Obiettivi & Trofei di Carriera (12 Trofei Ufficiali, Art Bible §2, §6).
+// Verifica continua delle condizioni di sblocco con notifica toast ed audio.
+// Lockout totale dei trofei se cheatsEnabled === true.
 import { events } from '../core/Events.js';
-import { showAchievementToast } from '../ui/Toast.js';
+import { showAchievementToast } from '../ui/AchievementToast.js';
 
 export const ACHIEVEMENTS_KEY = 'dds_achievements_v1';
 
 export const ACHIEVEMENT_DEFS = [
   {
-    id: 'FIRST_DIG',
+    id: 'first_strike',
     icon: '⛏️',
     check: (ctx) => (ctx.stats?.totalClicks ?? 0) >= 1 || (ctx.state?.clicks ?? 0) >= 1,
   },
   {
-    id: 'DUNE_BREAKER',
-    icon: '🏜️',
-    check: (ctx) => (ctx.state?.totalSand ?? 0) >= 100000,
+    id: 'sand_millionaire',
+    icon: '💰',
+    check: (ctx) => (ctx.state?.sand ?? 0) >= 1000000 || (ctx.state?.totalSand ?? 0) >= 1000000 || (ctx.stats?.totalSandLifetime ?? 0) >= 1000000,
   },
   {
-    id: 'MACHINE_LORD',
+    id: 'explosive_temper',
+    icon: '🧨',
+    check: (ctx) => (ctx.stats?.dynamiteUsed ?? 0) >= 10 || (ctx.state?.dynamiteUsed ?? 0) >= 10,
+  },
+  {
+    id: 'automation_age',
     icon: '⚙️',
     check: (ctx) => {
       const u = ctx.state?.upgrades ?? {};
-      return ((u.scarab ?? 0) + (u.excavator ?? 0) + (u.dredge ?? 0)) >= 5;
+      return ((u.scarab ?? 0) + (u.excavator ?? 0) + (u.dredge ?? 0)) >= 25;
     },
   },
   {
-    id: 'ECHOES_PAST',
+    id: 'relic_resonance',
     icon: '🏛️',
-    check: (ctx) => (ctx.state?.completion ?? 0) >= 0.5,
+    check: (ctx) => {
+      const u = ctx.state?.upgrades ?? {};
+      return (u.relic_resonance ?? 0) >= 1 || (u.relic_leyline ?? 0) >= 1 || (u.relic_abyss ?? 0) >= 1;
+    },
   },
   {
-    id: 'TRINITY',
+    id: 'first_epilogue',
     icon: '🏺',
+    check: (ctx) => (ctx.save?.getEndingsSeen?.() ?? []).length >= 1 || (ctx.stats?.runsCompleted ?? 0) >= 1,
+  },
+  {
+    id: 'pantheon_master',
+    icon: '👑',
     check: (ctx) => {
       const seen = ctx.save?.getEndingsSeen?.() ?? [];
-      return ['curse', 'treasure', 'business'].every((id) => seen.includes(id));
+      return ['curse', 'treasure', 'business', 'secret'].every((id) => seen.includes(id));
     },
   },
   {
-    id: 'AWAKENING',
-    icon: '🔱',
-    check: (ctx) => {
-      const seen = ctx.save?.getEndingsSeen?.() ?? [];
-      return seen.includes('secret');
-    },
+    id: 'deep_diver',
+    icon: '🌊',
+    check: (ctx) => (ctx.save?.getCompletedBiomes?.() ?? []).includes('ocean') || (ctx.stats?.completedBiomes ?? []).includes('ocean'),
   },
   {
-    id: 'SPEEDRUNNER',
+    id: 'frost_breaker',
+    icon: '❄️',
+    check: (ctx) => (ctx.save?.getCompletedBiomes?.() ?? []).includes('glacier') || (ctx.stats?.completedBiomes ?? []).includes('glacier'),
+  },
+  {
+    id: 'jungle_pioneer',
+    icon: '🌿',
+    check: (ctx) => (ctx.save?.getCompletedBiomes?.() ?? []).includes('jungle') || (ctx.stats?.completedBiomes ?? []).includes('jungle'),
+  },
+  {
+    id: 'speed_demon',
     icon: '⏱️',
     check: (ctx) => {
       const best = ctx.stats?.bestRunTime;
-      return best !== null && best !== undefined && best <= 1200;
+      return best !== null && best !== undefined && best <= 1500;
     },
   },
   {
-    id: 'SAND_HOARDER',
-    icon: '👑',
-    check: (ctx) => (ctx.stats?.totalSandLifetime ?? 0) >= 1000000,
-  },
-  {
-    id: 'ANCIENT_WISDOM',
-    icon: '📜',
-    check: (ctx) => (ctx.save?.getTablets?.() ?? 0) >= 5 || (ctx.state?.tablets ?? 0) >= 5,
-  },
-  {
-    id: 'STORM_SURVIVOR',
-    icon: '🌪️',
-    check: (ctx) => !!ctx.eventDiggingInStorm,
-  },
-  {
-    id: 'NOMAD_PARTNER',
-    icon: '🐪',
-    check: (ctx) => !!ctx.eventNomadTraded,
-  },
-  {
-    id: 'COMPLETIONIST',
-    icon: '✨',
-    check: (ctx) => (ctx.state?.completion ?? 0) >= 0.999,
+    id: 'sanctuary_ascendant',
+    icon: '🔱',
+    check: (ctx) => (ctx.stats?.tabletsSpent ?? 0) >= 50 || (ctx.save?.getTabletsSpent?.() ?? 0) >= 50,
   },
 ];
+
+const ALIASES = {
+  FIRST_DIG: 'first_strike',
+  DUNE_BREAKER: 'sand_millionaire',
+  MACHINE_LORD: 'automation_age',
+  ECHOES_PAST: 'relic_resonance',
+  TRINITY: 'pantheon_master',
+  AWAKENING: 'pantheon_master',
+  SPEEDRUNNER: 'speed_demon',
+  SAND_HOARDER: 'sand_millionaire',
+  ANCIENT_WISDOM: 'sanctuary_ascendant',
+  COMPLETIONIST: 'first_epilogue',
+};
 
 export class Achievements {
   constructor({ state = null, statsManager = null, save = null, audio = null } = {}) {
@@ -111,7 +125,8 @@ export class Achievements {
         const parsed = JSON.parse(raw);
         if (parsed && typeof parsed === 'object') {
           for (const [id, ts] of Object.entries(parsed)) {
-            if (ts) this.unlocked.set(id, ts);
+            const realId = ALIASES[id] || id;
+            if (ts) this.unlocked.set(realId, ts);
           }
         }
       }
@@ -132,35 +147,17 @@ export class Achievements {
   }
 
   _bindEvents() {
-    events.on('dig:hit', () => {
-      this.check();
-    });
-
-    events.on('upgrade:bought', () => {
-      this.check();
-    });
-
-    events.on('stats:changed', () => {
-      this.check();
-    });
-
-    events.on('ending:complete', () => {
-      this.check();
-    });
-
-    events.on('storm:dig', () => {
-      this._flags.eventDiggingInStorm = true;
-      this.check();
-    });
-
-    events.on('merchant:traded', () => {
-      this._flags.eventNomadTraded = true;
-      this.check();
-    });
+    events.on('dig:hit', () => this.check());
+    events.on('upgrade:bought', () => this.check());
+    events.on('stats:changed', () => this.check());
+    events.on('ending:complete', () => this.check());
+    events.on('ability:used', () => this.check());
+    events.on('meta:bought', () => this.check());
   }
 
   isUnlocked(id) {
-    return this.unlocked.has(id);
+    const realId = ALIASES[id] || id;
+    return this.unlocked.has(realId);
   }
 
   getUnlockedCount() {
@@ -173,23 +170,28 @@ export class Achievements {
 
   unlock(id) {
     if (this.state?.cheatsEnabled) return false;
-    if (this.unlocked.has(id)) return false;
-    const def = ACHIEVEMENT_DEFS.find((d) => d.id === id);
+    const realId = ALIASES[id] || id;
+    if (this.unlocked.has(realId)) return false;
+    const def = ACHIEVEMENT_DEFS.find((d) => d.id === realId);
     if (!def) return false;
 
     const ts = Date.now();
-    this.unlocked.set(id, ts);
+    this.unlocked.set(realId, ts);
     this.saveData();
 
-    // Notifica visiva toast
-    showAchievementToast(def);
-
-    // Effetto sonoro trionfale
-    if (this.audio?.playAchievementChime) {
-      this.audio.playAchievementChime();
+    // Feedback sonoro cerimoniale
+    if (this.audio) {
+      if (typeof this.audio.playSfx === 'function') {
+        this.audio.playSfx('achievement');
+      } else if (typeof this.audio.playAchievementChime === 'function') {
+        this.audio.playAchievementChime();
+      }
     }
 
-    events.emit('achievement:unlocked', { id, timestamp: ts });
+    // Notifica visiva toast con particelle
+    showAchievementToast(def, null);
+
+    events.emit('achievement:unlocked', { id: realId, timestamp: ts });
     return true;
   }
 
@@ -226,4 +228,3 @@ export class Achievements {
     }));
   }
 }
-

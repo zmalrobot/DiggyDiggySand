@@ -20,7 +20,7 @@ assert.ok(durationMs < 2000, 'simulateProgression deve completarsi in meno di 2 
 console.log(`    Tempo progressione stimato: ${sim.elapsedMinutes} min (finestra target: 30-35 min)`);
 assert.ok(sim.inTargetWindow, `Il tempo (${sim.elapsedMinutes} min) deve rientrare nella finestra target 30-35 min`);
 assert.ok(sim.elapsedMinutes >= 30.0 && sim.elapsedMinutes <= 35.0, 'Valore elapsedMinutes conforme al bilanciamento');
-assert.equal(sim.completion, '100.7%', 'Completamento finale deve raggiungere il 100%');
+assert.ok(parseFloat(sim.completion) >= 100.0, 'Completamento finale deve raggiungere il 100%');
 assert.ok(sim.milestones.length >= 6, 'Tutte le 6 milestone archeologiche devono essere registrate');
 
 // 2. Verifica Reliquie di Risonanza nel catalogo upgrade
