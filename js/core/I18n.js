@@ -37,9 +37,13 @@ export const DICTIONARY = {
       credits: 'Crediti',
       help: 'Aiuto & Comandi',
       noSave: 'Nessun salvataggio disponibile',
-      confirmOverwriteTitle: 'Sovrascrivere la spedizione?',
-      confirmOverwriteMsg: 'Esiste già un salvataggio attivo. Iniziare una nuova spedizione lo cancellerà in modo definitivo. Vuoi procedere?',
-      overwrite: 'Sovrascrivi',
+      overwriteConfirmTitle: 'Sovrascrivere la Spedizione?',
+      overwriteConfirmMsg: "Una spedizione è già in corso nel deserto. Iniziarne una nuova cancellerà i progressi attuali della duna e dell'officina. Desideri procedere?",
+      overwriteBtn: 'Sovrascrivi e Inizia',
+      cancelBtn: 'Annulla',
+      confirmOverwriteTitle: 'Sovrascrivere la Spedizione?',
+      confirmOverwriteMsg: "Una spedizione è già in corso nel deserto. Iniziarne una nuova cancellerà i progressi attuali della duna e dell'officina. Desideri procedere?",
+      overwrite: 'Sovrascrivi e Inizia',
       creditsTitle: 'Crediti di Sviluppo',
       creditsIntro: 'Diggy Diggy Sand · miner incrementale 3D in low-poly chiseled con rovine e finali dinamici.',
       creditsEngine: 'Motore: Three.js r160. Font: Cinzel Decorative, Cinzel, Syne (Google Fonts).',
@@ -52,6 +56,7 @@ export const DICTIONARY = {
       spsSuffix: '/s',
       progress: 'Deserto scavato',
       desertExcavated: 'Deserto scavato',
+      excavation: 'Deserto scavato',
       completionPct: '{pct}% scavato',
       radarDepth: 'Profondità',
       radarBedrock: 'Roccia Madre',
@@ -675,9 +680,13 @@ export const DICTIONARY = {
       credits: 'Credits',
       help: 'Help & Controls',
       noSave: 'No save file available',
-      confirmOverwriteTitle: 'Overwrite expedition?',
-      confirmOverwriteMsg: 'An active save already exists. Starting a new expedition will erase it permanently. Do you wish to proceed?',
-      overwrite: 'Overwrite',
+      overwriteConfirmTitle: 'Overwrite Expedition?',
+      overwriteConfirmMsg: 'An expedition is already underway. Starting a new one will erase current dune and workshop progress. Do you wish to proceed?',
+      overwriteBtn: 'Overwrite & Start',
+      cancelBtn: 'Cancel',
+      confirmOverwriteTitle: 'Overwrite Expedition?',
+      confirmOverwriteMsg: 'An expedition is already underway. Starting a new one will erase current dune and workshop progress. Do you wish to proceed?',
+      overwrite: 'Overwrite & Start',
       creditsTitle: 'Development Credits',
       creditsIntro: 'Diggy Diggy Sand · 3D chiseled low-poly incremental miner with sunken ruins and multiple endings.',
       creditsEngine: 'Engine: Three.js r160. Fonts: Cinzel Decorative, Cinzel, Syne (Google Fonts).',
@@ -690,6 +699,7 @@ export const DICTIONARY = {
       spsSuffix: '/s',
       progress: 'Desert excavated',
       desertExcavated: 'Excavated Desert',
+      excavation: 'Excavated Desert',
       completionPct: '{pct}% excavated',
       radarDepth: 'Depth',
       radarBedrock: 'Bedrock',
@@ -1344,29 +1354,45 @@ export class I18n {
   }
 
   /**
+   * Helper per navigazione nell'albero dizionario con supporto case-insensitive.
+   */
+  _resolveKey(dict, parts) {
+    if (!dict) return undefined;
+    let cur = dict;
+    for (const p of parts) {
+      if (cur === undefined || cur === null) return undefined;
+      if (typeof cur !== 'object') return undefined;
+      if (p in cur) {
+        cur = cur[p];
+      } else {
+        const lowerP = p.toLowerCase();
+        const foundKey = Object.keys(cur).find((k) => k.toLowerCase() === lowerP);
+        if (foundKey !== undefined) {
+          cur = cur[foundKey];
+        } else {
+          return undefined;
+        }
+      }
+    }
+    return cur;
+  }
+
+  /**
    * Risolve una chiave di traduzione nidificata (es. 'hud.sand' o 'achievements.FIRST_DIG.title').
    * Supporta parametri di interpolazione: t('hud.completionPct', { pct: '45.2' }) => "45.2% scavato"
+   * e fallback case-insensitive di sicurezza.
    */
   t(key, params = {}) {
     if (!key) return '';
     const parts = key.split('.');
 
-    // 1. Prova con la lingua attiva
-    let cur = DICTIONARY[this.lang];
-    for (const p of parts) {
-      if (cur === undefined || cur === null) break;
-      cur = cur[p];
-    }
+    // 1. Prova con la lingua attiva (esatto + fallback case-insensitive)
+    let cur = this._resolveKey(DICTIONARY[this.lang], parts);
 
     // 2. Fallback alla lingua alternativa (it o en)
     if (cur === undefined || cur === null) {
       const altLang = this.lang === 'it' ? 'en' : 'it';
-      let alt = DICTIONARY[altLang];
-      for (const p of parts) {
-        if (alt === undefined || alt === null) break;
-        alt = alt[p];
-      }
-      cur = alt;
+      cur = this._resolveKey(DICTIONARY[altLang], parts);
     }
 
     // 3. Fallback alla chiave stessa se assente ovunque

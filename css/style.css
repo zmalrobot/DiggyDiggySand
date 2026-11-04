@@ -251,13 +251,103 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
 @keyframes menuIn { from { opacity: 0; transform: translateX(-24px); } to { opacity: 1; transform: none; } }
 
 /* ===== Modali ===== */
-.modal-backdrop { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 16px; animation: menuIn 0.25s ease both; }
-.modal { width: min(460px, 94vw); max-height: 90vh; display: flex; flex-direction: column; gap: 14px; }
-.modal.wide { width: min(640px, 94vw); }
-.modal-title { font-size: 1.4rem; color: var(--gold-pharaoh); letter-spacing: 0.06em; }
-.modal-body { overflow-y: auto; line-height: 1.5; }
-.modal-body p { margin: 0 0 10px; }
-.modal-actions { display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap; }
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: menuIn 0.25s ease both;
+}
+
+.modal {
+  width: min(460px, 94vw);
+  max-height: calc(100vh - 40px);
+  max-height: calc(100dvh - 40px);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: clamp(16px, 2.5vh, 26px);
+  gap: 14px;
+}
+
+.modal.wide {
+  width: min(640px, 94vw);
+}
+
+.modal-title, .modal-header {
+  flex-shrink: 0;
+  font-size: clamp(1.2rem, 2.4vh, 1.45rem);
+  color: var(--gold-pharaoh);
+  letter-spacing: 0.06em;
+}
+
+.modal-body, .modal-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  line-height: 1.5;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(200, 152, 73, 0.5) rgba(3, 24, 38, 0.45);
+}
+
+.modal-body p {
+  margin: 0 0 10px;
+}
+
+.modal-actions, .modal-footer {
+  flex-shrink: 0;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  padding-top: 6px;
+}
+
+/* Scrollbar Cerimoniale Satinata Oro/Sabbia Atlantidea */
+.modal-body::-webkit-scrollbar,
+.modal-content::-webkit-scrollbar,
+.biome-cards-grid::-webkit-scrollbar,
+.shop-items::-webkit-scrollbar,
+.trophies-list::-webkit-scrollbar,
+.wardrobe-grid::-webkit-scrollbar,
+.gallery-grid::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.modal-body::-webkit-scrollbar-track,
+.modal-content::-webkit-scrollbar-track,
+.biome-cards-grid::-webkit-scrollbar-track,
+.shop-items::-webkit-scrollbar-track,
+.trophies-list::-webkit-scrollbar-track,
+.wardrobe-grid::-webkit-scrollbar-track,
+.gallery-grid::-webkit-scrollbar-track {
+  background: rgba(3, 24, 38, 0.5);
+  border-radius: 4px;
+}
+
+.modal-body::-webkit-scrollbar-thumb,
+.modal-content::-webkit-scrollbar-thumb,
+.biome-cards-grid::-webkit-scrollbar-thumb,
+.shop-items::-webkit-scrollbar-thumb,
+.trophies-list::-webkit-scrollbar-thumb,
+.wardrobe-grid::-webkit-scrollbar-thumb,
+.gallery-grid::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--gold-pharaoh), var(--sand-deep));
+  border-radius: 4px;
+  border: 1px solid rgba(245, 186, 35, 0.35);
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover,
+.modal-content::-webkit-scrollbar-thumb:hover,
+.biome-cards-grid::-webkit-scrollbar-thumb:hover,
+.shop-items::-webkit-scrollbar-thumb:hover,
+.trophies-list::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--gold-bright), var(--atlantis-teal));
+}
 
 /* ===== Impostazioni ===== */
 .tabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
@@ -286,25 +376,351 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
 .toast { max-width: min(520px, 92vw); transition: opacity 0.5s; animation: menuIn 0.3s ease both; }
 .toast.leaving { opacity: 0; }
 
-/* ===== HUD di gioco ===== */
-#hud { position: fixed; inset: 0; z-index: 15; pointer-events: none; display: flex; justify-content: center; align-items: flex-start; padding: calc(14px + env(safe-area-inset-top, 0px)) calc(16px + env(safe-area-inset-right, 0px)) calc(14px + env(safe-area-inset-bottom, 0px)) calc(16px + env(safe-area-inset-left, 0px)); animation: hudIn 0.8s ease both; }
-#hud .hud-top { pointer-events: auto; display: flex; align-items: center; gap: 24px; width: min(880px, 100%); padding: 12px 22px; }
-.hud-block { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.hud-label { font-family: var(--font-heading); font-weight: 600; font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sand-surface); }
-.hud-sand { min-width: 130px; }
-.hud-sand-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-.hud-num { font-family: var(--font-data); font-weight: 800; font-size: 2rem; line-height: 1; color: var(--gold-pharaoh); text-shadow: 0 0 14px rgba(245, 186, 35, 0.45); font-variant-numeric: tabular-nums; display: inline-block; transform-origin: left center; }
-.hud-num.pop { animation: numPop 0.18s ease-out; }
-.hud-sps { font-family: var(--font-data); font-weight: 700; font-size: 0.85rem; color: var(--atlantis-teal); font-variant-numeric: tabular-nums; transition: color 0.3s; }
-.hud-progress { flex: 1; }
-.hud-progress-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
-.hud-percent { font-family: var(--font-data); font-weight: 700; font-size: 0.95rem; color: var(--atlantis-teal); font-variant-numeric: tabular-nums; }
-.hud-actions { display: flex; align-items: center; gap: 10px; }
-.hud-btn { padding: 9px 14px; font-size: 0.78rem; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
-.hud-btn-icon { display: none; }
-.hud-btn-text { display: inline; }
-.shop-drag-handle { display: none; }
-.hud-shop-btn { border-color: var(--gold-pharaoh); box-shadow: inset 0 0 0 1.5px var(--gold-pharaoh), 0 0 10px rgba(245, 186, 35, 0.35); }
+/* ===== HUD di gioco Ristrutturato (Metriche Top-Center, Dock Bottom-Center, Sigillo Trucchi Bottom-Right) ===== */
+#hud {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+  pointer-events: none;
+  animation: hudIn 0.8s ease both;
+}
+
+.hud-zone {
+  pointer-events: none;
+}
+
+.hud-zone > * {
+  pointer-events: auto;
+}
+
+/* --- Zona 1: Top-Center Metriche di Progressione --- */
+.hud-top-center {
+  position: fixed;
+  top: max(14px, env(safe-area-inset-top, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  pointer-events: none;
+  width: auto;
+  max-width: min(760px, calc(100vw - 32px));
+}
+
+.hud-metrics-panel {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: clamp(14px, 2.2vw, 26px);
+  padding: 10px 22px;
+  background: rgba(3, 24, 38, 0.88);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  --b: var(--bevel);
+  clip-path: polygon(
+    var(--b) 0, calc(100% - var(--b)) 0, 100% var(--b),
+    100% calc(100% - var(--b)), calc(100% - var(--b)) 100%,
+    var(--b) 100%, 0 calc(100% - var(--b)), 0 var(--b)
+  );
+  box-shadow:
+    inset 0 0 0 1.5px var(--ui-border-gold),
+    inset 0 0 0 4px rgba(3, 24, 38, 0.9),
+    inset 0 0 0 5px var(--ui-border-teal),
+    inset 0 0 24px rgba(15, 227, 193, 0.08);
+}
+
+.hud-currency {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 120px;
+}
+
+.currency-label, .hud-label {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--sand-surface);
+}
+
+.currency-value-row, .hud-sand-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.currency-amount, .hud-num {
+  font-family: var(--font-data);
+  font-weight: 800;
+  font-size: clamp(1.4rem, 2.5vw, 2rem);
+  line-height: 1;
+  color: var(--gold-pharaoh);
+  text-shadow: 0 0 14px rgba(245, 186, 35, 0.45);
+  font-variant-numeric: tabular-nums;
+  display: inline-block;
+  transform-origin: left center;
+}
+
+.currency-amount.pop, .hud-num.pop {
+  animation: numPop 0.18s ease-out;
+}
+
+.currency-rate, .hud-sps {
+  font-family: var(--font-data);
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--atlantis-teal);
+  font-variant-numeric: tabular-nums;
+  transition: color 0.3s;
+}
+
+.currency-rate.active, .hud-sps.active {
+  color: var(--gold-glow);
+}
+
+.hud-divider {
+  width: 1px;
+  height: 38px;
+  background: linear-gradient(180deg, transparent, rgba(200, 152, 73, 0.45), transparent);
+  flex-shrink: 0;
+}
+
+.hud-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1 1 auto;
+  min-width: 160px;
+  max-width: 260px;
+}
+
+.progress-labels, .hud-progress-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+#completion-pct, .hud-percent {
+  font-family: var(--font-data);
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--atlantis-teal);
+  font-variant-numeric: tabular-nums;
+}
+
+.progress-bar-track, .obelisk-bar {
+  width: 100%;
+  height: 12px;
+  background: rgba(3, 14, 23, 0.85);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-bar-fill, .obelisk-bar .fill {
+  height: 100%;
+  width: calc(var(--p, 0) * 1%);
+  background: linear-gradient(90deg, var(--gold-deep), var(--gold-pharaoh), var(--atlantis-teal));
+  box-shadow: 0 0 10px rgba(15, 227, 193, 0.5);
+  transition: width 0.3s ease-out;
+}
+
+.hud-boost-tag {
+  font-family: var(--font-data);
+  font-weight: 700;
+  font-size: 0.74rem;
+  margin-top: 2px;
+}
+
+/* --- Zona 2: Bottom-Center Dock Comandi Principale --- */
+.hud-bottom-center {
+  position: fixed;
+  bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  pointer-events: none;
+}
+
+.hud-dock-panel {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 14px;
+  background: var(--ui-bg);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  --b: 8px;
+  clip-path: polygon(
+    var(--b) 0, calc(100% - var(--b)) 0, 100% var(--b),
+    100% calc(100% - var(--b)), calc(100% - var(--b)) 100%,
+    var(--b) 100%, 0 calc(100% - var(--b)), 0 var(--b)
+  );
+  box-shadow:
+    inset 0 0 0 1.5px var(--ui-border-gold),
+    inset 0 0 0 4px rgba(3, 24, 38, 0.9),
+    inset 0 0 0 5px var(--ui-border-teal),
+    0 10px 28px rgba(3, 24, 38, 0.85);
+}
+
+.hud-dock-btn {
+  min-height: 44px;
+  padding: 8px 18px;
+  font-family: var(--font-heading);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1.5px solid var(--ui-border-gold);
+  background: rgba(3, 24, 38, 0.75);
+  color: var(--sand-light);
+  box-sizing: border-box;
+}
+
+.hud-dock-btn:hover {
+  border-color: var(--atlantis-teal);
+  color: var(--gold-glow);
+  box-shadow: 0 0 12px rgba(15, 227, 193, 0.4);
+}
+
+.hud-dock-btn-primary {
+  background: linear-gradient(180deg, #104259, #072638);
+  border-color: var(--gold-pharaoh);
+  font-weight: 700;
+  color: var(--gold-bright);
+  box-shadow: 0 0 14px rgba(15, 227, 193, 0.3), inset 0 0 8px rgba(245, 186, 35, 0.25);
+}
+
+.hud-dock-btn-primary:hover {
+  background: linear-gradient(180deg, #185a7a, #0b344d);
+  box-shadow: 0 0 20px rgba(15, 227, 193, 0.55), inset 0 0 12px rgba(245, 186, 35, 0.4);
+}
+
+.hud-btn-icon {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.hud-dock-btn-text, .hud-btn-text {
+  display: inline;
+}
+
+/* --- Zona 3: Bottom-Right Simbolo/Sigillo Trucchi --- */
+.hud-bottom-right {
+  position: fixed;
+  bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  right: max(16px, env(safe-area-inset-right, 0px));
+  z-index: 100;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cheats-sigil-btn {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(80, 10, 15, 0.88);
+  border: 1.5px solid #e63946;
+  color: #ff6b6b;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6), inset 0 0 8px rgba(230, 57, 70, 0.3);
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.cheats-sigil-btn:hover {
+  transform: scale(1.08);
+  border-color: #ff8585;
+  color: #ffffff;
+  box-shadow: 0 0 18px rgba(230, 57, 70, 0.8), inset 0 0 10px rgba(255, 107, 107, 0.5);
+}
+
+.cheats-sigil-icon {
+  width: 22px;
+  height: 22px;
+  transition: transform 0.25s ease;
+}
+
+.cheats-sigil-btn:hover .cheats-sigil-icon {
+  transform: rotate(15deg);
+}
+
+.cheats-pulse-ring {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1.5px solid transparent;
+  pointer-events: none;
+}
+
+.cheats-sigil-btn.cheats-active,
+.cheats-sigil-btn.is-active {
+  animation: cheatPulse 2s infinite ease-in-out;
+  box-shadow: 0 0 18px rgba(230, 57, 70, 0.7), inset 0 0 10px rgba(255, 107, 107, 0.4);
+}
+
+.cheats-sigil-btn.cheats-active .cheats-pulse-ring,
+.cheats-sigil-btn.is-active .cheats-pulse-ring {
+  border-color: rgba(230, 57, 70, 0.6);
+  animation: cheatRingPulse 2s infinite ease-out;
+}
+
+@keyframes cheatPulse {
+  0%, 100% {
+    transform: scale(1);
+    border-color: #e63946;
+    box-shadow: 0 0 10px rgba(230, 57, 70, 0.5), inset 0 0 6px rgba(230, 57, 70, 0.3);
+  }
+  50% {
+    transform: scale(1.06);
+    border-color: #ff8585;
+    box-shadow: 0 0 22px rgba(230, 57, 70, 0.9), inset 0 0 12px rgba(255, 107, 107, 0.6);
+  }
+}
+
+@keyframes cheatRingPulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.45);
+    opacity: 0;
+  }
+}
+
+.hud-cheats-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(139, 0, 0, 0.45);
+  color: #FFAAAA;
+  border: 1px solid #8B0000;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: var(--font-data);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
 @keyframes hudIn { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: none; } }
 @keyframes numPop { 0% { transform: scale(1); } 40% { transform: scale(1.12); } 100% { transform: scale(1); } }
 .game-fade { position: fixed; inset: 0; z-index: 18; background: var(--atlantis-abyss); opacity: 0; pointer-events: none; transition: opacity 0.45s ease; }
@@ -425,7 +841,7 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
 
 
 @media (min-aspect-ratio: 21/9) {
-  #hud .hud-top { width: min(1080px, 80vw); }
+  #hud .hud-top, #hud-metrics-center { width: min(1080px, 80vw); }
 }
 
 /* ==========================================================================
@@ -926,10 +1342,14 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
    modali centrate a larghezza fissa.
    -------------------------------------------------------------------------- */
 @media (min-width: 1025px) {
-  #hud .hud-top {
+  #hud .hud-top, #hud-metrics-center {
     width: min(720px, 94vw);
     left: 50%;
     transform: translateX(-50%);
+  }
+
+  .hud-dock-btn {
+    padding: 8px 22px;
   }
 
   #shop, #shop-root .shop-drawer, .shop-drawer {
@@ -950,9 +1370,9 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
     display: none !important;
   }
   .hud-btn-icon {
-    display: none;
+    display: inline-block;
   }
-  .hud-btn-text {
+  .hud-btn-text, .hud-dock-btn-text {
     display: inline;
   }
 
@@ -971,7 +1391,7 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
    -------------------------------------------------------------------------- */
 @media (min-width: 601px) and (max-width: 1024px) {
   /* Safe touch target min 44x44px */
-  .btn, .tab, .hud-btn, .multibuy-btn, .shop-close-btn {
+  .btn, .tab, .hud-btn, .hud-dock-btn, .cheats-sigil-btn, .multibuy-btn, .shop-close-btn {
     min-height: 44px;
     min-width: 44px;
   }
@@ -986,19 +1406,17 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
   }
 
   /* HUD Tablet compatto con margini laterali protettivi */
-  #hud .hud-top {
-    width: calc(100vw - 64px);
-    max-width: 760px;
+  #hud .hud-top, #hud-metrics-center {
+    width: min(640px, calc(100vw - 64px));
     left: 50%;
     transform: translateX(-50%);
-    padding: 10px 20px;
     box-sizing: border-box;
   }
 
   .hud-btn-icon {
-    display: none;
+    display: inline-block;
   }
-  .hud-btn-text {
+  .hud-btn-text, .hud-dock-btn-text {
     display: inline;
   }
 }
@@ -1069,75 +1487,122 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
 
   /* Safe Area Insets per viewport mobile */
   #hud {
-    padding-top: var(--safe-top);
-    padding-bottom: var(--safe-bottom);
-    padding-left: var(--safe-left);
-    padding-right: var(--safe-right);
+    padding: 0;
   }
 
-  /* HUD Mobile Compatto: sabbia, sps e completamento raggruppati */
-  #hud .hud-top {
+  /* HUD Mobile Compatto: Metriche in Alto al Centro */
+  #hud .hud-top, .hud-top-center, #hud-metrics-center {
     position: fixed;
     top: var(--safe-top);
     left: 50%;
     transform: translateX(-50%);
     width: calc(100vw - 16px);
-    max-width: 100vw;
+    max-width: calc(100vw - 16px);
+    padding: 0;
+    box-sizing: border-box;
+    z-index: 100;
+  }
+
+  .hud-metrics-panel {
     padding: 6px 10px;
     gap: 8px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     box-sizing: border-box;
+    width: 100%;
   }
 
-  .hud-block.hud-sand {
+  .hud-currency, .hud-block.hud-sand {
     min-width: 0;
     flex: 0 1 auto;
   }
-  .hud-sand-row {
+  .currency-value-row, .hud-sand-row {
     gap: 4px;
     align-items: baseline;
   }
-  .hud-num {
+  .currency-amount, .hud-num {
     font-size: 1.25rem;
   }
-  .hud-sps {
+  .currency-rate, .hud-sps {
     font-size: 0.72rem;
   }
-  .hud-block.hud-progress {
+  .hud-progress, .hud-block.hud-progress {
     flex: 1 1 auto;
     min-width: 80px;
     margin: 0 4px;
   }
-  .hud-progress-head {
+  .progress-labels, .hud-progress-head {
     gap: 4px;
   }
-  .hud-label {
+  .currency-label, .hud-label {
     display: none; /* Iconografia e numeri parlanti, elimina testo esteso per densità */
   }
 
-  .hud-actions {
+  /* Dock Comandi in Basso al Centro su Smartphone */
+  .hud-bottom-center, #hud-bottom-dock {
+    position: fixed;
+    bottom: var(--safe-bottom);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    pointer-events: none;
+    max-width: calc(100vw - 80px);
+  }
+
+  .hud-dock-panel, .hud-actions {
     display: flex;
     align-items: center;
     gap: 6px;
+    padding: 4px 8px;
     flex-shrink: 0;
+    pointer-events: auto;
   }
-  .hud-btn {
+
+  .hud-dock-btn, .hud-btn {
     min-width: 44px;
     min-height: 44px;
-    padding: 0 8px;
+    padding: 0 12px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    font-size: 0.74rem;
+    gap: 6px;
   }
-  .hud-btn-text {
-    display: none;
-  }
+
   .hud-btn-icon {
     display: inline-block;
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
+  }
+
+  .hud-dock-btn-text, .hud-btn-text {
+    display: inline;
+  }
+
+  /* Sigillo Trucchi in Basso a Destra su Smartphone */
+  .hud-bottom-right, #hud-cheats-zone {
+    position: fixed;
+    bottom: var(--safe-bottom);
+    right: var(--safe-right);
+    z-index: 100;
+  }
+
+  .cheats-sigil-btn {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* Schermi stretti <= 380px: icone sintetiche nella dock */
+  @media (max-width: 380px) {
+    .hud-dock-btn-text {
+      display: none;
+    }
+    .hud-dock-btn {
+      padding: 0 10px;
+    }
   }
 
   /* Negozio Bottom Sheet */
@@ -2146,9 +2611,11 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
 .biome-modal-dialog {
   --b: var(--bevel);
   width: min(1100px, 96vw);
-  max-height: 92vh;
+  max-height: calc(100vh - 36px);
+  max-height: calc(100dvh - 36px);
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
   padding: 20px 24px;
   background:
     linear-gradient(135deg, rgba(15, 227, 193, 0.08), transparent 40%),
@@ -2168,6 +2635,7 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
 }
 
 .biome-modal-dialog .modal-header {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2208,11 +2676,14 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
 }
 
 .biome-cards-grid {
+  flex: 1 1 auto;
+  min-height: 0;
   display: grid;
   grid-template-columns: repeat(4, minmax(195px, 1fr));
   gap: 0.9rem;
   padding: 1rem 0.5rem;
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 @media (max-width: 920px) {
@@ -2371,6 +2842,7 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
 }
 
 .biome-modal-footer {
+  flex-shrink: 0;
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;
@@ -3057,6 +3529,154 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
     max-width: calc(100vw - 16px);
   }
 }
+
+/* ==========================================================================
+   Milestone 20.6: Ottimizzazione Display Laptop 14" e Risoluzioni Compatte
+   Supporto per viewport 1366x768 o 1920x1080 con scaling OS 125%/150% (altezze 600px–820px)
+   ========================================================================== */
+@media (max-height: 820px) {
+  /* HUD compatto proporzionato */
+  #hud {
+    padding-top: max(8px, env(safe-area-inset-top, 0px));
+    padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
+  }
+
+  #hud .hud-top, .hud-metrics-panel {
+    padding: clamp(6px, 1.2vh, 10px) clamp(12px, 2vw, 20px);
+    gap: clamp(10px, 1.8vw, 18px);
+  }
+
+  .hud-currency, .hud-sand {
+    min-width: 105px;
+  }
+
+  .currency-amount, .hud-num {
+    font-size: clamp(1.3rem, 2.4vh, 1.7rem);
+  }
+
+  .currency-label, .hud-label {
+    font-size: 0.62rem;
+  }
+
+  .currency-rate, .hud-sps {
+    font-size: 0.76rem;
+  }
+
+  .hud-dock-btn, .hud-btn {
+    padding: clamp(5px, 0.9vh, 8px) clamp(8px, 1.1vw, 12px);
+    font-size: 0.72rem;
+    min-height: 40px;
+  }
+
+  .hud-dock-panel {
+    padding: 4px 10px;
+    gap: 8px;
+  }
+
+  /* Directives Widget compatto ancorato sotto l'HUD */
+  #directives-root {
+    top: clamp(54px, 8vh, 72px);
+    left: clamp(8px, 1.2vw, 16px);
+  }
+
+  .directives-card {
+    width: clamp(230px, 22vw, 270px);
+    padding: 8px 12px;
+    gap: 4px;
+  }
+
+  .directives-card-title {
+    font-size: 0.74rem;
+  }
+
+  .directive-item {
+    font-size: 0.72rem;
+    padding: 3px 0;
+  }
+
+  /* Modali compatti con flexbox vincolato */
+  .modal {
+    max-height: calc(100vh - 28px);
+    max-height: calc(100dvh - 28px);
+    padding: clamp(12px, 2vh, 20px);
+    gap: 10px;
+  }
+
+  .modal-title {
+    font-size: clamp(1.15rem, 2.2vh, 1.3rem);
+  }
+
+  .tabs {
+    margin-bottom: 8px;
+    gap: 4px;
+  }
+
+  .tab {
+    padding: 6px 10px;
+    font-size: 0.78rem;
+  }
+
+  .row {
+    padding: 6px 0;
+    gap: 10px;
+  }
+
+  /* Elenco trofei e griglie per display bassi */
+  .trophies-list {
+    max-height: calc(100vh - 220px);
+    max-height: calc(100dvh - 220px);
+    gap: 8px;
+  }
+
+  .trophy-card {
+    padding: 8px 10px;
+  }
+
+  .stats-grid {
+    gap: 8px;
+  }
+
+  .stat-card {
+    padding: 8px 10px;
+  }
+
+  /* Dialogo Selezione Bioma per schermi 14" */
+  .biome-modal-dialog {
+    max-height: calc(100vh - 28px);
+    max-height: calc(100dvh - 28px);
+    padding: 12px 16px;
+  }
+
+  .biome-modal-dialog .modal-header {
+    padding-bottom: 8px;
+  }
+
+  .biome-cards-grid {
+    padding: 0.5rem 0.25rem;
+    gap: 0.65rem;
+  }
+
+  .biome-card {
+    padding: 0.6rem;
+    gap: 0.45rem;
+  }
+
+  .biome-card__lore {
+    font-size: 0.75rem;
+    line-height: 1.3;
+  }
+
+  .biome-modal-footer {
+    padding: 0.5rem 0.8rem;
+  }
+
+  /* Negozio e schede upgrade compatti */
+  .upgrade-card {
+    padding: 8px 10px;
+    min-height: 54px;
+  }
+}
+
 
 
 

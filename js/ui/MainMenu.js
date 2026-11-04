@@ -116,10 +116,10 @@ export class MainMenu {
   async _new() {
     if (this.save.hasValidSave()) {
       const ok = await this.modal.confirm({
-        title: i18n.t('menu.overwriteConfirmTitle') || 'Sovrascrivere la spedizione?',
-        message: i18n.t('menu.overwriteConfirmMsg') || 'Esiste già un salvataggio. Iniziare una nuova spedizione lo cancellerà in modo definitivo.',
-        confirmLabel: i18n.t('menu.overwriteBtn') || 'Sovrascrivi',
-        cancelLabel: i18n.t('common.cancel') || 'Annulla',
+        title: i18n.t('menu.overwriteConfirmTitle'),
+        message: i18n.t('menu.overwriteConfirmMsg'),
+        confirmLabel: i18n.t('menu.overwriteBtn'),
+        cancelLabel: i18n.t('menu.cancelBtn') || i18n.t('common.cancel'),
         danger: true,
       });
       if (!ok) return;

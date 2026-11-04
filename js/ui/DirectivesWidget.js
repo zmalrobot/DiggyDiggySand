@@ -21,7 +21,8 @@ export class DirectivesWidget {
 
   _build() {
     if (!this.root) return;
-    this.root.className = 'directives-widget-container';
+    this.root.classList.add('directives-widget-container', 'hud-zone', 'hud-top-left');
+    if (!this.root.id) this.root.id = 'directives-widget';
     this.root.innerHTML = `
       <aside class="panel directives-card" role="region" aria-label="${i18n.t('directives.widgetTitle') || 'Direttive di Spedizione'}">
         <button type="button" class="btn btn-pill directives-toggle-btn" data-act="toggle" title="Minimizza / Espandi" aria-label="Minimizza / Espandi">‹</button>

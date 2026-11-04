@@ -94,42 +94,64 @@ export class Hud {
 
   _build() {
     this.root.innerHTML = `
-      <div class="hud-top panel" role="status" aria-live="off">
-        <div class="hud-block hud-sand">
-          <span class="hud-label" data-i18n="hud.sand">${i18n.t('hud.sand')}</span>
-          <div class="hud-sand-row">
-            <span class="hud-num" data-el="sand">0</span>
-            <span class="hud-sps muted" data-el="sps">+0/s</span>
-            <div class="hud-cheats-badge hidden" data-el="cheatsBadge" data-i18n-title="hud.cheatsActive" data-i18n-aria-label="hud.cheatsActive" title="${i18n.t('hud.cheatsActive')}" aria-label="${i18n.t('hud.cheatsActive')}">
-              <span class="cheats-icon">🛠️</span>
-              <span class="cheats-tag" data-i18n="hud.cheatsTag">${i18n.t('hud.cheatsTag')}</span>
+      <!-- 2. Top-Center: Metriche di Progressione -->
+      <header id="hud-metrics-center" class="hud-zone hud-top-center">
+        <div class="hud-panel hud-metrics-panel hud-top panel" role="status" aria-live="off">
+          <div class="hud-currency hud-block hud-sand">
+            <span class="currency-label hud-label" data-i18n="hud.sand">${i18n.t('hud.sand')}</span>
+            <div class="currency-value-row hud-sand-row">
+              <span id="sand-counter" class="currency-amount hud-num" data-el="sand">0</span>
+              <span id="sand-rate" class="currency-rate hud-sps muted" data-el="sps">+0/s</span>
+            </div>
+            <div class="hud-boost-tag hidden accent" data-el="boost"></div>
+          </div>
+          <div class="hud-divider" aria-hidden="true"></div>
+          <div class="hud-progress hud-block">
+            <div class="progress-labels hud-progress-head">
+              <span class="hud-label" data-i18n="hud.excavation">${i18n.t('hud.excavation')}</span>
+              <span id="completion-pct" class="hud-percent" data-el="percent">0.00%</span>
+            </div>
+            <div class="progress-bar-track obelisk-bar glow" data-el="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+              <div id="completion-bar" class="progress-bar-fill fill"></div>
             </div>
           </div>
-          <div class="hud-boost-tag hidden accent" data-el="boost"></div>
         </div>
-        <div class="hud-block hud-progress">
-          <div class="hud-progress-head">
-            <span class="hud-label" data-i18n="hud.desertExcavated">${i18n.t('hud.desertExcavated')}</span>
-            <span class="hud-percent" data-el="percent">0.0%</span>
-          </div>
-          <div class="obelisk-bar glow" data-el="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="fill"></div></div>
-        </div>
-        <div class="hud-actions">
-          <button type="button" class="btn hud-btn hud-help-btn" data-act="help" data-el="help" data-i18n-title="hud.helpTitle" data-i18n-aria-label="hud.helpTitle" title="${i18n.t('hud.helpTitle')}" aria-label="${i18n.t('hud.helpTitle')}">
+      </header>
+
+      <!-- 3. Bottom-Center: Dock Comandi Principale -->
+      <nav id="hud-bottom-dock" class="hud-zone hud-bottom-center" aria-label="Comandi di Spedizione">
+        <div class="hud-panel hud-dock-panel hud-actions panel">
+          <button id="btn-help" class="hud-dock-btn hud-btn hud-help-btn" data-act="help" data-el="help" data-i18n-title="hud.helpTitle" data-i18n-aria-label="hud.helpTitle" title="${i18n.t('hud.helpTitle')}" aria-label="${i18n.t('hud.helpTitle')}">
             <svg class="hud-btn-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            <span class="hud-btn-text" data-i18n="hud.help">${i18n.t('hud.help')}</span>
+            <span class="hud-dock-btn-text hud-btn-text" data-i18n="hud.help">${i18n.t('hud.help')}</span>
           </button>
-          <button type="button" class="btn hud-btn hud-shop-btn" data-act="shop" data-el="shop" data-i18n-title="hud.workshop" data-i18n-aria-label="hud.workshop" title="${i18n.t('hud.workshop')}" aria-label="${i18n.t('hud.workshop')}">
+          <button id="btn-shop" class="hud-dock-btn hud-dock-btn-primary hud-btn hud-shop-btn" data-act="shop" data-el="shop" data-i18n-title="hud.workshop" data-i18n-aria-label="hud.workshop" title="${i18n.t('hud.workshop')}" aria-label="${i18n.t('hud.workshop')}">
             <svg class="hud-btn-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-            <span class="hud-btn-text" data-i18n="hud.workshop">${i18n.t('hud.workshop')}</span>
+            <span class="hud-dock-btn-text hud-btn-text" data-i18n="hud.workshop">${i18n.t('hud.workshop')}</span>
           </button>
-          <button type="button" class="btn hud-btn hud-menu-btn" data-act="menu" data-el="menu" data-i18n-title="hud.pauseTitle" data-i18n-aria-label="hud.pauseTitle" title="${i18n.t('hud.pauseTitle')}" aria-label="${i18n.t('hud.pauseTitle')}">
+          <button id="btn-pause" class="hud-dock-btn hud-btn hud-menu-btn" data-act="menu" data-el="menu" data-i18n-title="hud.pauseTitle" data-i18n-aria-label="hud.pauseTitle" title="${i18n.t('hud.pauseTitle')}" aria-label="${i18n.t('hud.pauseTitle')}">
             <svg class="hud-btn-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-            <span class="hud-btn-text" data-i18n="hud.pause">${i18n.t('hud.pause')}</span>
+            <span class="hud-dock-btn-text hud-btn-text" data-i18n="hud.pause">${i18n.t('hud.pause')}</span>
           </button>
+        </div>
+      </nav>
+
+      <!-- 4. Bottom-Right: Simbolo/Sigillo Trucchi -->
+      <div id="hud-cheats-zone" class="hud-zone hud-bottom-right">
+        <button id="btn-cheats-toggle" class="cheats-sigil-btn" data-el="cheatsToggle" data-act="cheats" title="${i18n.t('settings.tabCheats') || 'Trucchi / Sandbox'}" aria-label="Trucchi">
+          <!-- Icona vettoriale stilizzata: chiave inglese, sigillo spezzato o glifo d'avviso -->
+          <svg viewBox="0 0 24 24" class="cheats-sigil-icon" width="22" height="22" aria-hidden="true">
+            <path d="M12 2L2 22h20L12 2zm0 4.2L18.8 19H5.2L12 6.2zm-1 5.8h2v4h-2zm0 5h2v2h-2z" fill="currentColor"/>
+          </svg>
+          <span class="cheats-pulse-ring" aria-hidden="true"></span>
+        </button>
+        <div class="hud-cheats-badge hidden" data-el="cheatsBadge" data-i18n-title="hud.cheatsActive" data-i18n-aria-label="hud.cheatsActive" title="${i18n.t('hud.cheatsActive')}" aria-label="${i18n.t('hud.cheatsActive')}">
+          <span class="cheats-icon">🛠️</span>
+          <span class="cheats-tag" data-i18n="hud.cheatsTag">${i18n.t('hud.cheatsTag')}</span>
         </div>
       </div>
 
+      <!-- Modulo Georadar di profondità -->
       <div class="hud-radar-wrap hidden" data-el="radar">
         <div class="hud-radar-card panel surface glow-teal">
           <div class="radar-scope">
@@ -159,11 +181,13 @@ export class Hud {
       radarReading: this.root.querySelector('[data-el="radarReading"]'),
       boost: this.root.querySelector('[data-el="boost"]'),
       cheatsBadge: this.root.querySelector('[data-el="cheatsBadge"]'),
+      cheatsToggle: this.root.querySelector('[data-el="cheatsToggle"]'),
     };
 
     this.el.help?.addEventListener('click', () => events.emit('hud:help'));
-    this.el.shop.addEventListener('click', () => events.emit('hud:shop'));
-    this.el.menu.addEventListener('click', () => events.emit('hud:menu'));
+    this.el.shop?.addEventListener('click', () => events.emit('hud:shop'));
+    this.el.menu?.addEventListener('click', () => events.emit('hud:menu'));
+    this.el.cheatsToggle?.addEventListener('click', () => events.emit('hud:cheats'));
   }
 
   show() { this.root.classList.remove('hidden'); this.refresh(); }
@@ -201,8 +225,18 @@ export class Hud {
     this._setCompletion(this.state.completion);
     if (this.economy) this.setSps(this.economy.sps);
     this.refreshRadar();
+    const cheatsActive = !!this.state.cheatsEnabled;
+    if (this.el.cheatsToggle) {
+      this.el.cheatsToggle.classList.toggle('cheats-active', cheatsActive);
+      this.el.cheatsToggle.classList.toggle('is-active', cheatsActive);
+      if (cheatsActive) {
+        this.el.cheatsToggle.setAttribute('title', i18n.t('settings.cheats.hudBadge') || 'Trucchi attivi — Obiettivi bloccati');
+      } else {
+        this.el.cheatsToggle.setAttribute('title', i18n.t('settings.tabCheats') || 'Trucchi / Sandbox');
+      }
+    }
     if (this.el.cheatsBadge) {
-      this.el.cheatsBadge.classList.toggle('hidden', !this.state.cheatsEnabled);
+      this.el.cheatsBadge.classList.toggle('hidden', !cheatsActive);
     }
   }
 

@@ -135,6 +135,7 @@ export class Game {
     events.on('game:continue', (data) => this.start(data));
     events.on('hud:menu', () => this.openPause());
     events.on('hud:help', () => new HelpModal(this.modal).open());
+    events.on('hud:cheats', () => this.settingsModal?.open?.('cheats'));
 
     events.on('dig:hit', ({ amount }) => {
       this.state.registerClick();
