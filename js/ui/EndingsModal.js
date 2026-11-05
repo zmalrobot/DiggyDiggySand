@@ -152,6 +152,7 @@ export class EndingsModal {
             if (menuWasVisible && menu) {
               menu.show();
             }
+            this.open();
           },
         });
       } else {

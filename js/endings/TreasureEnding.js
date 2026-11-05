@@ -101,22 +101,32 @@ export class TreasureEnding {
       const isGem = i % 3 === 0;
       const mesh = new THREE.Mesh(isGem ? gemGeo : coinGeo, isGem ? gemMat : goldMat);
       const angle = Math.random() * Math.PI * 2;
-      const dist = Math.random() * 22;
+      // Distribuzione scenica concentrata attorno al forziere (raggio 0.6m - 8.2m)
+      const dist = 0.6 + Math.pow(Math.random(), 1.5) * 7.6;
       const x = Math.cos(angle) * dist;
       const z = Math.sin(angle) * dist;
-      const startY = 22 + Math.random() * 20;
+      const startY = 16 + Math.random() * 18;
 
       mesh.position.set(x, startY, z);
       mesh.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+
+      // Pavimento di atterraggio: lastricato archeologico a Y=0 (monete a Y>=0.12, gemme a Y>=0.28)
+      let terrainY = 0;
+      if (this.terrain && typeof this.terrain.heightAt === 'function') {
+        const h = this.terrain.heightAt(x, z);
+        // Se il terreno è deformato/scavato prendiamo la quota, altrimenti floor a Y=0
+        if (!isNaN(h) && h >= 0 && h < 10) terrainY = h;
+      }
+      const floorY = Math.max(0.12, terrainY + (isGem ? 0.28 : 0.12));
 
       this.treasureGroup.add(mesh);
       this.lootItems.push({
         mesh,
         isGem,
-        vy: -(12 + Math.random() * 10),
+        vy: -(10 + Math.random() * 8),
         rx: (Math.random() - 0.5) * 8,
         ry: (Math.random() - 0.5) * 8,
-        floorY: Math.max(0.4, this.terrain ? this.terrain.heightAt(x, z) + 0.2 : 0.4),
+        floorY,
         bounced: 0,
         collected: false,
       });
@@ -169,16 +179,20 @@ export class TreasureEnding {
         it.vy -= 22 * dt; // gravità
         it.mesh.rotation.x += it.rx * dt;
         it.mesh.rotation.y += it.ry * dt;
+
+        // Clamping rigoroso sul piano del pavimento ad ogni passo
+        if (it.mesh.position.y <= it.floorY) {
+          it.mesh.position.y = it.floorY;
+          if (it.bounced < 2) {
+            it.bounced++;
+            it.vy = Math.abs(it.vy) * 0.45;
+          } else {
+            it.vy = 0;
+          }
+        }
       } else {
         it.mesh.position.y = it.floorY;
-        if (it.bounced < 2) {
-          it.bounced++;
-          it.vy = Math.abs(it.vy) * 0.45;
-          it.mesh.position.y += it.vy * dt;
-        } else {
-          // A terra, ruota dolcemente su se stesso
-          it.mesh.rotation.y += dt * 1.5;
-        }
+        it.mesh.rotation.y += dt * 1.5;
       }
     }
 

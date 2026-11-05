@@ -262,6 +262,7 @@ export const DICTIONARY = {
         menu: 'Torna al Menu',
         sandbox: 'Continua in Sandbox Libera',
       },
+      exit_replay: 'Torna al Menu',
       stats: {
         time: 'Tempo Spedizione',
         sand: 'Sabbia Estratta',
@@ -1029,6 +1030,7 @@ export const DICTIONARY = {
         menu: 'Back to Menu',
         sandbox: 'Continue in Free Sandbox',
       },
+      exit_replay: 'Return to Menu',
       stats: {
         time: 'Expedition Time',
         sand: 'Extracted Sand',

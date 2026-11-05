@@ -54,8 +54,9 @@ export class CurseEnding {
       this.scene.scene.fog.density = 0.012;
     }
 
-    // 3. Colonna di anime / locuste oscure vorticose
+    // 3. Colonna di anime / locuste oscure vorticose e tentacoli d'ombra
     this._spawnDarkVortex();
+    this._spawnShadowTendrils();
 
     // 4. Se il santuario centrale ha il sigillo, fallo pulsare violentemente
     if (this.city?.curseSeal) {
@@ -84,7 +85,7 @@ export class CurseEnding {
       const r = 1.0 + Math.random() * 4.5;
       mesh.position.set(
         Math.cos(angle) * r,
-        2.5 + Math.random() * 22,
+        0.5 + Math.random() * 24,
         Math.sin(angle) * r
       );
       mesh.scale.setScalar(0.7 + Math.random() * 0.9);
@@ -102,6 +103,38 @@ export class CurseEnding {
     this.scene?.scene?.add(this.pillarGroup);
   }
 
+  _spawnShadowTendrils() {
+    this.tendrilGroup = new THREE.Group();
+    this.tendrils = [];
+    const count = 12;
+    const geom = new THREE.ConeGeometry(0.5, 4.5, 5);
+    const mat = new THREE.MeshStandardMaterial({
+      color: 0x050203,
+      emissive: 0x660011,
+      emissiveIntensity: 1.2,
+      flatShading: true,
+      roughness: 0.7,
+    });
+
+    for (let i = 0; i < count; i++) {
+      const mesh = new THREE.Mesh(geom, mat);
+      const angle = (i / count) * Math.PI * 2;
+      const r = 7.5 + (i % 2 === 0 ? 1.5 : -1.0);
+      mesh.position.set(Math.cos(angle) * r, -1.5, Math.sin(angle) * r);
+      mesh.rotation.z = (Math.random() - 0.5) * 0.35;
+      mesh.rotation.x = (Math.random() - 0.5) * 0.35;
+      this.tendrilGroup.add(mesh);
+      this.tendrils.push({
+        mesh,
+        targetY: 1.8 + (i % 3) * 0.6,
+        currentY: -1.5,
+        speed: 3.5 + Math.random() * 2.0,
+        wigglePhase: Math.random() * Math.PI * 2,
+      });
+    }
+    this.scene?.scene?.add(this.tendrilGroup);
+  }
+
   update(dt) {
     if (!this.triggered) return;
     this.elapsed += dt;
@@ -114,10 +147,23 @@ export class CurseEnding {
         p.mesh.position.z = Math.sin(p.baseAngle) * p.radius;
         p.mesh.position.y += dt * 4.5;
         if (p.mesh.position.y > 28) {
-          p.mesh.position.y = 2.0 + Math.random() * 2.0;
+          p.mesh.position.y = 0.5 + Math.random() * 2.0;
         }
         p.mesh.rotation.x += p.rotSpeed * dt;
         p.mesh.rotation.y += p.rotSpeed * dt;
+      }
+    }
+
+    // Emersione e oscillazione tentacoli oscuri dai bordi delle lastre
+    if (this.tendrils && this.tendrils.length > 0) {
+      for (const t of this.tendrils) {
+        if (t.currentY < t.targetY) {
+          t.currentY = Math.min(t.targetY, t.currentY + t.speed * dt);
+          t.mesh.position.y = t.currentY;
+        }
+        t.wigglePhase += dt * 3.0;
+        t.mesh.rotation.y += dt * 0.8;
+        t.mesh.rotation.z = Math.sin(t.wigglePhase) * 0.18;
       }
     }
 
@@ -150,6 +196,17 @@ export class CurseEnding {
       }
       this.pillarGroup = null;
       this.particles = [];
+    }
+    if (this.tendrilGroup) {
+      this.scene?.scene?.remove(this.tendrilGroup);
+      if (this.tendrils) {
+        for (const t of this.tendrils) {
+          t.mesh.geometry.dispose();
+          t.mesh.material.dispose();
+        }
+      }
+      this.tendrilGroup = null;
+      this.tendrils = [];
     }
     // Ripristina luci originali se presenti
     if (this.origSunColor && this.scene?.sun) {

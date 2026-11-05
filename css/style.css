@@ -1447,6 +1447,53 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
   box-shadow: 0 0 14px rgba(15, 227, 193, 0.4);
 }
 
+/* Overlay di Uscita Replay Epilogo */
+.replay-overlay {
+  position: fixed;
+  top: max(20px, env(safe-area-inset-top));
+  right: max(20px, env(safe-area-inset-right));
+  z-index: 2000;
+  pointer-events: auto;
+}
+
+.btn-exit-replay {
+  background: rgba(3, 24, 38, 0.9);
+  border: 1px solid var(--ui-border-gold, #d4af37);
+  color: #fff;
+  font-family: 'Cinzel', serif;
+  padding: 10px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(245, 186, 35, 0.15);
+}
+
+.btn-exit-replay .exit-icon {
+  font-size: 1.05rem;
+  color: var(--atlantis-teal, #0fe3c1);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.btn-exit-replay:hover {
+  background: rgba(15, 227, 193, 0.2);
+  border-color: #0fe3c1;
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(15, 227, 193, 0.35);
+}
+
+.btn-exit-replay:active {
+  transform: translateY(0);
+}
+
 /* ==========================================================================
    Fase 5: Polish Generale, Tutorial Contestuale, Pause Menu & Mobile Touch
    ========================================================================== */

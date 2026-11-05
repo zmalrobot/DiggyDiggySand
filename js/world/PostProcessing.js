@@ -473,6 +473,11 @@ export class PostProcessing {
     // Sincronizza matrici e parametri camera per la ricostruzione view-space del raymarching
     this.update(0);
 
+    // Preserva accumulo draw calls e statistiche per il Profiler in-game e metriche di scena
+    const autoReset = this.renderer.info.autoReset;
+    this.renderer.info.autoReset = false;
+    this.renderer.info.reset();
+
     // 1. Render della scena 3D principale nel buffer texture (colore e profondità)
     const currentTarget = this.renderer.getRenderTarget();
     this.renderer.setRenderTarget(this.renderTarget);
@@ -482,6 +487,8 @@ export class PostProcessing {
     // 2. Compositing a schermo intero (bloom + vignette + color grading + SSR + SSAO + antialiasing)
     this.renderer.setRenderTarget(currentTarget);
     this.renderer.render(this.postScene, this.postCamera);
+
+    this.renderer.info.autoReset = autoReset;
   }
 
   dispose() {
