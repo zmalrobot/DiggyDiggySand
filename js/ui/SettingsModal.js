@@ -5,6 +5,7 @@ import { events } from '../core/Events.js';
 import { UPGRADE_CATALOG } from '../systems/Upgrades.js';
 import { toast } from './Modal.js';
 import { SaveSerializer } from '../core/SaveSerializer.js';
+import { Save } from '../core/Save.js';
 
 function getOptionLabel(key, val) {
   const v = String(val);
@@ -539,7 +540,8 @@ export class SettingsModal {
       this._row(i18n.t('settings.settingsBackup') || 'Backup Impostazioni', io),
       area,
       this._row(i18n.t('settings.resetSection') || 'Reset & Dati', reset),
-      status
+      status,
+      this._createHardResetZone('btn-hard-reset-data')
     );
   }
 
@@ -593,6 +595,7 @@ export class SettingsModal {
       notice.className = 'muted';
       notice.textContent = i18n.t('settings.cheats.notInGame') || 'I trucchi possono essere utilizzati solo durante una spedizione in corso.';
       p.append(notice);
+      p.append(this._createHardResetZone('btn-hard-reset-all'));
       return;
     }
 
@@ -808,5 +811,63 @@ export class SettingsModal {
     });
     upgradesRow.append(maxUpgradesBtn);
     p.append(this._row(i18n.t('settings.cheats.upgradesSection') || 'Potenziamenti Massimi', upgradesRow));
+
+    p.append(this._createHardResetZone('btn-hard-reset-all'));
+  }
+
+  _createHardResetZone(buttonId = 'btn-hard-reset-all') {
+    const zone = document.createElement('div');
+    zone.className = 'cheat-danger-zone';
+
+    const title = document.createElement('h4');
+    title.className = 'danger-zone-title';
+    title.textContent = i18n.t('cheats.hard_reset_title') || i18n.t('settings.cheats.hard_reset_title') || 'Reset Totale & Svuota Cache';
+
+    const info = document.createElement('p');
+    info.className = 'danger-zone-info';
+    info.textContent = i18n.t('cheats.hard_reset_desc') || i18n.t('settings.cheats.hard_reset_desc') || 'Cancella salvataggi locali, Tavolette (τ), trofei, impostazioni e cache PWA.';
+
+    const btn = document.createElement('button');
+    btn.id = buttonId;
+    btn.type = 'button';
+    btn.className = 'btn btn-danger-wipe';
+    const defaultLabel = i18n.t('cheats.hard_reset_btn') || i18n.t('settings.cheats.hard_reset_btn') || '☢ Cancella Tutto e Riavvia';
+    const confirmLabel = i18n.t('cheats.hard_reset_confirm') || i18n.t('settings.cheats.hard_reset_confirm') || '⚠ Conferma Formattazione Totale';
+    const progressLabel = i18n.t('cheats.hard_reset_progress') || i18n.t('settings.cheats.hard_reset_progress') || 'Pulizia in corso…';
+    btn.textContent = defaultLabel;
+
+    let confirmTimer = null;
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (!btn.classList.contains('is-confirming')) {
+        btn.classList.add('is-confirming');
+        btn.textContent = confirmLabel;
+        confirmTimer = setTimeout(() => {
+          btn.classList.remove('is-confirming');
+          btn.textContent = defaultLabel;
+          confirmTimer = null;
+        }, 5000);
+      } else {
+        if (confirmTimer) clearTimeout(confirmTimer);
+        btn.disabled = true;
+        btn.textContent = progressLabel;
+        try {
+          await Save.performHardReset();
+        } catch (err) {
+          console.error('[HardReset] Errore durante il wipe:', err);
+          btn.textContent = 'Errore!';
+          setTimeout(() => {
+            btn.disabled = false;
+            btn.classList.remove('is-confirming');
+            btn.textContent = defaultLabel;
+          }, 3000);
+        }
+      }
+    });
+
+    zone.append(title, info, btn);
+    return zone;
   }
 }

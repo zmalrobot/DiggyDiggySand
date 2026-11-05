@@ -56,6 +56,7 @@ export class StatsManager {
   }
 
   save() {
+    if (typeof window !== 'undefined' && window.__DDS_WIPING_DATA) return false;
     if (!this.storage) return false;
     try {
       this.storage.setItem(STATS_KEY, JSON.stringify(this.stats));

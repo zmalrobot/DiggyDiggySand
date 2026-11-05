@@ -118,6 +118,7 @@ export class SettingsManager {
 
   /** Scrittura immediata e sincrona (nessun debounce). */
   _save() {
+    if (typeof window !== 'undefined' && window.__DDS_WIPING_DATA) return false;
     try {
       this.storage?.setItem(SETTINGS_KEY, JSON.stringify({ version: SETTINGS_VERSION, values: this.values }));
       return true;

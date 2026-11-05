@@ -31,6 +31,15 @@ window.addEventListener('unhandledrejection', (e) => console.error('[DDS] promis
 async function boot() {
   Logger.init();
 
+  // Se la pagina è stata riavviata da un hard reset, ripulisce i parametri nell'URL
+  if (typeof window !== 'undefined' && window.location?.search?.includes('reset=')) {
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('reset');
+      window.history.replaceState({}, document.title, url.pathname + (url.search ? url.search : '') + url.hash);
+    } catch {}
+  }
+
   try {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator &&
         (window.location.protocol === 'http:' || window.location.protocol === 'https:')) {
@@ -128,6 +137,7 @@ async function boot() {
   // Hook di debug e release gate per i test e console DevTools.
   window.__dds = { settings, settingsModal, audio, save, scene, assets, menu, game, debugTools, statsManager, achievements, cosmeticsManager, wardrobeModal, biomeManager, biomeSelectModal, i18n, profiler, profilerOverlay, accessibility, simulateProgression, sanityAudit: SanityAudit };
   window.__DDS_DEBUG = window.__DDS_DEBUG || {};
+  window.__DDS_DEBUG.hardReset = (opts) => Save.performHardReset(opts);
   window.__DDS_DEBUG.simulateProgression = simulateProgression;
   window.__DDS_DEBUG.testModelScale = (factor) => {
     const f = Math.max(0.1, Math.min(5.0, Number(factor) || 1.0));

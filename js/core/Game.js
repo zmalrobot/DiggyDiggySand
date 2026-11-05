@@ -210,9 +210,18 @@ export class Game {
     window.addEventListener('keydown', this._onKeyDown);
     window.addEventListener('keyup', this._onKeyUp);
     window.addEventListener('blur', () => this.keys.clear());
-    window.addEventListener('beforeunload', () => this.saveNow());
-    window.addEventListener('pagehide', () => this.saveNow());
-    document.addEventListener('visibilitychange', () => { if (document.hidden) this.saveNow(); });
+    window.addEventListener('beforeunload', () => {
+      if (typeof window !== 'undefined' && window.__DDS_WIPING_DATA) return;
+      this.saveNow();
+    });
+    window.addEventListener('pagehide', () => {
+      if (typeof window !== 'undefined' && window.__DDS_WIPING_DATA) return;
+      this.saveNow();
+    });
+    document.addEventListener('visibilitychange', () => {
+      if (typeof window !== 'undefined' && window.__DDS_WIPING_DATA) return;
+      if (document.hidden) this.saveNow();
+    });
   }
 
   /** Avvia (o riavvia) la partita partendo dai dati di salvataggio. */
@@ -579,6 +588,7 @@ export class Game {
   }
 
   saveNow() {
+    if (typeof window !== 'undefined' && window.__DDS_WIPING_DATA) return;
     if (!this.running) return;
     this._lastSave = performance.now();
     // Preserva un lastSaved impostato artificialmente nel passato per test di progresso offline

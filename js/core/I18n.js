@@ -452,7 +452,19 @@ export const DICTIONARY = {
         toastGodOn: 'Super Pala (God Mode) Attivata!',
         toastGodOff: 'Super Pala Disattivata.',
         toastMaxUpgrades: 'Tutti gli upgrade sbloccati al massimo!',
+        hard_reset_title: 'Reset Totale & Svuota Cache',
+        hard_reset_desc: 'Cancella salvataggi locali, Tavolette (τ), trofei, impostazioni e cache PWA.',
+        hard_reset_btn: '☢ Cancella Tutto e Riavvia',
+        hard_reset_confirm: '⚠ Conferma Formattazione Totale',
+        hard_reset_progress: 'Pulizia in corso…',
       },
+    },
+    cheats: {
+      hard_reset_title: 'Reset Totale & Svuota Cache',
+      hard_reset_desc: 'Cancella salvataggi locali, Tavolette (τ), trofei, impostazioni e cache PWA.',
+      hard_reset_btn: '☢ Cancella Tutto e Riavvia',
+      hard_reset_confirm: '⚠ Conferma Formattazione Totale',
+      hard_reset_progress: 'Pulizia in corso…',
     },
     achievements: {
       first_strike: {
@@ -1237,7 +1249,19 @@ export const DICTIONARY = {
         toastGodOn: 'Super Shovel (God Mode) Activated!',
         toastGodOff: 'Super Shovel Disabled.',
         toastMaxUpgrades: 'All upgrades maxed out!',
+        hard_reset_title: 'Full Wipe & Clear Cache',
+        hard_reset_desc: 'Wipes local saves, Tablets (τ), achievements, settings and PWA cache.',
+        hard_reset_btn: '☢ Wipe All & Restart',
+        hard_reset_confirm: '⚠ Confirm Full Format',
+        hard_reset_progress: 'Wiping in progress…',
       },
+    },
+    cheats: {
+      hard_reset_title: 'Full Wipe & Clear Cache',
+      hard_reset_desc: 'Wipes local saves, Tablets (τ), achievements, settings and PWA cache.',
+      hard_reset_btn: '☢ Wipe All & Restart',
+      hard_reset_confirm: '⚠ Confirm Full Format',
+      hard_reset_progress: 'Wiping in progress…',
     },
     achievements: {
       first_strike: {

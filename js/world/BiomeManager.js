@@ -240,6 +240,7 @@ export class BiomeManager {
   }
 
   saveData() {
+    if (typeof window !== 'undefined' && window.__DDS_WIPING_DATA) return false;
     if (!this.storage) return false;
     try {
       const payload = {

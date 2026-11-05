@@ -192,6 +192,7 @@ export class Save {
   }
 
   recordCompletedBiome(biome) {
+    if (typeof window !== 'undefined' && window.__DDS_WIPING_DATA) return [];
     if (!biome) return this.getCompletedBiomes();
     const completed = new Set(this.getCompletedBiomes());
     completed.add(biome);
@@ -212,6 +213,7 @@ export class Save {
   }
 
   addTablets(amount) {
+    if (typeof window !== 'undefined' && window.__DDS_WIPING_DATA) return this.getTablets();
     if (!(amount > 0)) return this.getTablets();
     const cur = this.getTablets() + amount;
     try { this.storage?.setItem('dds_tablets_v1', String(cur)); } catch {}
@@ -224,6 +226,7 @@ export class Save {
   }
 
   spendTablets(amount) {
+    if (typeof window !== 'undefined' && window.__DDS_WIPING_DATA) return false;
     const cur = this.getTablets();
     if (amount > cur) return false;
     const next = cur - amount;
@@ -263,6 +266,7 @@ export class Save {
   }
 
   setMetaUpgrade(id, level) {
+    if (typeof window !== 'undefined' && window.__DDS_WIPING_DATA) return {};
     const cur = { ...this.getMetaUpgrades(), [id]: level };
     try { this.storage?.setItem('dds_meta_v1', JSON.stringify(cur)); } catch {}
     const s = this.load();
@@ -327,6 +331,9 @@ export class Save {
   }
 
   write(data) {
+    if (typeof window !== 'undefined' && window.__DDS_WIPING_DATA) {
+      return false;
+    }
     if (!validateSave(data)) {
       console.warn('[Save] Scrittura annullata: dati non conformi allo schema.');
       return false;
@@ -348,5 +355,70 @@ export class Save {
       this.storage?.removeItem(SAVE_BACKUP_KEY);
     } catch { /* ignora */ }
   }
+
+  /**
+   * Procedura centralizzata di Hard Reset:
+   * Svuota localStorage, sessionStorage, Cache Storage API, deregistra i Service Worker
+   * ed elimina eventuali database IndexedDB, forzando poi il reload con cache-buster.
+   *
+   * @param {Object} [options]
+   * @param {boolean} [options.reload=true] - Se false, non esegue window.location.replace (utile per test e headless QA)
+   */
+  static async performHardReset(options = {}) {
+    const shouldReload = options.reload !== false;
+
+    if (typeof window !== 'undefined') {
+      window.__DDS_WIPING_DATA = true;
+    }
+
+    try {
+      // 1. Svuota localStorage e sessionStorage
+      if (typeof window !== 'undefined') {
+        try { window.localStorage?.clear?.(); } catch {}
+        try { window.sessionStorage?.clear?.(); } catch {}
+      }
+
+      // 2. Elimina tutte le Cache PWA (Service Worker Caches)
+      const cacheStorage = (typeof window !== 'undefined' && window.caches) ? window.caches : (typeof caches !== 'undefined' ? caches : null);
+      if (cacheStorage && typeof cacheStorage.keys === 'function') {
+        const cacheNames = await cacheStorage.keys();
+        await Promise.all(cacheNames.map((name) => cacheStorage.delete(name)));
+      }
+
+      // 3. Deregistra tutti i Service Worker attivi
+      const nav = (typeof window !== 'undefined' && window.navigator) ? window.navigator : (typeof navigator !== 'undefined' ? navigator : null);
+      if (nav && 'serviceWorker' in nav && nav.serviceWorker?.getRegistrations) {
+        const registrations = await nav.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map((reg) => reg.unregister()));
+      }
+
+      // 4. Elimina eventuali database IndexedDB
+      const idb = (typeof window !== 'undefined' && window.indexedDB) ? window.indexedDB : (typeof indexedDB !== 'undefined' ? indexedDB : null);
+      if (idb && typeof idb.databases === 'function') {
+        const dbs = await idb.databases();
+        dbs.forEach((db) => {
+          if (db.name) idb.deleteDatabase(db.name);
+        });
+      }
+    } catch (err) {
+      console.warn('[DDS] Errore parziale durante la pulizia cache:', err);
+    } finally {
+      // 5. Ricarica pulita con cache-buster nell'URL
+      if (shouldReload && typeof window !== 'undefined' && window.location) {
+        const cleanUrl = window.location.origin + window.location.pathname + '?reset=' + Date.now();
+        window.location.replace(cleanUrl);
+      }
+    }
+
+    return { ok: true };
+  }
+
+  async performHardReset(options = {}) {
+    return Save.performHardReset(options);
+  }
+}
+
+export async function performHardReset(options = {}) {
+  return Save.performHardReset(options);
 }
 
