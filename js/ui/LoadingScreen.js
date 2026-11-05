@@ -27,14 +27,17 @@ export class LoadingScreen {
         <h1 class="display loading-title">Diggy Diggy Sand</h1>
         <div class="loading-sub">Preparazione della spedizione</div>
         <div class="loading-bar-wrap">
-          <div class="obelisk-bar glow"><div class="fill"></div></div>
-          <div class="loading-pct num">0%</div>
+          <div id="loader-bar-track" class="obelisk-bar loader-bar-track glow">
+            <div id="loader-bar-fill" class="fill loader-bar-fill"></div>
+          </div>
+          <div id="loader-pct" class="loading-pct num">0%</div>
         </div>
-        <div class="loading-status muted">Risveglio degli antichi meccanismi…</div>
+        <div id="loader-status" class="loading-status muted">Risveglio degli antichi meccanismi…</div>
         <p class="loading-tip"></p>
         <button type="button" class="btn start-btn hidden">Inizia Spedizione</button>
       </div>`;
     this.bar = this.root.querySelector('.obelisk-bar');
+    this.fill = this.root.querySelector('#loader-bar-fill, .loader-bar-fill, .fill');
     this.pct = this.root.querySelector('.loading-pct');
     this.status = this.root.querySelector('.loading-status');
     this.tip = this.root.querySelector('.loading-tip');
@@ -52,8 +55,11 @@ export class LoadingScreen {
   }
 
   _render() {
-    const p = Math.round(this.display * 100);
+    const p = Math.max(0, Math.min(100, Math.round(this.display * 100)));
     this.bar.style.setProperty('--p', p);
+    if (this.fill) {
+      this.fill.style.width = `${p}%`;
+    }
     this.pct.textContent = `${p}%`;
   }
 
@@ -64,8 +70,16 @@ export class LoadingScreen {
    * @param {{audio, report}} hooks
    */
   run(manager, loadPromise, { audio, getReport } = {}) {
-    manager.onProgress = (_url, loaded, total) => {
-      if (total > 0) this.target = Math.max(this.target, loaded / total);
+    manager.onProgress = (url, loaded, total) => {
+      if (total > 0) {
+        this.target = Math.max(this.target, loaded / total);
+        const itemShort = url ? url.split('/').pop() : '';
+        if (this.status) {
+          this.status.textContent = itemShort
+            ? `Caricamento asset: ${itemShort} (${loaded}/${total})`
+            : `Caricamento asset (${loaded}/${total})…`;
+        }
+      }
     };
     loadPromise.then(() => {
       this.target = 1;
@@ -73,7 +87,7 @@ export class LoadingScreen {
       const fb = getReport?.().fallback.length ?? 0;
       this.status.textContent = fb
         ? `Pronto. ${fb} risorse sostituite da versioni procedurali.`
-        : 'Pronto.';
+        : 'Pronto. Tutti gli asset sono stati verificati con successo.';
     });
 
     // Easing verso il target, velocità minima: la barra non salta mai e il lore resta leggibile.

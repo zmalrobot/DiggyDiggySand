@@ -24,22 +24,22 @@ export const MODEL_REGISTRY = {
   'tools/shovel_basic.glb': { id: 'TOOL_SHOVEL', file: './assets/models/tools/shovel_basic.glb', fallback: 'createShovel', height: 0.9 },
   'tools/shovel_atlantean.glb': { id: 'TOOL_SHOVEL_ATLANTEAN', file: './assets/models/tools/shovel_atlantean.glb', fallback: 'createShovel', height: 0.9 },
   // Machinery & Fleet
-  'fleet/worker.glb': { id: 'MODEL_WORKER', file: './assets/models/fleet/worker_animated.glb', fallback: 'createWorker', height: 1.4 },
+  'fleet/worker.glb': { id: 'MODEL_WORKER', file: './assets/models/fleet/worker.glb', fallback: 'createWorker', height: 1.4 },
   'fleet/worker_animated.glb': { id: 'MODEL_WORKER_ANIMATED', file: './assets/models/fleet/worker_animated.glb', fallback: 'createWorker', height: 1.4 },
-  'fleet/excavator.glb': { id: 'MODEL_EXCAVATOR', file: './assets/models/fleet/excavator_rigged.glb', fallback: 'createExcavator', height: 2.5 },
+  'fleet/excavator.glb': { id: 'MODEL_EXCAVATOR', file: './assets/models/fleet/excavator.glb', fallback: 'createExcavator', height: 2.5 },
   'fleet/excavator_rigged.glb': { id: 'MODEL_EXCAVATOR_RIGGED', file: './assets/models/fleet/excavator_rigged.glb', fallback: 'createExcavator', height: 2.5 },
-  'machinery/worker_scarab.glb': { id: 'UNIT_SCARAB', file: './assets/models/fleet/worker_animated.glb', fallback: 'createWorker', height: 1.4 },
-  'machinery/excavator_steam.glb': { id: 'UNIT_EXCAVATOR', file: './assets/models/fleet/excavator_rigged.glb', fallback: 'createExcavator', height: 2.5 },
+  'machinery/worker_scarab.glb': { id: 'UNIT_SCARAB', file: './assets/models/machinery/worker_scarab.glb', fallback: 'createWorker', height: 1.4 },
+  'machinery/excavator_steam.glb': { id: 'UNIT_EXCAVATOR', file: './assets/models/machinery/excavator_steam.glb', fallback: 'createExcavator', height: 2.5 },
   'machinery/dredge.glb': { id: 'UNIT_DREDGE', file: './assets/models/machinery/dredge.glb', fallback: 'createMonolith', height: 3.5 },
   // Props
   'props/chest_animated.glb': { id: 'MODEL_CHEST_ANIMATED', file: './assets/models/props/chest_animated.glb', fallback: 'createChest', height: 0.85 },
   // Ruins & City
   'city/obelisk.glb': { id: 'MODEL_OBELISK', file: './assets/models/city/obelisk.glb', fallback: 'createObelisk', height: 6.0 },
-  'city/chest.glb': { id: 'MODEL_CHEST', file: './assets/models/props/chest_animated.glb', fallback: 'createChest', height: 0.85 },
+  'city/chest.glb': { id: 'MODEL_CHEST', file: './assets/models/city/chest.glb', fallback: 'createChest', height: 0.85 },
   'city/pillar_ruin.glb': { id: 'MODEL_PILLAR_RUIN', file: './assets/models/city/pillar_ruin.glb', fallback: 'createPillar', height: 5.0 },
-  'ruins/column.glb': { id: 'RUIN_COLUMN', file: './assets/models/city/pillar_ruin.glb', fallback: 'createPillar', height: 5.0 },
+  'ruins/column.glb': { id: 'RUIN_COLUMN', file: './assets/models/ruins/column.glb', fallback: 'createPillar', height: 5.0 },
   'ruins/temple_center.glb': { id: 'RUIN_TEMPLE', file: './assets/models/ruins/temple_center.glb', fallback: 'createObelisk', height: 6.0 },
-  'ruins/chest.glb': { id: 'RUIN_CHEST', file: './assets/models/props/chest_animated.glb', fallback: 'createChest', height: 0.85 },
+  'ruins/chest.glb': { id: 'RUIN_CHEST', file: './assets/models/ruins/chest.glb', fallback: 'createChest', height: 0.85 },
 };
 
 const withTimeout = (promise, ms, label) => new Promise((resolve, reject) => {
@@ -55,12 +55,36 @@ export class AssetLoader {
     this.animations = new Map();   // id -> THREE.AnimationClip[]
     this.pending = new Set();      // item ancora in corso (per il timeout globale)
     this.report = { loaded: [], fallback: [] };
+    this.failedModels = [];        // { key, path, reason, vertices }
     this.maxAnisotropy = 16;
     this.manifest = null;
+    this._fallbackPopupShown = false;
   }
 
   setSettings(settings) {
     this.settings = settings;
+  }
+
+  /**
+   * Convalida geometrica del modello GLTF: verifica che non sia un placeholder da <= 36 vertici (cubo).
+   * Restituisce il conteggio totale di vertici o lancia un errore esplicito.
+   */
+  validateModelGeometry(gltf, identifier = 'unknown') {
+    if (!gltf || !gltf.scene) {
+      throw new Error(`Scena GLTF nulla o non valida per "${identifier}"`);
+    }
+    let totalVertices = 0;
+    gltf.scene.traverse((child) => {
+      if ((child.isMesh || child.isSkinnedMesh) && child.geometry?.attributes?.position) {
+        totalVertices += child.geometry.attributes.position.count;
+      }
+    });
+
+    if (totalVertices <= 36) {
+      throw new Error(`Modello placeholder rilevato (${totalVertices} vertici <= 36). Attivazione fallback.`);
+    }
+
+    return totalVertices;
   }
 
   /**
@@ -192,23 +216,45 @@ export class AssetLoader {
     const models = entries.map((m) => this._track(`model:${m.id}`, async () => {
       if (!loader) throw new Error('GLTFLoader assente');
       const filePath = m.file.startsWith('./') ? m.file : `./${m.file}`;
-      const gltf = await loader.loadAsync(filePath);
-      if (gltf.animations && gltf.animations.length) {
-        this.animations.set(m.id, gltf.animations);
-        this.animations.set(m.file, gltf.animations);
-        this.animations.set(filePath, gltf.animations);
-        gltf.scene.userData.animations = gltf.animations;
+      try {
+        const gltf = await loader.loadAsync(filePath);
+        const vertCount = this.validateModelGeometry(gltf, m.id);
+
+        if (gltf.animations && gltf.animations.length) {
+          this.animations.set(m.id, gltf.animations);
+          this.animations.set(m.file, gltf.animations);
+          this.animations.set(filePath, gltf.animations);
+          gltf.scene.userData.animations = gltf.animations;
+        }
+        const targetH = this._resolveTargetHeight(m.id);
+        this.normalizeModel(gltf.scene, targetH);
+        this._prepareMesh(gltf.scene);
+        this.models.set(m.id, gltf.scene);
+        this.models.set(m.file, gltf.scene);
+        this.models.set(filePath, gltf.scene);
+        this.report.loaded.push(m.id);
+      } catch (err) {
+        console.warn(`[Assets] Modello "${m.id}" non valido o non caricabile (${filePath}): ${err.message}. Attivazione fallback.`);
+        this.failedModels.push({ key: m.id, path: filePath, reason: err.message });
+        this.report.fallback.push(m.id);
+        const fallbackMesh = createMesh(m.id);
+        this.models.set(m.id, fallbackMesh);
+        this.models.set(m.file, fallbackMesh);
+        this.models.set(filePath, fallbackMesh);
       }
-      const targetH = this._resolveTargetHeight(m.id);
-      this.normalizeModel(gltf.scene, targetH);
-      this._prepareMesh(gltf.scene);
-      this.models.set(m.id, gltf.scene);
-      this.models.set(m.file, gltf.scene);
-      this.models.set(filePath, gltf.scene);
-      this.report.loaded.push(m.id);
     }));
 
     await Promise.all([...fonts, factory, ...models]);
+  }
+
+  /** Precarica tutti gli asset con notifica di avanzamento in tempo reale. */
+  async preloadAll(onProgress = null) {
+    if (typeof onProgress === 'function') {
+      this.manager.onProgress = (url, loaded, total) => {
+        onProgress(loaded, total, url);
+      };
+    }
+    return this.loadAll();
   }
 
   setMaxAnisotropy(val) {
@@ -216,6 +262,7 @@ export class AssetLoader {
   }
 
   _prepareMesh(root) {
+    if (!root) return;
     const texKeys = ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'bumpMap', 'aoMap', 'emissiveMap'];
     root.traverse((o) => {
       if (o.isMesh) {
@@ -260,6 +307,8 @@ export class AssetLoader {
         const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
         const loader = new GLTFLoader(this.manager);
         const gltf = await loader.loadAsync(file);
+        this.validateModelGeometry(gltf, id);
+
         if (gltf && gltf.scene) {
           if (gltf.animations && gltf.animations.length) {
             this.animations.set(id, gltf.animations);
@@ -278,7 +327,12 @@ export class AssetLoader {
         }
       } catch (err) {
         console.warn(`[Assets] Caricamento GLTF per "${id}" (${file}) fallito, fallback procedurale:`, err?.message || err);
+        this.failedModels.push({ key: id, path: file, reason: err?.message || String(err) });
         this.report.fallback.push(id);
+        const fallbackMesh = createMesh(id);
+        this.models.set(id, fallbackMesh);
+        if (reg?.id) this.models.set(reg.id, fallbackMesh);
+        this.models.set(file, fallbackMesh);
       }
     }
 
@@ -287,7 +341,7 @@ export class AssetLoader {
 
   /**
    * Restituisce un modello clonabile in base all'impostazione corrente (GLTF vs Procedurale):
-   * Se modelStyle === 'gltf' e il modello è disponibile, clona con flatShading e shadow mapping.
+   * Se modelStyle === 'gltf' e il modello è disponibile, clona con SkeletonUtils.clone per preservare rig e animazioni.
    * Se modelStyle === 'procedural' o il modello non è precaricato, usa il fallback procedurale.
    */
   getModel(id, fallbackGenerator = null) {
@@ -327,5 +381,63 @@ export class AssetLoader {
       }
     }
     return createMesh(id);
+  }
+
+  /**
+   * Mostra un popup modale cerimoniale se uno o più modelli hanno fallito il caricamento o la validazione.
+   */
+  showAssetFallbackPopup(container = (typeof document !== 'undefined' ? document.body : null)) {
+    if (!container || !this.failedModels || this.failedModels.length === 0 || this._fallbackPopupShown) {
+      return null;
+    }
+    this._fallbackPopupShown = true;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'asset-fallback-popup';
+    overlay.className = 'modal-overlay asset-fallback-overlay';
+    overlay.innerHTML = `
+      <div class="modal-card cerimonial-card asset-fallback-card" role="dialog" aria-modal="true" aria-labelledby="fallback-popup-title">
+        <div class="modal-header">
+          <h2 id="fallback-popup-title" class="modal-title font-display">AVVISO CARICAMENTO MODELLI 3D</h2>
+        </div>
+        <div class="modal-body">
+          <p class="fallback-warning-text">
+            Alcuni modelli 3D esterni non sono stati caricati correttamente o risultavano incompleti (${this.failedModels.length} asset).
+            È stata attivata automaticamente la pipeline procedurale articolata di emergenza.
+          </p>
+          <div class="fallback-list-container">
+            <ul class="fallback-items-list">
+              ${this.failedModels.map(m => `
+                <li class="fallback-item">
+                  <span class="fallback-item-key font-data">${m.key}</span>
+                  <span class="fallback-item-reason">${m.reason}</span>
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-primary btn-gold font-heading btn-dismiss-fallback">CONTINUA</button>
+        </div>
+      </div>
+    `;
+
+    const closePopup = () => {
+      overlay.remove();
+      document.removeEventListener('keydown', onKeyDown);
+    };
+
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') closePopup();
+    };
+
+    overlay.querySelector('.btn-dismiss-fallback')?.addEventListener('click', closePopup);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closePopup();
+    });
+    document.addEventListener('keydown', onKeyDown);
+
+    container.appendChild(overlay);
+    return overlay;
   }
 }

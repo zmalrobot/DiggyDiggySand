@@ -212,11 +212,16 @@ const ID_TO_FALLBACK = {
   END_BIZ_CONE: 'createCone',
 };
 
-/** Crea il fallback per un ID di asset. ID sconosciuto: blocco di pietra generico. */
+/** Crea il fallback per un ID di asset. ID sconosciuto: monolite cerimoniale articolato (zero cubi piatti). */
 export function createFallback(id) {
   const fn = FallbackMeshes[ID_TO_FALLBACK[id]];
   if (fn) return fn();
-  return mesh(new THREE.BoxGeometry(1, 1, 1), mat(PALETTE_3D.ruinsStone, { roughness: 0.88, metalness: 0.02, normalMap: getStoneNormalMap() }));
+  // Struttura archeologica articolata multi-pezzo per garantire sempre zero cubi grezzi
+  const g = new THREE.Group();
+  g.add(mesh(new THREE.CylinderGeometry(0.45, 0.65, 1.4, 6), mat(PALETTE_3D.sandBedrock, { roughness: 0.85, metalness: 0.05, normalMap: getStoneNormalMap() }), [0, 0.7, 0]));
+  g.add(mesh(new THREE.CylinderGeometry(0.55, 0.45, 0.25, 6), mat(PALETTE_3D.orichalcum, { metalness: 0.85, roughness: 0.22 }), [0, 1.5, 0]));
+  g.add(mesh(new THREE.OctahedronGeometry(0.35, 0), mat(PALETTE_3D.atlantisCoreTeal, { emissive: 0x00F2FF, emissiveIntensity: 0.85, roughness: 0.15, metalness: 0.1 }), [0, 1.85, 0]));
+  return g;
 }
 
 /**
@@ -237,4 +242,6 @@ export function createMesh(assetKey) {
 }
 
 export const FALLBACK_IDS = Object.keys(ID_TO_FALLBACK);
+export const ProceduralFactory = { FallbackMeshes, createFallback, createMesh, FALLBACK_IDS };
+
 

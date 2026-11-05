@@ -141,6 +141,11 @@ async function boot() {
 
   await startClicked;
   menu.show();
+
+  // Mostra il popup cerimoniale se uno o più modelli GLTF hanno attivato la fallback di emergenza
+  if (assets.failedModels && assets.failedModels.length > 0) {
+    assets.showAssetFallbackPopup();
+  }
 }
 
 boot().catch((e) => {
