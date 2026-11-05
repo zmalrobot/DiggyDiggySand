@@ -129,6 +129,14 @@ async function boot() {
   window.__dds = { settings, settingsModal, audio, save, scene, assets, menu, game, debugTools, statsManager, achievements, cosmeticsManager, wardrobeModal, biomeManager, biomeSelectModal, i18n, profiler, profilerOverlay, accessibility, simulateProgression, sanityAudit: SanityAudit };
   window.__DDS_DEBUG = window.__DDS_DEBUG || {};
   window.__DDS_DEBUG.simulateProgression = simulateProgression;
+  window.__DDS_DEBUG.testModelScale = (factor) => {
+    const f = Math.max(0.1, Math.min(5.0, Number(factor) || 1.0));
+    settings.set('graphics.modelScaleFactor', f);
+    if (game?.workers?.setModelScale) {
+      game.workers.setModelScale(f);
+    }
+    return `Model scale factor set to ${f}x`;
+  };
   window.__DDS_AUDIT = window.__DDS_AUDIT || { run: (opts) => SanityAudit.run(opts), SanityAudit };
 
   await startClicked;

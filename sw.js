@@ -108,9 +108,14 @@ const CORE_ASSETS = [
   // Modelli 3D Low-Poly GLTF (Kenney / Quaternius CC0)
   './assets/models/tools/shovel.glb',
   './assets/models/fleet/worker.glb',
+  './assets/models/fleet/worker_animated.glb',
   './assets/models/fleet/excavator.glb',
+  './assets/models/fleet/excavator_rigged.glb',
   './assets/models/city/obelisk.glb',
   './assets/models/city/chest.glb',
+  './assets/models/city/pillar_ruin.glb',
+  './assets/models/props/chest_animated.glb',
+  './vendor/three/addons/utils/SkeletonUtils.js',
 ];
 
 // 1. Installazione e precaching degli asset core

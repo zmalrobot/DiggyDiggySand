@@ -193,6 +193,7 @@ export class Workers {
 
     this.workers = []; // { type, mesh, timer, cycleTime, x, z, targetX, targetZ, digRadius, powerPerHit }
     this.currentSkin = 'machinery_standard';
+    this.modelScaleFactor = 1.0;
     this._unsubs = [
       events.on('upgrade:bought', ({ id }) => {
         if (UPGRADE_CATALOG[id]?.branch === 'fleet') {
@@ -206,6 +207,9 @@ export class Workers {
       }),
       events.on('settings:modelStyleChanged', () => {
         this.rebuildVisualMeshes();
+      }),
+      events.on('settings:modelScaleChanged', (factor) => {
+        this.setModelScale(factor);
       }),
     ];
 
@@ -225,6 +229,48 @@ export class Workers {
     }
   }
 
+  /** Imposta la calibrazione globale della scala dei modelli in tempo reale. */
+  setModelScale(factor) {
+    const f = Math.max(0.1, Math.min(5.0, Number(factor) || 1.0));
+    this.modelScaleFactor = f;
+    for (const w of this.workers) {
+      if (w.mesh) {
+        const base = w.baseScale || 1.0;
+        w.mesh.scale.setScalar(base * f);
+      }
+    }
+  }
+
+  /** Inizializza l'AnimationMixer per i modelli scheletrici provvisti di clip. */
+  _initWorkerAnimation(w, mesh) {
+    const clips = mesh.userData?.animations || this.assets?.getAnimations?.(
+      w.type === 'scarab' ? 'machinery/worker_scarab.glb' :
+      w.type === 'excavator' ? 'machinery/excavator_steam.glb' : 'machinery/dredge.glb'
+    ) || [];
+
+    if (clips && clips.length > 0) {
+      try {
+        const mixer = new THREE.AnimationMixer(mesh);
+        const actions = {};
+        for (const clip of clips) {
+          if (clip && clip.name) {
+            const act = mixer.clipAction(clip);
+            actions[clip.name.toLowerCase()] = act;
+          }
+        }
+        const idleAction = actions['idle'] || actions['static'] || actions['open'] || Object.values(actions)[0];
+        if (idleAction) {
+          idleAction.play();
+        }
+        w.mixer = mixer;
+        w.actions = actions;
+        w.currentAction = idleAction;
+      } catch (err) {
+        console.warn('[Workers] Inizializzazione AnimationMixer fallita:', err);
+      }
+    }
+  }
+
   /**
    * Ricostruisce le mesh visive di tutti i lavoratori attivi a runtime
    * in seguito al cambio di stile modello nelle impostazioni (GLTF vs Procedurali).
@@ -237,6 +283,14 @@ export class Workers {
       const oldMesh = w.mesh;
       const pos = oldMesh.position.clone();
       const rot = oldMesh.rotation.clone();
+
+      if (w.mixer) {
+        w.mixer.stopAllAction();
+        w.mixer.uncacheRoot(oldMesh);
+        w.mixer = null;
+        w.actions = {};
+        w.currentAction = null;
+      }
 
       this.group.remove(oldMesh);
       DisposeUtils.deepDispose(oldMesh);
@@ -263,8 +317,12 @@ export class Workers {
         }
         newMesh.position.copy(pos);
         newMesh.rotation.copy(rot);
+        const baseScale = newMesh.scale.x || 1.0;
+        w.baseScale = baseScale;
+        newMesh.scale.setScalar(baseScale * this.modelScaleFactor);
         this.group.add(newMesh);
         w.mesh = newMesh;
+        this._initWorkerAnimation(w, newMesh);
       }
     }
   }
@@ -289,11 +347,12 @@ export class Workers {
       // Rimuovi se in eccesso
       while (currentOfType.length > targetVisual) {
         const removed = currentOfType.pop();
+        if (removed.mixer) {
+          removed.mixer.stopAllAction();
+          removed.mixer.uncacheRoot(removed.mesh);
+        }
         this.group.remove(removed.mesh);
-        removed.mesh.traverse((o) => {
-          o.geometry?.dispose?.();
-          if (o.material) [].concat(o.material).forEach((m) => m?.dispose?.());
-        });
+        DisposeUtils.deepDispose(removed.mesh);
         this.workers = this.workers.filter((w) => w !== removed);
       }
 
@@ -353,6 +412,9 @@ export class Workers {
 
     m.position.set(x, y, z);
     m.rotation.y = Math.random() * Math.PI * 2;
+
+    const baseScale = m.scale.x || 1.0;
+    m.scale.setScalar(baseScale * this.modelScaleFactor);
     this.group.add(m);
 
     const targetPos = this.getNewTargetPosition(x, z, 8);
@@ -368,7 +430,13 @@ export class Workers {
       targetX: targetPos.x,
       targetZ: targetPos.z,
       animPhase: Math.random() * 6.28,
+      baseScale,
+      mixer: null,
+      actions: {},
+      currentAction: null,
+      isMoving: false,
     };
+    this._initWorkerAnimation(worker, m);
     return worker;
   }
 
@@ -397,6 +465,11 @@ export class Workers {
     for (const w of this.workers) {
       w.timer += realDt;
       w.animPhase += realDt;
+
+      // Aggiornamento mixer di animazione per rig scheletrici (Three.js AnimationMixer)
+      if (w.mixer) {
+        w.mixer.update(realDt);
+      }
 
       // Clamping immediato su coordinate e mesh del lavoratore / escavatore
       const worker = w;
@@ -448,7 +521,35 @@ export class Workers {
       w.x = Math.max(-BOUNDARY_LIMIT, Math.min(BOUNDARY_LIMIT, w.x));
       w.z = Math.max(-BOUNDARY_LIMIT, Math.min(BOUNDARY_LIMIT, w.z));
       w.mesh.rotation.y = Math.atan2(dx, dz);
+
+      // Transizione fluida verso camminata per modelli animati
+      if (w.mixer && w.actions?.walk) {
+        if (w.currentAction !== w.actions.walk) {
+          w.actions.walk.reset().fadeIn(0.2).play();
+          if (w.currentAction && w.currentAction !== w.actions.walk) {
+            w.currentAction.fadeOut(0.2);
+          }
+          w.currentAction = w.actions.walk;
+        }
+        w.actions.walk.timeScale = 1.2;
+      }
+      w.isMoving = true;
+      w.mesh.rotation.x = 0;
     } else {
+      // Raggiunto il punto di scavo: transizione verso idle
+      if (w.mixer && w.actions?.idle) {
+        if (w.currentAction !== w.actions.idle) {
+          w.actions.idle.reset().fadeIn(0.2).play();
+          if (w.currentAction && w.currentAction !== w.actions.idle) {
+            w.currentAction.fadeOut(0.2);
+          }
+          w.currentAction = w.actions.idle;
+        }
+      }
+      w.isMoving = false;
+      // Inclinazione ritmica sull'asse X che simula il colpo di pala
+      w.mesh.rotation.x = Math.sin(w.animPhase * 8) * 0.15;
+
       // Sceglie un nuovo punto vicino strettamente interno al perimetro
       const nextTarget = this.getNewTargetPosition(w.x, w.z, 12);
       w.targetX = nextTarget.x;
@@ -460,7 +561,7 @@ export class Workers {
     w.z = Math.max(-BOUNDARY_LIMIT, Math.min(BOUNDARY_LIMIT, w.z));
     w.mesh.position.set(w.x, this.terrain.heightAt(w.x, w.z), w.z);
 
-    // Movimento oscillatorio delle zampette
+    // Movimento oscillatorio delle zampette per modelli procedurali
     if (w.mesh.userData.legs) {
       w.mesh.userData.legs.rotation.y = Math.sin(w.animPhase * 8) * 0.15;
     }
@@ -585,6 +686,11 @@ export class Workers {
   dispose() {
     this._unsubs.forEach((u) => u());
     for (const w of this.workers) {
+      if (w.mixer) {
+        w.mixer.stopAllAction();
+        w.mixer.uncacheRoot(w.mesh);
+        w.mixer = null;
+      }
       this.group.remove(w.mesh);
       w.mesh.traverse((o) => {
         o.geometry?.dispose?.();

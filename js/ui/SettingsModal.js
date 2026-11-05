@@ -242,6 +242,11 @@ export class SettingsModal {
         this._select('graphics.modelStyle'),
         i18n.t('settings.graphics.model_style_hint') || 'Alterna tra modelli low-poly GLTF di Kenney/Quaternius e geometrie procedurali matematiche'
       ),
+      this._row(
+        i18n.t('settings.graphics.model_scale_label') || 'Fattore Scala Modelli',
+        this._slider('graphics.modelScaleFactor', { format: (v) => `${Number(v).toFixed(1)}×` }),
+        i18n.t('settings.graphics.model_scale_hint') || 'Regola la dimensione globale di lavoratori e macchinari (0.5× - 2.0×)'
+      ),
       this._row(i18n.t('settings.shadows') || 'Ombre', this._select('graphics.shadows')),
       this._row(i18n.t('settings.graphicsQuality') || 'Qualità particelle', this._select('graphics.particles')),
       this._row(i18n.t('settings.postProcessing') || 'Post-Processing (Bloom & Vignette)', this._toggle('graphics.postProcessing', 'Post-Processing'), i18n.t('settings.postProcessingHint') || 'Bagliori emissivi e color grading'),

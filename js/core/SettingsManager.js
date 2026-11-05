@@ -20,6 +20,7 @@ export const SCHEMA = {
   'graphics.showProfiler': { type: 'bool', def: false },
   'graphics.raytracingSSR': { type: 'bool', def: false },
   'graphics.modelStyle': { type: 'enum', def: 'gltf', values: ['gltf', 'procedural'] },
+  'graphics.modelScaleFactor': { type: 'range', def: 1.0, min: 0.5, max: 2.0, step: 0.1 },
   'controls.cameraSens': { type: 'range', def: 1, min: 0.25, max: 2, step: 0.05 },
   'controls.invertY':    { type: 'bool',  def: false },
   'controls.screenShake':{ type: 'bool',  def: true },
@@ -120,6 +121,7 @@ export class SettingsManager {
     if (key === 'showProfiler') key = 'graphics.showProfiler';
     if (key === 'raytracingSSR') key = 'graphics.raytracingSSR';
     if (key === 'modelStyle') key = 'graphics.modelStyle';
+    if (key === 'modelScaleFactor') key = 'graphics.modelScaleFactor';
     if (key === 'haptics') key = 'controls.haptics';
     if (key === 'notation') key = 'game.notation';
     if (key === 'reducedMotion') key = 'accessibility.reducedMotion';
@@ -142,6 +144,7 @@ export class SettingsManager {
     if (key === 'showProfiler') key = 'graphics.showProfiler';
     if (key === 'raytracingSSR') key = 'graphics.raytracingSSR';
     if (key === 'modelStyle') key = 'graphics.modelStyle';
+    if (key === 'modelScaleFactor') key = 'graphics.modelScaleFactor';
     if (key === 'haptics') key = 'controls.haptics';
     if (key === 'notation') key = 'game.notation';
     if (key === 'reducedMotion') key = 'accessibility.reducedMotion';
@@ -162,6 +165,10 @@ export class SettingsManager {
       this._notify('modelStyle', v);
       events.emit('settings:modelStyleChanged', v);
     }
+    if (key === 'graphics.modelScaleFactor') {
+      this._notify('modelScaleFactor', v);
+      events.emit('settings:modelScaleChanged', v);
+    }
     if (key === 'controls.haptics') {
       this._notify('haptics', v);
     }
@@ -179,6 +186,7 @@ export class SettingsManager {
     if (key === 'showProfiler') key = 'graphics.showProfiler';
     if (key === 'raytracingSSR') key = 'graphics.raytracingSSR';
     if (key === 'modelStyle') key = 'graphics.modelStyle';
+    if (key === 'modelScaleFactor') key = 'graphics.modelScaleFactor';
     if (key === 'haptics') key = 'controls.haptics';
     if (key === 'notation') key = 'game.notation';
     if (!this.listeners.has(key)) this.listeners.set(key, new Set());
