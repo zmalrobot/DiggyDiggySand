@@ -672,6 +672,7 @@ export const DICTIONARY = {
     pause: {
       title: 'Spedizione in Pausa',
       subtitle: 'Tempo trascorso: {time} · Sabbia: {sand}',
+      elapsed: 'Tempo trascorso',
       quickSettings: 'Impostazioni Rapide',
       masterVol: 'Volume Master',
       muteLabel: 'Silenzioso (Muto)',
@@ -679,7 +680,7 @@ export const DICTIONARY = {
       resume: 'Riprendi Spedizione',
       stats: 'Statistiche & Trofei',
       wardrobe: 'Guardaroba & Skin',
-      prestige: 'Santuario dei Predecessori (τ {count})',
+      prestige: 'Santuario dei Predecessori',
       settingsBtn: 'Tutte le Impostazioni',
       saveAndExit: 'Salva ed Esci',
     },
@@ -1456,6 +1457,7 @@ export const DICTIONARY = {
     pause: {
       title: 'Expedition Paused',
       subtitle: 'Time elapsed: {time} · Sand: {sand}',
+      elapsed: 'Time elapsed',
       quickSettings: 'Quick Settings',
       masterVol: 'Master Volume',
       muteLabel: 'Mute Audio',
@@ -1463,7 +1465,7 @@ export const DICTIONARY = {
       resume: 'Resume Expedition',
       stats: 'Stats & Trophies',
       wardrobe: 'Wardrobe & Skins',
-      prestige: 'Sanctuary of Ancestors (τ {count})',
+      prestige: 'Sanctuary of Ancestors',
       settingsBtn: 'All Settings',
       saveAndExit: 'Save & Exit',
     },
@@ -1676,8 +1678,13 @@ export class I18n {
 
     if (typeof cur !== 'string') return cur ?? key;
 
-    // 4. Interpolazione parametri dinamici {key}
-    return cur.replace(/\{(\w+)\}/g, (_, k) => (params[k] !== undefined ? params[k] : `{${k}}`));
+    // 4. Interpolazione parametri dinamici {key} con supporto case-insensitive
+    return cur.replace(/\{(\w+)\}/g, (_, k) => {
+      if (params[k] !== undefined) return params[k];
+      const lowerK = k.toLowerCase();
+      const matchedKey = Object.keys(params).find((pk) => pk.toLowerCase() === lowerK);
+      return matchedKey !== undefined ? params[matchedKey] : `{${k}}`;
+    });
   }
 
   static updateDOM(root = typeof document !== 'undefined' ? document : null) {

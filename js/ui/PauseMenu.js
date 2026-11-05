@@ -10,7 +10,7 @@ import { i18n } from '../core/I18n.js';
 import { events } from '../core/Events.js';
 
 export class PauseMenu {
-  constructor(root = document.body, { game, settings, settingsModal, audio, save }) {
+  constructor(root = document.body, { game, settings, settingsModal, audio, save } = {}) {
     this.root = root;
     this.game = game;
     this.settings = settings;
@@ -104,12 +104,16 @@ export class PauseMenu {
     const optMed = i18n.t('settings.graphicsOptions.med') || 'Media (Bilanciata)';
     const optHigh = i18n.t('settings.graphicsOptions.high') || 'Alta (Dettagliata)';
 
+    const tablets = this.save?.getTablets?.() ?? 0;
+    let prestigeLabel = i18n.t('pause.prestige', { count: tablets, COUNT: tablets }) || 'Santuario dei Predecessori';
+    prestigeLabel = prestigeLabel.replace(/\s*\([τtT]\s*(\d+|\{[^}]+\})\)/gi, '').trim();
+
     this.el.innerHTML = `
       <div class="pause-card panel">
         <header class="pause-header">
           <div class="pause-badge">⏳</div>
           <h2 class="display pause-title" data-i18n="pause.title">${titleText}</h2>
-          <div class="pause-sub muted">${elapsedLabel}: <span class="accent">${timeFormatted}</span> · ${sandLabel}: <span class="accent">${sandFormatted}</span></div>
+          <div class="pause-sub muted"><span data-i18n="pause.elapsed">${elapsedLabel}</span>: <span class="accent">${timeFormatted}</span> · <span data-i18n="hud.sand">${sandLabel}</span>: <span class="accent">${sandFormatted}</span></div>
         </header>
 
         <div class="pause-quick-settings">
@@ -148,7 +152,7 @@ export class PauseMenu {
           <button type="button" class="btn btn-secondary" data-act="wardrobe" data-i18n="pause.wardrobe">${i18n.t('pause.wardrobe') || 'Guardaroba & Skin'}</button>
           <button type="button" class="btn btn-secondary" data-act="help" data-i18n="menu.help">${i18n.t('menu.help') || 'Aiuto & Comandi'}</button>
           <button type="button" class="btn btn-secondary" data-act="credits" data-i18n="menu.credits">${i18n.t('menu.credits') || 'Crediti & Licenze'}</button>
-          <button type="button" class="btn btn-secondary" data-act="prestige"><span data-i18n="pause.prestige">${i18n.t('pause.prestige') || 'Santuario dei Predecessori'}</span> (τ ${this.save?.getTablets?.() ?? 0})</button>
+          <button type="button" class="btn btn-secondary" data-act="prestige"><span data-i18n="pause.prestige">${prestigeLabel}</span> (<span class="tablets-count">τ ${tablets}</span>)</button>
           <button type="button" class="btn btn-secondary" data-act="settings" data-i18n="settings.title">${i18n.t('settings.title') || 'Tutte le Impostazioni'}</button>
           <button type="button" class="btn btn-danger" data-act="save-exit" data-i18n="pause.saveAndExit">${i18n.t('pause.saveAndExit') || 'Salva ed Esci'}</button>
         </div>

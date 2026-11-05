@@ -1,5 +1,7 @@
 /* Diggy Diggy Sand: stile Atlantean-Kemet (Art Bible §2-§4) */
 :root {
+  --ui-scale: 1;
+
   /* Font */
   --font-display: 'Cinzel Decorative', serif;
   --font-heading: 'Cinzel', serif;
@@ -31,6 +33,65 @@
 
   /* Smusso a 45° */
   --bevel: 14px;
+}
+
+/* Scalino Tablet / Schermi Medi */
+@media (max-width: 768px) {
+  :root {
+    --ui-scale: 0.85;
+  }
+  html {
+    font-size: 13.5px;
+  }
+}
+
+/* Scalino Smartphone Compatti */
+@media (max-width: 480px), (max-height: 740px) {
+  :root {
+    --ui-scale: 0.76;
+  }
+  html {
+    font-size: 12px;
+  }
+
+  /* Compattazione HUD Superiore e Contratti su Mobile */
+  .hud-metrics-panel {
+    width: min(94vw, 380px) !important;
+    padding: 5px 10px !important;
+    gap: 10px !important;
+  }
+
+  .contract-widget,
+  #active-contract-panel,
+  .directives-widget-container,
+  .directives-card {
+    transform: scale(0.82);
+    transform-origin: top left;
+  }
+
+  /* Compattazione Modali (Pausa, Impostazioni, Santuario, Guardaroba) */
+  .modal-content,
+  .pause-panel,
+  .pause-card,
+  .dialog-box,
+  .modal {
+    width: 92vw !important;
+    max-height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+    padding: 12px 14px !important;
+    overflow-y: auto !important;
+    gap: 6px !important;
+  }
+
+  .modal-content button,
+  .pause-panel button,
+  .pause-card button,
+  .pause-actions .btn,
+  .menu-btn {
+    min-height: 34px !important;
+    padding: 6px 10px !important;
+    font-size: 0.78rem !important;
+    margin: 2px 0 !important;
+  }
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -531,9 +592,16 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
 .toast.leaving { opacity: 0; }
 
 /* ===== HUD di gioco Ristrutturato (Metriche Top-Center, Dock Bottom-Center, Sigillo Trucchi Bottom-Right) ===== */
+#ui-layer,
+#hud-container,
 #hud {
   position: fixed;
   inset: 0;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
+  box-sizing: border-box;
+  padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
   z-index: 15;
   pointer-events: none;
   animation: hudIn 0.8s ease both;
@@ -698,13 +766,26 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
 }
 
 /* --- Zona 2: Bottom-Center Dock Comandi Principale --- */
+#hud-bottom-dock,
+.hud-bottom-dock,
 .hud-bottom-center {
-  position: fixed;
-  bottom: max(16px, env(safe-area-inset-bottom, 0px));
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 100;
+  position: fixed !important;
+  bottom: max(14px, calc(env(safe-area-inset-bottom, 0px) + 8px)) !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 850 !important;
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  gap: 6px;
+  padding: 4px 6px;
   pointer-events: none;
+}
+#hud-bottom-dock > *,
+.hud-bottom-dock > *,
+#hud-bottom-dock button,
+.hud-bottom-dock button {
+  pointer-events: auto !important;
 }
 
 .hud-dock-panel {
@@ -781,14 +862,14 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
 /* --- Zona 2.5: Medaglioni Abilità Attive (Branch 4) --- */
 .hud-abilities-dock, #hud-abilities-dock {
   position: fixed;
-  bottom: calc(max(16px, env(safe-area-inset-bottom, 0px)) + 64px);
+  bottom: calc(max(14px, calc(env(safe-area-inset-bottom, 0px) + 8px)) + 52px) !important;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   gap: 12px;
   align-items: center;
   justify-content: center;
-  z-index: 100;
+  z-index: 840 !important;
   pointer-events: none;
   transition: opacity 1.5s ease-out, transform 0.3s ease;
 }
@@ -1133,17 +1214,61 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
   color: var(--gold-glow);
   box-shadow: 0 0 8px rgba(245, 186, 35, 0.4);
 }
-.shop-content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-right: 4px; }
-.upgrade-card { padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; border: 1px solid rgba(212, 175, 55, 0.2); transition: border-color 0.2s, box-shadow 0.2s; }
-.upgrade-card:hover { border-color: var(--atlantis-teal); box-shadow: 0 0 12px rgba(15, 227, 193, 0.15); }
-.upgrade-card.maxed { opacity: 0.7; }
+.shop-items-list,
+.upgrade-list,
+.shop-content {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 8px 12px 32px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.upgrade-card,
+.shop-item {
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  background: rgba(4, 28, 44, 0.92);
+  border: 1px solid rgba(212, 175, 55, 0.45);
+  border-radius: 6px;
+  flex-shrink: 0 !important; /* Impedisce a flexbox di schiacciare le card verticalmente! */
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.upgrade-card:hover, .shop-item:hover { border-color: var(--atlantis-teal); box-shadow: 0 0 12px rgba(15, 227, 193, 0.15); }
+.upgrade-card.maxed, .shop-item.maxed { opacity: 0.7; }
 .upgrade-card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .upgrade-name { font-family: var(--font-heading); font-weight: 700; font-size: 0.95rem; color: var(--gold-pharaoh); }
 .upgrade-level { font-family: var(--font-data); font-weight: 700; font-size: 0.85rem; color: var(--atlantis-teal); }
 .upgrade-desc { font-size: 0.8rem; line-height: 1.4; margin: 0; }
 .upgrade-benefit { font-family: var(--font-data); font-weight: 600; font-size: 0.82rem; }
-.upgrade-card-foot { display: flex; justify-content: flex-end; margin-top: 4px; }
-.btn-buy { min-width: 140px; display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 14px; font-size: 0.82rem; }
+.upgrade-card-foot { display: flex; justify-content: stretch; width: 100%; margin-top: 6px; flex-shrink: 0 !important; }
+.upgrade-card .btn-buy,
+.shop-item .btn-buy,
+.upgrade-buy-btn {
+  display: flex !important;
+  visibility: visible !important;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 36px;
+  margin-top: 6px;
+  padding: 6px 12px;
+  font-family: var(--font-heading, 'Cinzel', serif);
+  font-size: 0.82rem;
+  font-weight: 700;
+  border-radius: 4px;
+  flex-shrink: 0 !important;
+}
+.upgrade-card.maxed .btn-buy,
+.shop-item.maxed .btn-buy {
+  justify-content: center;
+}
 .btn-buy.glow { box-shadow: inset 0 0 0 1.5px var(--gold-pharaoh), 0 0 12px rgba(245, 186, 35, 0.55); border-color: var(--gold-pharaoh); }
 .buy-cost { font-family: var(--font-data); font-weight: 800; font-size: 0.9rem; color: var(--gold-glow); }
 
@@ -2105,8 +2230,13 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
 
   /* Medaglioni Abilità Attive su Smartphone */
   .hud-abilities-dock, #hud-abilities-dock {
-    bottom: calc(var(--safe-bottom) + 56px);
+    position: fixed;
+    bottom: calc(max(14px, calc(env(safe-area-inset-bottom, 0px) + 8px)) + 52px) !important;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 840 !important;
     gap: 8px;
+    pointer-events: none;
   }
   .ability-medallion {
     width: 44px;
@@ -2116,14 +2246,21 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
   }
 
   /* Dock Comandi in Basso al Centro su Smartphone */
-  .hud-bottom-center, #hud-bottom-dock {
-    position: fixed;
-    bottom: var(--safe-bottom);
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 100;
+  #hud-bottom-dock,
+  .hud-bottom-dock,
+  .hud-bottom-center {
+    position: fixed !important;
+    bottom: max(14px, calc(env(safe-area-inset-bottom, 0px) + 8px)) !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    z-index: 850 !important;
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    gap: 6px;
+    padding: 4px 6px;
     pointer-events: none;
-    max-width: calc(100vw - 80px);
+    max-width: calc(100vw - 32px);
   }
 
   .hud-dock-panel, .hud-actions {
@@ -2182,18 +2319,17 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
   }
 
   /* Negozio Bottom Sheet */
-  #shop, #shop-root .shop-drawer, .shop-drawer {
-    top: auto;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    width: 100% !important;
-    max-width: 100% !important;
-    height: 85vh;
-    height: 85dvh;
-    max-height: 85dvh;
-    border-radius: 20px 20px 0 0;
-    padding: 12px 14px 20px !important;
+  #shop, #shop-root .shop-drawer, #shop-drawer, .shop-drawer {
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 82dvh !important;
+    max-height: 82dvh !important;
+    border-radius: 14px 14px 0 0;
+    padding: 12px 14px max(16px, env(safe-area-inset-bottom, 0px)) !important;
     box-sizing: border-box;
     transform: translateY(100%);
     transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
@@ -2239,15 +2375,22 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
     align-items: center;
     justify-content: center;
   }
-  .upgrade-card {
+  .upgrade-card, .shop-item {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
     padding: 10px 12px;
-    gap: 8px;
+    gap: 6px;
+    flex-shrink: 0 !important;
   }
-  .btn-buy, .upgrade-buy-btn {
-    min-height: 44px;
+  .upgrade-card .btn-buy, .shop-item .btn-buy, .btn-buy, .upgrade-buy-btn {
+    display: flex !important;
+    visibility: visible !important;
+    min-height: 36px;
     min-width: 80px;
-    padding: 8px 12px;
-    font-size: 0.85rem;
+    padding: 6px 12px;
+    font-size: 0.82rem;
+    flex-shrink: 0 !important;
   }
 
   /* Modali Full-Screen su Smartphone */
@@ -4321,9 +4464,18 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
   }
 
   /* Negozio e schede upgrade compatti */
-  .upgrade-card {
+  .upgrade-card, .shop-item {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
     padding: 8px 10px;
-    min-height: 54px;
+    min-height: fit-content;
+    flex-shrink: 0 !important;
+  }
+  .upgrade-card .btn-buy, .shop-item .btn-buy, .btn-buy, .upgrade-buy-btn {
+    display: flex !important;
+    visibility: visible !important;
+    flex-shrink: 0 !important;
   }
 }
 

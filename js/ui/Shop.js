@@ -15,7 +15,7 @@ import { formatNumber } from './Hud.js';
 import { i18n } from '../core/I18n.js';
 
 export class Shop {
-  constructor(root, { state, audio }) {
+  constructor(root, { state, audio } = {}) {
     this.root = root;
     this.state = state;
     this.audio = audio;
@@ -69,7 +69,7 @@ export class Shop {
           </div>
         </div>
 
-        <div class="shop-content" data-el="content">
+        <div class="shop-content shop-items-list upgrade-list" data-el="content">
           <!-- Carte degli upgrade -->
         </div>
       </aside>`;
@@ -258,7 +258,7 @@ export class Shop {
     }
 
     return `
-      <div class="panel surface upgrade-card ${info.isMax ? 'maxed' : ''} ${info.isLocked ? 'locked' : ''}" data-card="${def.id}">
+      <div class="panel surface upgrade-card shop-item ${info.isMax ? 'maxed' : ''} ${info.isLocked ? 'locked' : ''}" data-card="${def.id}">
         <div class="upgrade-card-head">
           <span class="upgrade-name">${name}</span>
           <span class="upgrade-level num">Lv. ${info.lvl}${info.isMax ? ` (${maxText})` : ` / ${def.maxLevel}`}</span>
@@ -267,7 +267,7 @@ export class Shop {
         ${info.isLocked ? `<div class="upgrade-lock-note muted" style="color: var(--color-gold-deep); font-size: 0.78rem; margin: 4px 0;">🔒 Richiede ${info.lockReq}% di completamento scavo</div>` : ''}
         <div class="upgrade-benefit accent">${benefit}</div>
         <div class="upgrade-card-foot">
-          <button type="button" class="btn btn-buy ${info.canAfford ? 'glow' : ''}" data-buy="${def.id}" ${info.canAfford ? '' : 'disabled'}>
+          <button type="button" class="btn btn-buy upgrade-buy-btn ${info.canAfford ? 'glow' : ''}" data-buy="${def.id}" ${info.canAfford ? '' : 'disabled'}>
             <span class="buy-action">${actionLabel}</span>
             ${info.isMax ? '' : `<span class="buy-cost num">${formatNumber(info.cost)} ⟡</span>`}
           </button>
