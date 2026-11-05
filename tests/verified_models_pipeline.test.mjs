@@ -170,3 +170,4 @@ assert.equal(loadingScreen.pct.textContent, '100%');
 console.log('    ✓ La barra di caricamento riflette in tempo reale la percentuale da 0% a 100%.');
 
 console.log('🎉 TUTTI I TEST DELLA PIPELINE MODELLI E LOADER SUPERATI CON SUCCESSO!');
+
