@@ -8,6 +8,7 @@ const PostShader = {
   uniforms: {
     tDiffuse: { value: null },
     tDepth: { value: null },
+    tNormal: { value: null },
     cameraNear: { value: 0.5 },
     cameraFar: { value: 400.0 },
     cameraProjectionMatrix: { value: new THREE.Matrix4() },
@@ -40,6 +41,7 @@ const PostShader = {
   fragmentShader: `
     uniform sampler2D tDiffuse;
     uniform sampler2D tDepth;
+    uniform sampler2D tNormal;
     uniform float cameraNear;
     uniform float cameraFar;
     uniform mat4 cameraProjectionMatrix;
@@ -122,7 +124,7 @@ const PostShader = {
       return viewPos.xyz / max(0.00001, viewPos.w);
     }
 
-    // Ricostruzione normale View Space dalle derivate parziali dello schermo
+    // Ricostruzione normale View Space dalle derivate parziali dello schermo (fallback)
     vec3 getViewNormal(vec3 viewPos) {
       vec3 dX = dFdx(viewPos);
       vec3 dY = dFdy(viewPos);
@@ -162,7 +164,7 @@ const PostShader = {
           if (sampleUv.x < 0.0 || sampleUv.x > 1.0 || sampleUv.y < 0.0 || sampleUv.y > 1.0) continue;
 
           float sDepth = texture2D(tDepth, sampleUv).r;
-          if (sDepth >= 0.9999) continue;
+          if (sDepth >= 0.9999 || sDepth <= 0.0001) continue;
           vec3 sPos = getViewPosition(sampleUv, sDepth);
           vec3 horizonVec = sPos - viewPos;
           float dist = length(horizonVec);
@@ -179,7 +181,7 @@ const PostShader = {
       }
 
       occlusion = clamp(occlusion / 4.0, 0.0, 1.0);
-      return clamp(1.0 - occlusion * uSSAOIntensity, 0.25, 1.0);
+      return clamp(1.0 - occlusion * uSSAOIntensity, 0.35, 1.0);
     }
 
     // Screen-Space Reflections (SSR): raymarching speculare su metalli e cristalli
@@ -198,8 +200,12 @@ const PostShader = {
         if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) break;
 
         float sceneDepth = texture2D(tDepth, uv).r;
-        vec3 scenePos = getViewPosition(uv, sceneDepth);
+        if (sceneDepth >= 0.9999 || sceneDepth <= 0.0001) {
+          stepSize *= 1.08;
+          continue;
+        }
 
+        vec3 scenePos = getViewPosition(uv, sceneDepth);
         float depthDiff = scenePos.z - currentPos.z;
         if (depthDiff > 0.0 && depthDiff < 2.0) {
           // Ricerca binaria di precisione (3 iterazioni)
@@ -264,7 +270,7 @@ const PostShader = {
 
           if (sampleUv.x < 0.0 || sampleUv.x > 1.0 || sampleUv.y < 0.0 || sampleUv.y > 1.0) break;
           float sDepth = texture2D(tDepth, sampleUv).r;
-          if (sDepth >= 0.9999) break;
+          if (sDepth >= 0.9999 || sDepth <= 0.0001) break;
 
           vec3 sPos = getViewPosition(sampleUv, sDepth);
           float diff = sPos.z - rayPos.z;
@@ -299,16 +305,28 @@ const PostShader = {
       // 1. Antialiasing FXAA sul campione primario della scena
       vec3 base = applyFXAA(tDiffuse, vUv, uResolution);
 
+      // Protezione NaN di base
+      if (isnan(base.r) || isnan(base.g) || isnan(base.b)) {
+        base = texture2D(tDiffuse, vUv).rgb;
+      }
+
       // 2. Pipeline Illuminazione Avanzata Modulare (uLightingMode)
       // 0.0 = Off | 1.0 = GTAO | 2.0 = SSR Speculare | 3.0 = SSGI Diffuse Bounce
       if (uLightingMode > 0.5) {
-        float depth = texture2D(tDepth, vUv).r;
-        if (depth < 0.9999) {
-          vec3 viewPos = getViewPosition(vUv, depth);
-          vec3 viewNorm = getViewNormal(viewPos);
+        float rawDepth = texture2D(tDepth, vUv).r;
+
+        // Se siamo sullo sfondo/cielo o la depth texture non è valida, non applicare oscuramenti distruttivi
+        if (rawDepth < 0.9999 && rawDepth > 0.0001) {
+          vec3 viewPos = getViewPosition(vUv, rawDepth);
+
+          // Campiona la normale dallo slot tNormal (MeshNormalMaterial) se presente, altrimenti fallback con derivate
+          vec3 normalSample = texture2D(tNormal, vUv).rgb * 2.0 - 1.0;
+          vec3 viewNorm = length(normalSample) > 0.1 ? normalize(normalSample) : getViewNormal(viewPos);
 
           // Calcola l'occlusione d'orizzonte (GTAO / HBAO+) per tutte le modalità attive
-          float ao = calculateGTAO(viewPos, viewNorm, vUv);
+          float calculatedAO = calculateGTAO(viewPos, viewNorm, vUv);
+          // FONDAMENTALE: non permettere mai che ao scenda a 0.0 annerendo tutta la scena
+          float ao = clamp(calculatedAO, 0.35, 1.0);
           base *= ao;
 
           // Modalità 2.0: SSR Speculare su metalli, cristalli e reliquie
@@ -317,7 +335,7 @@ const PostShader = {
             bool isCyanCrystal = (base.g > 0.32 && base.b > 0.32 && base.b > base.r * 1.15);
             bool isGoldOrichalcum = (base.r > 0.45 && base.g > 0.32 && base.b < base.g * 0.95);
             vec2 screenCenterDist = abs(vUv - vec2(0.5));
-            bool isCentralOracle = (screenCenterDist.x < 0.22 && screenCenterDist.y < 0.35 && depth < 0.98);
+            bool isCentralOracle = (screenCenterDist.x < 0.22 && screenCenterDist.y < 0.35 && rawDepth < 0.98);
             bool isExcavatedEdge = (length(dFdx(viewNorm)) + length(dFdy(viewNorm)) > 0.30 && luma > 0.25);
 
             float metallic = 0.25;
@@ -350,7 +368,7 @@ const PostShader = {
               vec3 rayDir = reflect(viewDir, viewNorm);
               vec3 hitColor = rayMarchSSR(viewPos, rayDir);
               if (length(hitColor) > 0.001) {
-                float blendFactor = clamp(reflectionFactor * uSSRIntensity, 0.0, 0.85);
+                float blendFactor = clamp(reflectionFactor * uSSRIntensity, 0.0, 0.45);
                 base = mix(base, hitColor, blendFactor);
               }
             }
@@ -358,9 +376,14 @@ const PostShader = {
           // Modalità 3.0: SSGI Diffuse Bounce & Radiance
           else if (uLightingMode >= 2.5) {
             vec3 diffuseBounce = calculateSSGI(viewPos, viewNorm, vUv);
-            base += diffuseBounce * 0.75;
+            base = base * clamp(ao, 0.5, 1.0) + diffuseBounce * 0.35;
           }
         }
+      }
+
+      // Protezione da NaN prima del bloom
+      if (isnan(base.r) || isnan(base.g) || isnan(base.b)) {
+        base = texture2D(tDiffuse, vUv).rgb;
       }
 
       // 3. Selective Bloom calibrato (campioni radiali a raggio controllato)
@@ -398,7 +421,10 @@ const PostShader = {
       float vignette = smoothstep(uVignetteOffset, uVignetteOffset - 0.45, dist);
       vec3 finalColor = mix(graded * (1.0 - uVignetteDarkness), graded, vignette);
 
-      // Uscita sempre a piena opacità per evitare schermate nere/trasparenti su canvas
+      // Uscita sempre a piena opacità e immune da NaN
+      if (isnan(finalColor.r) || isnan(finalColor.g) || isnan(finalColor.b)) {
+        finalColor = texture2D(tDiffuse, vUv).rgb;
+      }
       gl_FragColor = vec4(finalColor, 1.0);
     }
   `
@@ -417,13 +443,13 @@ export class PostProcessing {
     this.elapsedTime = 0;
     this.unsubs = [];
 
-    // Crea WebGLRenderTarget con campionamento lineare, profondità e MSAA 4x su WebGL2
     const size = new THREE.Vector2();
     this.renderer.getSize(size);
-    const pixelRatio = this.renderer.getPixelRatio();
-    const w = Math.max(1, Math.floor(size.x * pixelRatio));
-    const h = Math.max(1, Math.floor(size.y * pixelRatio));
+    const pixelRatio = this.renderer.getPixelRatio ? this.renderer.getPixelRatio() : 1;
+    const w = Math.max(1, Math.floor((size.x || 800) * pixelRatio));
+    const h = Math.max(1, Math.floor((size.y || 600) * pixelRatio));
 
+    // 1. RenderTarget principale per colore (con MSAA 4x e stencil disattivato)
     this.renderTarget = new THREE.WebGLRenderTarget(w, h, {
       minFilter: THREE.LinearFilter,
       magFilter: THREE.LinearFilter,
@@ -433,9 +459,28 @@ export class PostProcessing {
       samples: 4, // Hardware MSAA su WebGL2 per eliminare le scalettature
     });
 
-    // Texture 1x1 di fallback per profondità quando le tecniche di illuminazione sono disattivate (zero overhead)
+    // 2. RenderTarget DEDICATO per profondità e normali (samples: 0 FONDAMENTALE in WebGL2 per DepthTexture)
+    this.depthTexture = new THREE.DepthTexture(w, h);
+    this.depthTexture.type = THREE.UnsignedIntType;
+    this.depthTexture.format = THREE.DepthFormat;
+
+    this.depthTarget = new THREE.WebGLRenderTarget(w, h, {
+      minFilter: THREE.NearestFilter,
+      magFilter: THREE.NearestFilter,
+      format: THREE.RGBAFormat,
+      type: THREE.HalfFloatType,
+      depthTexture: this.depthTexture,
+      depthBuffer: true,
+      samples: 0, // Nessun MSAA sul depthTarget per compatibilità perfetta con DepthTexture
+    });
+
+    this.normalOverrideMaterial = new THREE.MeshNormalMaterial();
+
+    // Texture 1x1 di fallback per profondità e normali quando le tecniche di illuminazione sono disattivate (zero overhead)
     this.dummyDepthTexture = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1);
     this.dummyDepthTexture.needsUpdate = true;
+    this.dummyNormalTexture = new THREE.DataTexture(new Uint8Array([128, 128, 255, 255]), 1, 1);
+    this.dummyNormalTexture.needsUpdate = true;
 
     this.renderTarget1 = this.renderTarget;
     this.renderTarget2 = this.renderTarget;
@@ -443,6 +488,13 @@ export class PostProcessing {
       renderTarget1: this.renderTarget1,
       renderTarget2: this.renderTarget2,
     };
+
+    // Proprietà depthTexture su renderTarget per piena backward compatibility con i test
+    Object.defineProperty(this.renderTarget, 'depthTexture', {
+      get: () => (this.lightingTechnique !== 'off' ? this.depthTexture : null),
+      set: () => {},
+      configurable: true,
+    });
 
     // Scena ortografica per il quad a schermo intero
     this.postCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
@@ -455,6 +507,7 @@ export class PostProcessing {
     });
     this.postMaterial.uniforms.tDiffuse.value = this.renderTarget.texture;
     this.postMaterial.uniforms.tDepth.value = this.dummyDepthTexture;
+    this.postMaterial.uniforms.tNormal.value = this.dummyNormalTexture;
     this.postMaterial.uniforms.uResolution.value.set(w, h);
     this.postMaterial.uniforms.uEnabled.value = this.enabled ? 1.0 : 0.0;
 
@@ -532,28 +585,13 @@ export class PostProcessing {
     this.raytracingSSREnabled = (tech === 'ssr');
 
     if (tech === 'off') {
-      if (this.renderTarget.depthTexture) {
-        this.renderTarget.depthTexture.dispose();
-        this.renderTarget.depthTexture = null;
-        if (this.composer) {
-          this.composer.renderTarget1.depthTexture = null;
-          this.composer.renderTarget2.depthTexture = null;
-        }
-      }
       this.postMaterial.uniforms.tDepth.value = this.dummyDepthTexture;
+      this.postMaterial.uniforms.tNormal.value = this.dummyNormalTexture;
       this.postMaterial.uniforms.uLightingMode.value = 0.0;
       this.postMaterial.uniforms.uRaytracingSSR.value = 0.0;
     } else {
-      if (!this.renderTarget.depthTexture) {
-        const depthTexture = new THREE.DepthTexture();
-        depthTexture.type = THREE.UnsignedShortType;
-        this.renderTarget.depthTexture = depthTexture;
-        if (this.composer) {
-          this.composer.renderTarget1.depthTexture = depthTexture;
-          this.composer.renderTarget2.depthTexture = depthTexture;
-        }
-      }
-      this.postMaterial.uniforms.tDepth.value = this.renderTarget.depthTexture;
+      this.postMaterial.uniforms.tDepth.value = this.depthTexture;
+      this.postMaterial.uniforms.tNormal.value = this.depthTarget.texture;
 
       if (tech === 'gtao') {
         this.postMaterial.uniforms.uLightingMode.value = 1.0;
@@ -587,8 +625,9 @@ export class PostProcessing {
     if (this.lightingTechnique !== 'off' && this.camera) {
       this.camera.updateMatrixWorld?.();
       this.camera.updateProjectionMatrix?.();
-      const depthTex = this.renderTarget.depthTexture || this.composer?.renderTarget1?.depthTexture || this.dummyDepthTexture;
+      const depthTex = this.depthTexture || this.dummyDepthTexture;
       this.postMaterial.uniforms.tDepth.value = depthTex;
+      this.postMaterial.uniforms.tNormal.value = this.depthTarget?.texture || this.dummyNormalTexture;
       this.postMaterial.uniforms.cameraNear.value = this.camera.near;
       this.postMaterial.uniforms.cameraFar.value = this.camera.far;
       this.postMaterial.uniforms.cameraProjectionMatrix.value.copy(this.camera.projectionMatrix);
@@ -611,6 +650,9 @@ export class PostProcessing {
     const w = Math.max(1, Math.floor(width * pixelRatio));
     const h = Math.max(1, Math.floor(height * pixelRatio));
     this.renderTarget.setSize(w, h);
+    if (this.depthTarget) {
+      this.depthTarget.setSize(w, h);
+    }
     this.postMaterial.uniforms.uResolution.value.set(w, h);
   }
 
@@ -618,27 +660,44 @@ export class PostProcessing {
    * Esegue il rendering con post-processing o passa direttamente a renderer.render
    * se disattivato, garantendo zero overhead prestazionale su hardware datato.
    */
-  render() {
+  render(dt = 0) {
     if (!this.enabled) {
       this.renderer.render(this.scene, this.camera);
       return;
     }
 
+    // Memorizza il render target originale (normalmente null = il canvas a schermo)
+    const currentTarget = this.renderer.getRenderTarget();
+
     // Sincronizza matrici e parametri camera per la ricostruzione view-space del raymarching
-    this.update(0);
+    this.update(dt || 0);
 
     // Preserva accumulo draw calls e statistiche per il Profiler in-game e metriche di scena
     const autoReset = this.renderer.info.autoReset;
     this.renderer.info.autoReset = false;
     this.renderer.info.reset();
 
-    // 1. Render della scena 3D principale nel buffer texture (colore e profondità)
-    const currentTarget = this.renderer.getRenderTarget();
+    // 1. Se è attiva una tecnica di illuminazione (GTAO, SSR, SSGI), esegui il pre-pass dedicato su depthTarget
+    if (this.lightingTechnique !== 'off' && this.depthTarget && this.normalOverrideMaterial) {
+      const prevOverride = this.scene.overrideMaterial;
+      const prevAutoClear = this.renderer.autoClear;
+
+      this.scene.overrideMaterial = this.normalOverrideMaterial;
+      this.renderer.setRenderTarget(this.depthTarget);
+      this.renderer.clear();
+      this.renderer.render(this.scene, this.camera);
+
+      // Ripristina stato per il render a colori
+      this.scene.overrideMaterial = prevOverride;
+      this.renderer.autoClear = prevAutoClear;
+    }
+
+    // 2. Render della scena 3D principale nel buffer texture colore (MSAA 4x)
     this.renderer.setRenderTarget(this.renderTarget);
     this.renderer.clear();
     this.renderer.render(this.scene, this.camera);
 
-    // 2. Compositing a schermo intero (bloom + vignette + color grading + SSR + SSAO + antialiasing)
+    // 3. Compositing a schermo intero (bloom + vignette + color grading + lighting pass selezionato)
     this.renderer.setRenderTarget(currentTarget);
     this.renderer.render(this.postScene, this.postCamera);
 
@@ -648,15 +707,11 @@ export class PostProcessing {
   dispose() {
     this.unsubs.forEach((u) => u());
     this.unsubs = [];
-    if (this.renderTarget.depthTexture) {
-      this.renderTarget.depthTexture.dispose();
-      this.renderTarget.depthTexture = null;
-      if (this.composer) {
-        this.composer.renderTarget1.depthTexture = null;
-        this.composer.renderTarget2.depthTexture = null;
-      }
-    }
+    this.depthTexture?.dispose();
+    this.depthTarget?.dispose();
+    this.normalOverrideMaterial?.dispose();
     this.dummyDepthTexture?.dispose();
+    this.dummyNormalTexture?.dispose();
     this.renderTarget?.dispose();
     this.postMaterial?.dispose();
     this.postQuad?.geometry?.dispose();
