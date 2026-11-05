@@ -219,6 +219,115 @@ export class SettingsModal {
     return sel;
   }
 
+  _lightingSelector() {
+    const wrap = document.createElement('div');
+    wrap.className = 'setting-row-lighting';
+
+    const row = document.createElement('div');
+    row.className = 'setting-row';
+
+    const labelGroup = document.createElement('div');
+    labelGroup.className = 'setting-label-group';
+
+    const label = document.createElement('label');
+    label.htmlFor = 'select-lighting-tech';
+    label.setAttribute('data-i18n', 'settings.graphics.lighting_label');
+    label.textContent = i18n.t('settings.graphics.lighting_label') || 'Illuminazione & Occlusione';
+
+    const hint = document.createElement('span');
+    hint.className = 'setting-hint';
+    hint.setAttribute('data-i18n', 'settings.graphics.lighting_hint');
+    hint.textContent = i18n.t('settings.graphics.lighting_hint') || 'Seleziona l\'algoritmo di rendering per ombre e luce indiretta';
+
+    labelGroup.append(label, hint);
+
+    const controlGroup = document.createElement('div');
+    controlGroup.className = 'setting-control-group';
+
+    const select = document.createElement('select');
+    select.id = 'select-lighting-tech';
+    select.className = 'custom-select cerimonial-select';
+
+    const options = [
+      { val: 'off', labelKey: 'settings.graphics.tech_off', defText: 'Disattivato (Massime Prestazioni)' },
+      { val: 'gtao', labelKey: 'settings.graphics.tech_gtao', defText: 'GTAO / HBAO+ (Ombre di Contatto)' },
+      { val: 'ssr', labelKey: 'settings.graphics.tech_ssr', defText: 'SSR Speculare (Riflessi Superfici Lucide)' },
+      { val: 'ssgi', labelKey: 'settings.graphics.tech_ssgi', defText: 'SSGI (Rimbalzo Luce Diffusa & Bagliori)' },
+      { val: 'webgpu', labelKey: 'settings.graphics.tech_webgpu', defText: 'WebGPU Path Tracing (Sperimentale)', id: 'opt-webgpu' },
+    ];
+
+    for (const opt of options) {
+      const el = document.createElement('option');
+      el.value = opt.val;
+      if (opt.id) el.id = opt.id;
+      el.setAttribute('data-i18n', opt.labelKey);
+      el.textContent = i18n.t(opt.labelKey) || opt.defText;
+      select.appendChild(el);
+    }
+
+    const badge = document.createElement('div');
+    badge.id = 'lighting-tech-badge';
+    badge.className = 'lighting-desc-badge';
+
+    const updateBadge = (val) => {
+      const badgeKey = `settings.graphics.badge_${val}`;
+      const defaultBadges = {
+        off: 'Impatto: Zero Overhead | Prestazioni massime su qualsiasi dispositivo mobile o grafica integrata.',
+        gtao: 'Impatto: Leggero (~0.4ms) | Ombre di contatto marcate nei solchi della duna e alla base delle rovine (Consigliato).',
+        ssr: 'Impatto: Medio (~1.2ms) | Riflessi fotorealistici screen-space su cristalli, lastre in oricalco e attrezzi dorati.',
+        ssgi: 'Impatto: Pesante (~2.5ms) | Calcola rimbalzi di luce indiretta e bagliori ciano diffusi sulle pareti di sabbia scavate.',
+        webgpu: 'Impatto: Estremo (Sperimentale) | Motore compute-shader nativo; ripiega in sicurezza su SSGI se non supportato.',
+      };
+      badge.textContent = i18n.t(badgeKey) || defaultBadges[val] || '';
+    };
+
+    // Capability check per WebGPU
+    const hasWebGPU = typeof navigator !== 'undefined' && !!navigator.gpu;
+    const optWebGpu = select.querySelector('#opt-webgpu');
+    if (optWebGpu && !hasWebGPU) {
+      optWebGpu.disabled = true;
+      optWebGpu.textContent += ' [Non supportato dal browser]';
+    }
+
+    const currentVal = this.settings.get('graphics.lightingTechnique') || 'off';
+    select.value = currentVal;
+    updateBadge(currentVal);
+
+    this.unsubs.push(
+      this.settings.subscribe('graphics.lightingTechnique', (v) => {
+        select.value = v;
+        updateBadge(v);
+        const postProcessing = this.scene?.postProcessing || this.game?.sceneMgr?.postProcessing || window.__dds?.scene?.postProcessing;
+        if (postProcessing) {
+          postProcessing.setLightingTechnique?.(v);
+        }
+      })
+    );
+
+    select.addEventListener('change', () => {
+      let chosen = select.value;
+      if (chosen === 'webgpu') {
+        const canWebGPU = typeof navigator !== 'undefined' && !!navigator.gpu;
+        if (!canWebGPU) {
+          toast?.('WebGPU Path Tracing richiede un contesto WebGPU nativo dedicato. Attivata modalità SSGI come fallback.');
+          chosen = 'ssgi';
+          select.value = 'ssgi';
+        }
+      }
+      this.settings.set('graphics.lightingTechnique', chosen);
+      updateBadge(chosen);
+      const postProcessing = this.scene?.postProcessing || this.game?.sceneMgr?.postProcessing || window.__dds?.scene?.postProcessing;
+      if (postProcessing) {
+        postProcessing.setLightingTechnique?.(chosen);
+      }
+    });
+
+    controlGroup.appendChild(select);
+    row.append(labelGroup, controlGroup);
+    wrap.append(row, badge);
+    return wrap;
+  }
+
   _audioTab(p) {
     p.append(
       this._row(i18n.t('settings.masterVolume') || 'Volume generale', this._slider('audio.master')),
@@ -258,11 +367,7 @@ export class SettingsModal {
         this._toggle('graphics.showProfiler', i18n.t('settings.showProfiler') || 'Mostra Diagnostica & FPS'),
         i18n.t('settings.showProfilerHint') || 'Visualizza framerate, chiamate GPU e utilizzo memoria (F3)'
       ),
-      this._row(
-        i18n.t('settings.raytracingSSR') || 'Raytracing & Riflessi SSR (Sperimentale)',
-        this._toggle('graphics.raytracingSSR', i18n.t('settings.raytracingSSR') || 'Raytracing & Riflessi SSR'),
-        i18n.t('settings.raytracingSSRHint') || 'Simula riflessi fotorealistici nello spazio dello schermo. Richiede GPU dedicata (Disattivato di default).'
-      ),
+      this._lightingSelector(),
       this._row(
         i18n.t('settings.reducedMotion') || 'Riduzione Movimento (Accessibilità)',
         this._toggle('accessibility.reducedMotion', i18n.t('settings.reducedMotion') || 'Riduzione Movimento'),

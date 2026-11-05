@@ -4,6 +4,15 @@ import { events } from './Events.js';
 export const SETTINGS_KEY = 'dds_settings_v1';
 export const SETTINGS_VERSION = 1;
 
+/** Rileva se il client corrente è un dispositivo mobile/touchscreen per calibrare i default prestazionali. */
+export function isMobileDevice() {
+  if (typeof navigator === 'undefined') return false;
+  const isTouch = (navigator.maxTouchPoints || 0) > 1;
+  const isMobileUA = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent || '');
+  const isSmallScreen = typeof window !== 'undefined' && window.innerWidth <= 1024;
+  return isMobileUA || (isTouch && isSmallScreen);
+}
+
 /** Schema: tipo, default e vincoli di ogni impostazione (chiavi piatte "gruppo.nome"). */
 export const SCHEMA = {
   'audio.master':        { type: 'range', def: 80, min: 0, max: 100, step: 1 },
@@ -18,6 +27,7 @@ export const SCHEMA = {
   'graphics.dayNightCycle': { type: 'enum', def: 'auto', values: ['auto', 'day', 'night'] },
   'graphics.fpsCap':     { type: 'enum',  def: 60, values: [30, 60, 0] }, // 0 = senza limite
   'graphics.showProfiler': { type: 'bool', def: false },
+  'graphics.lightingTechnique': { type: 'enum', def: isMobileDevice() ? 'off' : 'gtao', values: ['off', 'gtao', 'ssr', 'ssgi', 'webgpu'] },
   'graphics.raytracingSSR': { type: 'bool', def: false },
   'graphics.modelStyle': { type: 'enum', def: 'gltf', values: ['gltf', 'procedural'] },
   'graphics.modelScaleFactor': { type: 'range', def: 1.0, min: 0.5, max: 2.0, step: 0.1 },
@@ -119,6 +129,7 @@ export class SettingsManager {
 
   get(key) {
     if (key === 'showProfiler') key = 'graphics.showProfiler';
+    if (key === 'lightingTechnique') key = 'graphics.lightingTechnique';
     if (key === 'raytracingSSR') key = 'graphics.raytracingSSR';
     if (key === 'modelStyle') key = 'graphics.modelStyle';
     if (key === 'modelScaleFactor') key = 'graphics.modelScaleFactor';
@@ -129,12 +140,21 @@ export class SettingsManager {
     return this.values[key];
   }
 
+  get lightingTechnique() {
+    return this.get('graphics.lightingTechnique');
+  }
+
+  set lightingTechnique(v) {
+    this.set('graphics.lightingTechnique', v);
+  }
+
   get raytracingSSR() {
-    return this.get('graphics.raytracingSSR');
+    return this.get('graphics.lightingTechnique') === 'ssr' || !!this.get('graphics.raytracingSSR');
   }
 
   set raytracingSSR(v) {
-    this.set('graphics.raytracingSSR', v);
+    this.set('graphics.lightingTechnique', v ? 'ssr' : 'off');
+    this.set('graphics.raytracingSSR', !!v);
   }
 
   snapshot() { return { ...this.values }; }
@@ -142,6 +162,7 @@ export class SettingsManager {
   /** Imposta un valore, salva subito e notifica. Ritorna true se il valore è cambiato. */
   set(key, val) {
     if (key === 'showProfiler') key = 'graphics.showProfiler';
+    if (key === 'lightingTechnique') key = 'graphics.lightingTechnique';
     if (key === 'raytracingSSR') key = 'graphics.raytracingSSR';
     if (key === 'modelStyle') key = 'graphics.modelStyle';
     if (key === 'modelScaleFactor') key = 'graphics.modelScaleFactor';
@@ -158,8 +179,26 @@ export class SettingsManager {
     if (key === 'graphics.showProfiler') {
       this._notify('showProfiler', v);
     }
+    if (key === 'graphics.lightingTechnique') {
+      this._notify('lightingTechnique', v);
+      events.emit('settings:lightingTechniqueChanged', v);
+      // Mantieni sincronizzato il booleano legacy raytracingSSR
+      const isSSR = v === 'ssr';
+      if (this.values['graphics.raytracingSSR'] !== isSSR) {
+        this.values['graphics.raytracingSSR'] = isSSR;
+        this._notify('graphics.raytracingSSR', isSSR);
+        this._notify('raytracingSSR', isSSR);
+      }
+    }
     if (key === 'graphics.raytracingSSR') {
       this._notify('raytracingSSR', v);
+      const targetTech = v ? 'ssr' : (this.values['graphics.lightingTechnique'] === 'ssr' ? 'off' : this.values['graphics.lightingTechnique']);
+      if (this.values['graphics.lightingTechnique'] !== targetTech) {
+        this.values['graphics.lightingTechnique'] = targetTech;
+        this._notify('graphics.lightingTechnique', targetTech);
+        this._notify('lightingTechnique', targetTech);
+        events.emit('settings:lightingTechniqueChanged', targetTech);
+      }
     }
     if (key === 'graphics.modelStyle') {
       this._notify('modelStyle', v);
@@ -184,6 +223,7 @@ export class SettingsManager {
   /** Observer: fn(value, key). key = chiave esatta oppure '*' per tutte. Ritorna la funzione di unsubscribe. */
   subscribe(key, fn, { immediate = false } = {}) {
     if (key === 'showProfiler') key = 'graphics.showProfiler';
+    if (key === 'lightingTechnique') key = 'graphics.lightingTechnique';
     if (key === 'raytracingSSR') key = 'graphics.raytracingSSR';
     if (key === 'modelStyle') key = 'graphics.modelStyle';
     if (key === 'modelScaleFactor') key = 'graphics.modelScaleFactor';

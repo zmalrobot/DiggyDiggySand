@@ -1494,6 +1494,57 @@ h1.display { font-family: var(--font-display); font-weight: 900; }
   transform: translateY(0);
 }
 
+/* Dropdown Cerimoniale Tecniche di Illuminazione */
+.cerimonial-select {
+  background: rgba(3, 24, 38, 0.95);
+  border: 1px solid var(--ui-border-gold, #d4af37);
+  color: var(--gold-light, #f7e7b4);
+  font-family: 'Cinzel', serif;
+  font-size: 0.85rem;
+  padding: 8px 12px;
+  border-radius: 4px;
+  outline: none;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  transition: all 0.25s ease;
+  max-width: 100%;
+}
+
+.cerimonial-select:focus,
+.cerimonial-select:hover {
+  border-color: #0fe3c1;
+  box-shadow: 0 0 10px rgba(15, 227, 193, 0.4);
+}
+
+.cerimonial-select option {
+  background: #031826;
+  color: #f7e7b4;
+  font-family: 'Syne', sans-serif;
+  padding: 6px 10px;
+}
+
+.cerimonial-select option:disabled {
+  color: #667885;
+  background: #020f18;
+}
+
+.lighting-desc-badge {
+  margin-top: 6px;
+  font-family: 'Syne', sans-serif;
+  font-size: 0.78rem;
+  color: #8da4b5;
+  line-height: 1.35;
+  padding: 6px 10px;
+  background: rgba(15, 227, 193, 0.06);
+  border-left: 2px solid var(--atlantis-teal, #0fe3c1);
+  border-radius: 0 4px 4px 0;
+  transition: all 0.2s ease;
+}
+
+.lighting-desc-badge strong {
+  color: var(--gold-pharaoh, #f5ba23);
+}
+
 /* ==========================================================================
    Fase 5: Polish Generale, Tutorial Contestuale, Pause Menu & Mobile Touch
    ========================================================================== */

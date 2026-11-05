@@ -23,9 +23,12 @@ const PostShader = {
     uVignetteOffset: { value: 0.95 },
     uWarmth: { value: 0.08 },
     uEnabled: { value: 1.0 },
+    uLightingMode: { value: 1.0 }, // 0: Off, 1: GTAO, 2: SSR, 3: SSGI
     uRaytracingSSR: { value: 0.0 },
     uSSRIntensity: { value: 0.65 },
-    uSSAOIntensity: { value: 0.4 },
+    uSSAOIntensity: { value: 0.55 },
+    uSSGIIntensity: { value: 0.75 },
+    uTime: { value: 0.0 },
   },
   vertexShader: `
     varying vec2 vUv;
@@ -50,14 +53,24 @@ const PostShader = {
     uniform float uVignetteOffset;
     uniform float uWarmth;
     uniform float uEnabled;
+    uniform float uLightingMode;
     uniform float uRaytracingSSR;
     uniform float uSSRIntensity;
     uniform float uSSAOIntensity;
+    uniform float uSSGIIntensity;
+    uniform float uTime;
     varying vec2 vUv;
 
     // Luminanza pesata secondo lo standard percettivo sRGB
     float getLuma(vec3 c) {
       return dot(c, vec3(0.299, 0.587, 0.114));
+    }
+
+    // Hash pseudo-casuale per Blue Noise jittering
+    float hash21(vec2 p) {
+      p = fract(p * vec2(233.34, 851.73));
+      p += dot(p, p + 23.45);
+      return fract(p.x * p.y);
     }
 
     // Fast Approximate Anti-Aliasing (FXAA) per ripulire i bordi geometrici low-poly
@@ -120,34 +133,53 @@ const PostShader = {
       return n;
     }
 
-    // Screen-Space Ambient Occlusion (SSAO) per cavità e fessure delle dune
-    float calculateSSAO(vec3 viewPos, vec3 viewNorm, vec2 uv) {
+    // Horizon-Based / Ground-Truth Ambient Occlusion (GTAO) su 8 direzioni a half-res
+    float calculateGTAO(vec3 viewPos, vec3 viewNorm, vec2 uv) {
       float occlusion = 0.0;
-      vec2 texel = 1.0 / uResolution;
-      float radius = 16.0;
+      vec2 texel = 2.0 / uResolution; // campionamento half-res per massima fluidità
+      float radius = 18.0;
 
-      vec2 aoOffsets[6];
-      aoOffsets[0] = vec2( 1.0,  0.0);
-      aoOffsets[1] = vec2(-1.0,  0.0);
-      aoOffsets[2] = vec2( 0.5,  0.86);
-      aoOffsets[3] = vec2(-0.5, -0.86);
-      aoOffsets[4] = vec2( 0.7, -0.7);
-      aoOffsets[5] = vec2(-0.7,  0.7);
+      // 8 direzioni angolari di scansione dell'orizzonte geometrico
+      vec2 dirs[8];
+      dirs[0] = vec2( 1.0,  0.0);
+      dirs[1] = vec2(-1.0,  0.0);
+      dirs[2] = vec2( 0.0,  1.0);
+      dirs[3] = vec2( 0.0, -1.0);
+      dirs[4] = vec2( 0.707,  0.707);
+      dirs[5] = vec2(-0.707,  0.707);
+      dirs[6] = vec2( 0.707, -0.707);
+      dirs[7] = vec2(-0.707, -0.707);
 
-      for (int i = 0; i < 6; i++) {
-        vec2 sampleUv = uv + aoOffsets[i] * texel * radius;
-        if (sampleUv.x < 0.0 || sampleUv.x > 1.0 || sampleUv.y < 0.0 || sampleUv.y > 1.0) continue;
-        float sampleDepth = texture2D(tDepth, sampleUv).r;
-        vec3 samplePos = getViewPosition(sampleUv, sampleDepth);
-        vec3 diff = samplePos - viewPos;
-        float d = length(diff);
-        if (d > 0.05 && d < 3.5) {
-          float aoFactor = max(0.0, dot(viewNorm, normalize(diff)));
-          occlusion += aoFactor * (1.0 / (1.0 + d * 0.4));
+      float jitter = hash21(uv * uResolution + uTime * 60.0);
+
+      for (int i = 0; i < 8; i++) {
+        vec2 dir = dirs[i];
+        float maxHorizon = 0.0;
+
+        for (int s = 1; s <= 3; s++) {
+          float stepScale = (float(s) + jitter * 0.5) / 3.0;
+          vec2 sampleUv = uv + dir * texel * radius * stepScale;
+          if (sampleUv.x < 0.0 || sampleUv.x > 1.0 || sampleUv.y < 0.0 || sampleUv.y > 1.0) continue;
+
+          float sDepth = texture2D(tDepth, sampleUv).r;
+          if (sDepth >= 0.9999) continue;
+          vec3 sPos = getViewPosition(sampleUv, sDepth);
+          vec3 horizonVec = sPos - viewPos;
+          float dist = length(horizonVec);
+
+          if (dist > 0.08 && dist < 4.2) {
+            float cosTheta = dot(viewNorm, normalize(horizonVec));
+            if (cosTheta > maxHorizon) {
+              maxHorizon = cosTheta;
+              float falloff = 1.0 - clamp(dist / 4.2, 0.0, 1.0);
+              occlusion += cosTheta * falloff * (1.0 / 3.0);
+            }
+          }
         }
       }
-      occlusion /= 6.0;
-      return clamp(1.0 - occlusion * uSSAOIntensity, 0.3, 1.0);
+
+      occlusion = clamp(occlusion / 4.0, 0.0, 1.0);
+      return clamp(1.0 - occlusion * uSSAOIntensity, 0.25, 1.0);
     }
 
     // Screen-Space Reflections (SSR): raymarching speculare su metalli e cristalli
@@ -200,6 +232,64 @@ const PostShader = {
       return hitColor * hitWeight;
     }
 
+    // Screen-Space Global Illumination (SSGI): diffuse bounce e color bleeding su 12 step
+    vec3 calculateSSGI(vec3 viewPos, vec3 viewNorm, vec2 uv) {
+      vec3 indirectRadiance = vec3(0.0);
+      float totalWeight = 0.0;
+      float noise = hash21(uv * uResolution + uTime * 30.0);
+
+      // Campionamento a cono emisferico orientato lungo la normale
+      for (int i = 0; i < 12; i++) {
+        float fi = float(i);
+        float phi = fi * 2.3999632 + noise * 6.2831853; // Golden angle spiral
+        float cosTheta = sqrt(1.0 - (fi + noise * 0.5) / 12.0);
+        float sinTheta = sqrt(max(0.0, 1.0 - cosTheta * cosTheta));
+
+        // Coordinate cono emisferico tangenziale
+        vec3 coneDir = vec3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
+        // Costruzione base ortonormale attorno a viewNorm
+        vec3 up = abs(viewNorm.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
+        vec3 tangent = normalize(cross(up, viewNorm));
+        vec3 bitangent = cross(viewNorm, tangent);
+        vec3 rayDir = normalize(tangent * coneDir.x + bitangent * coneDir.y + viewNorm * coneDir.z);
+
+        // Raymarching a raggio corto (max 3.5m)
+        vec3 rayPos = viewPos + viewNorm * 0.12;
+        float stepDist = 0.35;
+        for (int step = 0; step < 4; step++) {
+          rayPos += rayDir * stepDist;
+          vec4 proj = cameraProjectionMatrix * vec4(rayPos, 1.0);
+          vec3 ndc = proj.xyz / max(0.00001, proj.w);
+          vec2 sampleUv = ndc.xy * 0.5 + 0.5;
+
+          if (sampleUv.x < 0.0 || sampleUv.x > 1.0 || sampleUv.y < 0.0 || sampleUv.y > 1.0) break;
+          float sDepth = texture2D(tDepth, sampleUv).r;
+          if (sDepth >= 0.9999) break;
+
+          vec3 sPos = getViewPosition(sampleUv, sDepth);
+          float diff = sPos.z - rayPos.z;
+          if (diff > 0.0 && diff < 0.9) {
+            vec3 bounceColor = texture2D(tDiffuse, sampleUv).rgb;
+            float luma = getLuma(bounceColor);
+            // Amplifica il rimbalzo dei cristalli ciano emissivi e dell'oricalco dorato
+            float boost = 1.0;
+            if (bounceColor.b > bounceColor.r * 1.15 && bounceColor.g > 0.3) boost = 2.4; // ciano
+            else if (bounceColor.r > 0.4 && bounceColor.b < 0.35) boost = 1.8; // oro
+            float weight = max(0.0, dot(viewNorm, rayDir)) * (1.0 / (1.0 + length(sPos - viewPos) * 0.6));
+            indirectRadiance += bounceColor * weight * boost;
+            totalWeight += weight;
+            break;
+          }
+          stepDist *= 1.25;
+        }
+      }
+
+      if (totalWeight > 0.001) {
+        indirectRadiance = (indirectRadiance / totalWeight) * uSSGIIntensity;
+      }
+      return indirectRadiance;
+    }
+
     void main() {
       if (uEnabled < 0.5) {
         gl_FragColor = vec4(texture2D(tDiffuse, vUv).rgb, 1.0);
@@ -209,58 +299,66 @@ const PostShader = {
       // 1. Antialiasing FXAA sul campione primario della scena
       vec3 base = applyFXAA(tDiffuse, vUv, uResolution);
 
-      // 2. Simulazione Raytracing: SSAO e SSR (attivo solo se uRaytracingSSR > 0.5)
-      if (uRaytracingSSR > 0.5) {
+      // 2. Pipeline Illuminazione Avanzata Modulare (uLightingMode)
+      // 0.0 = Off | 1.0 = GTAO | 2.0 = SSR Speculare | 3.0 = SSGI Diffuse Bounce
+      if (uLightingMode > 0.5) {
         float depth = texture2D(tDepth, vUv).r;
         if (depth < 0.9999) {
           vec3 viewPos = getViewPosition(vUv, depth);
           vec3 viewNorm = getViewNormal(viewPos);
 
-          // A. Occlusione Ambientale (SSAO) per cavità e basi delle colonne
-          float ao = calculateSSAO(viewPos, viewNorm, vUv);
+          // Calcola l'occlusione d'orizzonte (GTAO / HBAO+) per tutte le modalità attive
+          float ao = calculateGTAO(viewPos, viewNorm, vUv);
           base *= ao;
 
-          // B. Riflessi Screen-Space (SSR) su superfici metalliche ed emissive
-          float luma = getLuma(base);
-          bool isCyanCrystal = (base.g > 0.32 && base.b > 0.32 && base.b > base.r * 1.15);
-          bool isGoldOrichalcum = (base.r > 0.45 && base.g > 0.32 && base.b < base.g * 0.95);
-          vec2 screenCenterDist = abs(vUv - vec2(0.5));
-          bool isCentralOracle = (screenCenterDist.x < 0.22 && screenCenterDist.y < 0.35 && depth < 0.98);
-          bool isExcavatedEdge = (length(dFdx(viewNorm)) + length(dFdy(viewNorm)) > 0.30 && luma > 0.25);
+          // Modalità 2.0: SSR Speculare su metalli, cristalli e reliquie
+          if (uLightingMode > 1.5 && uLightingMode < 2.5) {
+            float luma = getLuma(base);
+            bool isCyanCrystal = (base.g > 0.32 && base.b > 0.32 && base.b > base.r * 1.15);
+            bool isGoldOrichalcum = (base.r > 0.45 && base.g > 0.32 && base.b < base.g * 0.95);
+            vec2 screenCenterDist = abs(vUv - vec2(0.5));
+            bool isCentralOracle = (screenCenterDist.x < 0.22 && screenCenterDist.y < 0.35 && depth < 0.98);
+            bool isExcavatedEdge = (length(dFdx(viewNorm)) + length(dFdy(viewNorm)) > 0.30 && luma > 0.25);
 
-          float metallic = 0.25;
-          float roughness = 0.75;
+            float metallic = 0.25;
+            float roughness = 0.75;
 
-          if (isCyanCrystal) {
-            metallic = 0.90;
-            roughness = 0.10;
-          } else if (isGoldOrichalcum) {
-            metallic = 0.85;
-            roughness = 0.25;
-          } else if (isCentralOracle) {
-            metallic = 0.75;
-            roughness = 0.30;
-          } else if (isExcavatedEdge) {
-            metallic = 0.80;
-            roughness = 0.20;
-          } else {
-            metallic = clamp(smoothstep(0.25, 0.75, luma) * 0.75, 0.15, 0.75);
-            roughness = clamp(1.0 - smoothstep(0.28, 0.80, luma) * 0.65, 0.25, 0.85);
-          }
-
-          float reflectionFactor = metallic * (1.0 - roughness * 0.7);
-          if (isCyanCrystal || isGoldOrichalcum || isCentralOracle || isExcavatedEdge) {
-            reflectionFactor = max(reflectionFactor, 0.55);
-          }
-
-          if (reflectionFactor > 0.05) {
-            vec3 viewDir = normalize(viewPos);
-            vec3 rayDir = reflect(viewDir, viewNorm);
-            vec3 hitColor = rayMarchSSR(viewPos, rayDir);
-            if (length(hitColor) > 0.001) {
-              float blendFactor = clamp(reflectionFactor * uSSRIntensity, 0.0, 0.85);
-              base = mix(base, hitColor, blendFactor);
+            if (isCyanCrystal) {
+              metallic = 0.90;
+              roughness = 0.10;
+            } else if (isGoldOrichalcum) {
+              metallic = 0.85;
+              roughness = 0.25;
+            } else if (isCentralOracle) {
+              metallic = 0.75;
+              roughness = 0.30;
+            } else if (isExcavatedEdge) {
+              metallic = 0.80;
+              roughness = 0.20;
+            } else {
+              metallic = clamp(smoothstep(0.25, 0.75, luma) * 0.75, 0.15, 0.75);
+              roughness = clamp(1.0 - smoothstep(0.28, 0.80, luma) * 0.65, 0.25, 0.85);
             }
+
+            float reflectionFactor = metallic * (1.0 - roughness * 0.7);
+            if (isCyanCrystal || isGoldOrichalcum || isCentralOracle || isExcavatedEdge) {
+              reflectionFactor = max(reflectionFactor, 0.55);
+            }
+
+            if (reflectionFactor > 0.05) {
+              vec3 viewDir = normalize(viewPos);
+              vec3 rayDir = reflect(viewDir, viewNorm);
+              vec3 hitColor = rayMarchSSR(viewPos, rayDir);
+              if (length(hitColor) > 0.001) {
+                float blendFactor = clamp(reflectionFactor * uSSRIntensity, 0.0, 0.85);
+                base = mix(base, hitColor, blendFactor);
+              }
+            }
+          }
+          // Modalità 3.0: SSGI Diffuse Bounce & Radiance
+          else if (uLightingMode >= 2.5) {
+            vec3 diffuseBounce = calculateSSGI(viewPos, viewNorm, vUv);
+            base += diffuseBounce * 0.75;
           }
         }
       }
@@ -314,7 +412,9 @@ export class PostProcessing {
     this.settings = settings;
 
     this.enabled = this.settings ? this.settings.get('graphics.postProcessing') !== false : true;
+    this.lightingTechnique = 'off';
     this.raytracingSSREnabled = false;
+    this.elapsedTime = 0;
     this.unsubs = [];
 
     // Crea WebGLRenderTarget con campionamento lineare, profondità e MSAA 4x su WebGL2
@@ -333,7 +433,7 @@ export class PostProcessing {
       samples: 4, // Hardware MSAA su WebGL2 per eliminare le scalettature
     });
 
-    // Texture 1x1 di fallback per profondità quando SSR è disattivato (zero overhead)
+    // Texture 1x1 di fallback per profondità quando le tecniche di illuminazione sono disattivate (zero overhead)
     this.dummyDepthTexture = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1);
     this.dummyDepthTexture.needsUpdate = true;
 
@@ -370,7 +470,7 @@ export class PostProcessing {
       _parent: this,
     };
 
-    // Sottoscrizione alle impostazioni
+    // Sottoscrizione alle impostazioni e inizializzazione tecnica di illuminazione
     if (this.settings) {
       this.unsubs.push(
         this.settings.subscribe('graphics.postProcessing', (val) => {
@@ -378,10 +478,18 @@ export class PostProcessing {
         })
       );
 
-      const initialSSR = !!(this.settings.get('graphics.raytracingSSR') || this.settings.get('raytracingSSR'));
-      this.setRaytracingSSREnabled(initialSSR);
+      // Determina la tecnica iniziale
+      let initialTech = this.settings.get('graphics.lightingTechnique');
+      if (!initialTech) {
+        const legacySSR = !!(this.settings.get('graphics.raytracingSSR') || this.settings.get('raytracingSSR'));
+        initialTech = legacySSR ? 'ssr' : 'off';
+      }
+      this.setLightingTechnique(initialTech);
 
       this.unsubs.push(
+        this.settings.subscribe('graphics.lightingTechnique', (tech) => {
+          this.setLightingTechnique(tech);
+        }),
         this.settings.subscribe('graphics.raytracingSSR', (val) => {
           this.setRaytracingSSREnabled(!!val);
         }),
@@ -389,6 +497,8 @@ export class PostProcessing {
           this.setRaytracingSSREnabled(!!val);
         })
       );
+    } else {
+      this.setLightingTechnique('off');
     }
   }
 
@@ -401,9 +511,39 @@ export class PostProcessing {
     this.setRaytracingSSREnabled(val);
   }
 
-  setRaytracingSSREnabled(val) {
-    this.raytracingSSREnabled = !!val;
-    if (this.raytracingSSREnabled) {
+  getLightingTechnique() {
+    return this.lightingTechnique;
+  }
+
+  setLightingTechnique(technique) {
+    const valid = ['off', 'gtao', 'ssr', 'ssgi', 'webgpu'];
+    let tech = valid.includes(technique) ? technique : 'off';
+
+    // Capability check per WebGPU
+    if (tech === 'webgpu') {
+      const hasWebGPU = typeof navigator !== 'undefined' && 'gpu' in navigator && !!navigator.gpu;
+      if (!hasWebGPU) {
+        // Fallback su SSGI se il dispositivo/browser non supporta l'API WebGPU
+        tech = 'ssgi';
+      }
+    }
+
+    this.lightingTechnique = tech;
+    this.raytracingSSREnabled = (tech === 'ssr');
+
+    if (tech === 'off') {
+      if (this.renderTarget.depthTexture) {
+        this.renderTarget.depthTexture.dispose();
+        this.renderTarget.depthTexture = null;
+        if (this.composer) {
+          this.composer.renderTarget1.depthTexture = null;
+          this.composer.renderTarget2.depthTexture = null;
+        }
+      }
+      this.postMaterial.uniforms.tDepth.value = this.dummyDepthTexture;
+      this.postMaterial.uniforms.uLightingMode.value = 0.0;
+      this.postMaterial.uniforms.uRaytracingSSR.value = 0.0;
+    } else {
       if (!this.renderTarget.depthTexture) {
         const depthTexture = new THREE.DepthTexture();
         depthTexture.type = THREE.UnsignedShortType;
@@ -414,23 +554,37 @@ export class PostProcessing {
         }
       }
       this.postMaterial.uniforms.tDepth.value = this.renderTarget.depthTexture;
-      this.postMaterial.uniforms.uRaytracingSSR.value = 1.0;
-    } else {
-      if (this.renderTarget.depthTexture) {
-        this.renderTarget.depthTexture.dispose();
-        this.renderTarget.depthTexture = null;
-        if (this.composer) {
-          this.composer.renderTarget1.depthTexture = null;
-          this.composer.renderTarget2.depthTexture = null;
-        }
+
+      if (tech === 'gtao') {
+        this.postMaterial.uniforms.uLightingMode.value = 1.0;
+        this.postMaterial.uniforms.uRaytracingSSR.value = 0.0;
+      } else if (tech === 'ssr') {
+        this.postMaterial.uniforms.uLightingMode.value = 2.0;
+        this.postMaterial.uniforms.uRaytracingSSR.value = 1.0;
+      } else if (tech === 'ssgi' || tech === 'webgpu') {
+        this.postMaterial.uniforms.uLightingMode.value = 3.0;
+        this.postMaterial.uniforms.uRaytracingSSR.value = 0.0;
       }
-      this.postMaterial.uniforms.tDepth.value = this.dummyDepthTexture;
-      this.postMaterial.uniforms.uRaytracingSSR.value = 0.0;
+    }
+  }
+
+  setRaytracingSSREnabled(val) {
+    if (val) {
+      this.setLightingTechnique('ssr');
+    } else {
+      if (this.lightingTechnique === 'ssr') {
+        this.setLightingTechnique('off');
+      }
     }
   }
 
   update(dt = 0) {
-    if (this.raytracingSSREnabled && this.camera) {
+    this.elapsedTime += (Number.isFinite(dt) ? dt : 0);
+    if (this.postMaterial.uniforms.uTime) {
+      this.postMaterial.uniforms.uTime.value = this.elapsedTime;
+    }
+
+    if (this.lightingTechnique !== 'off' && this.camera) {
       this.camera.updateMatrixWorld?.();
       this.camera.updateProjectionMatrix?.();
       const depthTex = this.renderTarget.depthTexture || this.composer?.renderTarget1?.depthTexture || this.dummyDepthTexture;
@@ -509,4 +663,4 @@ export class PostProcessing {
   }
 }
 
-export { PostShader as SSRShader };
+export { PostShader, PostShader as SSRShader };
